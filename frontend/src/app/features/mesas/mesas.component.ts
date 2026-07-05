@@ -613,17 +613,18 @@ export class MesasComponent implements OnInit, OnDestroy {
   }
 
   cargarMesas() {
-    this.http.get<Mesa[]>(`${this.baseUrl}/mesas`).subscribe({
-      next: (data) => this.mesas.set(data),
+    this.http.get<any>(`${this.baseUrl}/mesas`).subscribe({
+      next: (res) => this.mesas.set(res.data || []),
       error: (err) => console.error('Error cargando mesas', err)
     });
   }
 
   cargarPlatos() {
-    this.http.get<Plato[]>(`${this.baseUrl}/carta/platos`).subscribe({
-      next: (data) => {
+    this.http.get<any>(`${this.baseUrl}/carta/platos`).subscribe({
+      next: (res) => {
         // Filtrar platos disponibles
-        this.platos.set(data.filter(p => p.disponible));
+        const platosLista = res.data || [];
+        this.platos.set(platosLista.filter((p: Plato) => p.disponible));
       },
       error: (err) => console.error('Error cargando carta', err)
     });

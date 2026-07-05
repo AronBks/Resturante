@@ -375,8 +375,8 @@ export class CocinaComponent implements OnInit, OnDestroy {
   }
 
   cargarPedidosActivos() {
-    this.http.get<Pedido[]>(`${this.baseUrl}/pedidos/activos`).subscribe({
-      next: (data) => this.pedidos.set(data),
+    this.http.get<any>(`${this.baseUrl}/pedidos/activos`).subscribe({
+      next: (res) => this.pedidos.set(res.data || []),
       error: (err) => console.error('Error cargando pedidos activos', err)
     });
   }
