@@ -9,6 +9,7 @@
     "frontend"
   ],
   "scripts": {
+    "dev": "concurrently -n \"backend,frontend\" -c \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm run start:dev --workspace=backend",
     "dev:frontend": "npm run start --workspace=frontend",
     "build:shared": "npm run build --workspace=@sggi/shared",
@@ -27,5 +28,8 @@
   "engines": {
     "node": ">=22.0.0",
     "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
   }
 }
