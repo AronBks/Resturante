@@ -20,7 +20,7 @@ import {
   computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CartaPublicaService, CategoriaPublica } from '../../services/carta-publica.service';
 import { SocketPublicoService } from '../../services/socket-publico.service';
@@ -35,7 +35,11 @@ import { SocketPublicoService } from '../../services/socket-publico.service';
 export class MenuDigitalComponent implements OnInit, OnDestroy {
   readonly cartaService = inject(CartaPublicaService);
   private readonly socketService = inject(SocketPublicoService);
+  private readonly route = inject(ActivatedRoute);
   private wsSub!: Subscription;
+
+  // Número de mesa para pasar al FAB de IA
+  mesaNumero = signal('M01');
 
   // ── Estado local del UI ──
   selectedCategoryId = signal<number | null>(null);
@@ -55,6 +59,11 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   totalPlatos = this.cartaService.totalPlatos;
 
   ngOnInit(): void {
+    // 0. Leer mesa de la URL
+    this.route.queryParams.subscribe((params) => {
+      if (params['mesa']) this.mesaNumero.set(params['mesa']);
+    });
+
     // 1. Carga inicial de la carta
     this.cartaService.cargarCarta();
 

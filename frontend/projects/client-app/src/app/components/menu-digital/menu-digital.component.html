@@ -144,3 +144,15 @@
   <p>Precios en Bolivianos (Bs.) • Menú sujeto a disponibilidad</p>
   <p class="menu-footer__brand">Peña Restaurant Tukuypaj © 2026</p>
 </footer>
+
+<!-- Botón Flotante (FAB) de Asistente IA -->
+<a
+  [routerLink]="['/pedido-ia']"
+  [queryParams]="{ mesa: mesaNumero() }"
+  class="ia-fab"
+  id="fab-asistente-ia"
+>
+  <span class="ia-fab__icon">🤖</span>
+  <span class="ia-fab__text">Pedir con IA</span>
+</a>
+

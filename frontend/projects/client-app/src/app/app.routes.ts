@@ -16,7 +16,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'pedido-ia',
+    loadComponent: () =>
+      import('./components/ia-comanda/ia-comanda.component').then(
+        (m) => m.IaComandaComponent,
+      ),
+  },
+  {
     path: '**',
     redirectTo: '',
   },
 ];
+

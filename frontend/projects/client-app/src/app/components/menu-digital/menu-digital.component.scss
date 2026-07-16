@@ -478,3 +478,47 @@
   font-weight: 600;
   color: var(--text-muted) !important;
 }
+
+/* ==========================================================================
+   BOTÓN FLOTANTE (FAB) DE IA
+   ========================================================================== */
+
+.ia-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  background: var(--gradient-brand);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(200, 149, 108, 0.35);
+  transition: var(--transition-normal);
+  animation: float 3s ease-in-out infinite, fadeInUp 0.5s ease both;
+
+  &:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 12px 30px rgba(200, 149, 108, 0.5);
+  }
+
+  &:active {
+    transform: translateY(-2px) scale(0.98);
+  }
+}
+
+.ia-fab__icon {
+  font-size: 1.35rem;
+}
+
+.ia-fab__text {
+  font-family: var(--font-title);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-on-brand);
+  letter-spacing: 0.3px;
+}
+

@@ -1,0 +1,176 @@
+<!-- ============================================================
+     ASISTENTE VIRTUAL — Chat de Pedidos por IA
+     Peña Restaurant Tukuypaj — Cochabamba, Bolivia
+     ============================================================ -->
+
+<!-- ── Header ── -->
+<header class="ia-header">
+  <a routerLink="/carta" [queryParams]="{ mesa: mesaNumero() }" class="ia-header__back" id="btn-back-carta">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
+    </svg>
+  </a>
+  <div class="ia-header__brand">
+    <div class="ia-header__avatar">🤖</div>
+    <div class="ia-header__info">
+      <h1>Asistente Tukuypaj</h1>
+      <p>Mesa {{ mesaNumero() }} · Pedido por IA</p>
+    </div>
+  </div>
+  <div class="ia-header__status" [class.processing]="iaService.loading()">
+    <span class="status-dot"></span>
+    <span class="status-text">{{ iaService.loading() ? 'Procesando...' : 'En línea' }}</span>
+  </div>
+</header>
+
+<!-- ── Chat Messages Area ── -->
+<div class="chat-container" #chatContainer>
+
+  <!-- Mensajes -->
+  @for (msg of mensajes(); track trackByIndex($index)) {
+
+    <!-- Mensaje del Usuario -->
+    @if (msg.tipo === 'usuario') {
+      <div class="chat-bubble user animate-bubble">
+        <p>{{ msg.texto }}</p>
+        <span class="bubble-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+      </div>
+    }
+
+    <!-- Mensaje del Asistente -->
+    @if (msg.tipo === 'asistente') {
+      <div class="chat-bubble assistant animate-bubble">
+        <div class="assistant-avatar">🤖</div>
+        <div class="bubble-content">
+          <p class="bubble-text" [innerHTML]="msg.texto | slice:0:500"></p>
+
+          <!-- Items interpretados (si los hay) -->
+          @if (msg.items && msg.items.length > 0) {
+            <div class="items-preview">
+              @for (item of msg.items; track item.platoId) {
+                <div class="item-card">
+                  <span class="item-emoji">{{ getFoodEmoji(item.nombre) }}</span>
+                  <div class="item-details">
+                    <span class="item-name">{{ item.nombre }}</span>
+                    @if (item.notas) {
+                      <span class="item-notes">📝 {{ item.notas }}</span>
+                    }
+                  </div>
+                  <div class="item-meta">
+                    <span class="item-qty">×{{ item.cantidad }}</span>
+                    <span class="item-price">Bs. {{ (item.precioUnitario * item.cantidad).toFixed(2) }}</span>
+                  </div>
+                </div>
+              }
+
+              <!-- Total -->
+              <div class="items-total">
+                <span>Total Estimado</span>
+                <strong>Bs. {{ msg.totalEstimado?.toFixed(2) }}</strong>
+              </div>
+
+              <!-- Motor IA usado -->
+              <div class="motor-badge">
+                <span class="motor-icon">{{ msg.motor === 'gemini' ? '✨' : '🔧' }}</span>
+                Interpretado por {{ msg.motor === 'gemini' ? 'Gemini AI' : 'Motor Local' }}
+              </div>
+            </div>
+          }
+
+          <span class="bubble-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- Indicador de "escribiendo..." -->
+    @if (msg.tipo === 'sistema' && msg.texto === 'thinking') {
+      <div class="chat-bubble assistant animate-bubble">
+        <div class="assistant-avatar">🤖</div>
+        <div class="bubble-content">
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<!-- ── Sugerencias Rápidas (solo si no hay resultado pendiente) ── -->
+@if (!hayItemsPendientes() && !iaService.pedidoConfirmado() && mensajes().length <= 2) {
+  <div class="suggestions-bar">
+    <p class="suggestions-label">Sugerencias rápidas:</p>
+    <div class="suggestions-scroll">
+      @for (sug of sugerenciasRapidas; track sug) {
+        <button class="suggestion-chip" (click)="usarSugerencia(sug)" id="chip-sugerencia">
+          {{ sug }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- ── Botón de Confirmación (cuando hay items interpretados) ── -->
+@if (hayItemsPendientes()) {
+  <div class="confirm-bar animate-slide-up">
+    <button
+      class="confirm-btn"
+      (click)="confirmarPedido()"
+      [disabled]="iaService.confirmando()"
+      id="btn-confirmar-ia"
+    >
+      @if (iaService.confirmando()) {
+        <span class="confirm-spinner"></span>
+        Enviando a cocina...
+      } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="confirm-icon">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Confirmar y Enviar a Cocina
+      }
+    </button>
+  </div>
+}
+
+<!-- ── Pantalla de Éxito + Botón Nueva Ronda ── -->
+@if (iaService.pedidoConfirmado()) {
+  <div class="success-bar animate-slide-up">
+    <div class="success-content">
+      <span class="success-check">✅</span>
+      <span>¡Pedido enviado!</span>
+    </div>
+    <button class="new-order-btn" (click)="nuevoPedido()" id="btn-nuevo-pedido">
+      ➕ Agregar más platos
+    </button>
+  </div>
+}
+
+<!-- ── Input Area (sticky bottom) ── -->
+@if (!iaService.pedidoConfirmado() && !hayItemsPendientes()) {
+  <div class="input-bar">
+    <div class="input-wrapper">
+      <input
+        #inputRef
+        type="text"
+        placeholder="Escribe tu pedido aquí..."
+        [ngModel]="inputTexto()"
+        (ngModelChange)="inputTexto.set($event)"
+        (keydown.enter)="enviarMensaje()"
+        [disabled]="iaService.loading()"
+        class="chat-input"
+        id="input-pedido-ia"
+        autocomplete="off"
+      />
+      <button
+        class="send-btn"
+        (click)="enviarMensaje()"
+        [disabled]="!inputTexto().trim() || iaService.loading()"
+        id="btn-enviar-ia"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+}
