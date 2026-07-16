@@ -34,24 +34,10 @@ export const routes: Routes = [
           import('./features/mesas/mesas.component').then((m) => m.MesasComponent),
       },
       {
-        path: 'cocina',
-        canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.CHEF])],
-        loadComponent: () =>
-          import('./features/cocina/cocina.component').then((m) => m.CocinaComponent),
-      },
-      {
         path: 'carta',
         canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO])],
         loadComponent: () =>
           import('./features/carta/carta.component').then((m) => m.CartaComponent),
-      },
-      {
-        path: 'inventario',
-        canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.CHEF])],
-        loadComponent: () =>
-          import('./features/inventario/inventario.component').then(
-            (m) => m.InventarioComponent,
-          ),
       },
       {
         path: 'usuarios',

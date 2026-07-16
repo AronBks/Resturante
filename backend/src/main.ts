@@ -11,9 +11,14 @@ async function bootstrap() {
   // Prefijo global para la API
   app.setGlobalPrefix('api');
 
-  // CORS para el frontend Angular
+  // CORS para ambos portales del frontend Angular
   app.enableCors({
-    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+    origin: [
+      'http://localhost:4200',  // admin-app (Portal Administrativo)
+      'http://127.0.0.1:4200',
+      'http://localhost:4300',  // client-app (Menú Digital Público)
+      'http://127.0.0.1:4300',
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });

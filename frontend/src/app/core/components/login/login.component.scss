@@ -1,3 +1,8 @@
+/* ==========================================================================
+   LOGIN — Peña Tukuypaj
+   Warm premium dark mode login screen
+   ========================================================================== */
+
 .login-wrapper {
   position: relative;
   width: 100vw;
@@ -9,85 +14,100 @@
   overflow: hidden;
 }
 
-/* Decorative Spheres */
+/* ── Decorative Warm Spheres ── */
 .glow-sphere {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.15;
+  filter: blur(120px);
+  opacity: 0.12;
   z-index: 1;
+  pointer-events: none;
 }
 
 .sphere-1 {
-  width: 400px;
-  height: 400px;
-  background-color: var(--primary);
-  top: -100px;
-  left: -100px;
+  width: 450px;
+  height: 450px;
+  background: var(--primary);
+  top: -120px;
+  left: -120px;
 }
 
 .sphere-2 {
   width: 500px;
   height: 500px;
-  background-color: var(--accent);
-  bottom: -150px;
-  right: -150px;
+  background: var(--accent);
+  bottom: -160px;
+  right: -160px;
 }
 
+.sphere-3 {
+  width: 250px;
+  height: 250px;
+  background: var(--warning);
+  top: 50%;
+  left: 60%;
+  opacity: 0.06;
+}
+
+/* ── Login Container ── */
 .login-container {
   position: relative;
   z-index: 2;
   width: 100%;
   max-width: 440px;
-  padding: 40px;
+  padding: 44px 40px 36px;
   margin: 20px;
+  animation: fadeInUp 0.5s ease both;
 }
 
+/* ── Brand / Logo Area ── */
 .logo-area {
   text-align: center;
-  margin-bottom: 35px;
+  margin-bottom: 36px;
   display: flex;
   flex-direction: column;
   align-items: center;
 
-  .logo-icon {
-    width: 64px;
-    height: 64px;
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.25);
+  .logo-isotipo {
+    width: 68px;
+    height: 68px;
+    background: var(--gradient-brand);
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary);
-    margin-bottom: 16px;
-
-    svg {
-      width: 32px;
-      height: 32px;
-    }
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1410;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 32px var(--primary-glow), 0 0 0 1px rgba(200, 149, 108, 0.2);
+    animation: pulse-warm 3.5s infinite;
   }
 
   .brand-title {
-    font-family: var(--font-title);
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    background: linear-gradient(135deg, #ffffff 0%, var(--text-muted) 100%);
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--text-warm) 0%, var(--primary) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
   }
 
   .brand-subtitle {
     font-family: var(--font-body);
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 400;
     color: var(--text-muted);
-    margin-top: 4px;
+    margin-top: 6px;
     letter-spacing: 0.5px;
   }
 }
 
+/* ── Form ── */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -99,18 +119,19 @@
   height: 48px;
 }
 
+/* ── Error Message ── */
 .error-container {
   display: flex;
   align-items: center;
   gap: 10px;
   background: var(--danger-glow);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(201, 74, 74, 0.2);
   border-radius: var(--radius-sm);
   padding: 12px 16px;
   margin-bottom: 20px;
-  color: #fca5a5;
+  color: #e08a8a;
   font-size: 0.85rem;
-  animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideIn 0.2s ease;
 
   svg {
     width: 18px;
@@ -119,13 +140,13 @@
   }
 }
 
-/* Spinner Loader */
+/* ── Spinner ── */
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(26, 20, 16, 0.3);
   border-radius: 50%;
-  border-top-color: #ffffff;
+  border-top-color: #1a1410;
   animation: spin 0.8s linear infinite;
   display: inline-block;
 }
@@ -136,13 +157,18 @@
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+/* ── Footer ── */
+.login-footer {
+  margin-top: 28px;
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-glass);
+
+  span {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    opacity: 0.6;
   }
 }

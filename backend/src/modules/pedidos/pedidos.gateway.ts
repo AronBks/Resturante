@@ -81,10 +81,8 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
    */
   broadcastNuevoPedido(pedido: any) {
     this.server
-      .to(`role:${RolUsuario.CHEF}`)
       .to(`role:${RolUsuario.MESERO}`)
       .to(`role:${RolUsuario.ADMIN}`)
-      .to(`role:${RolUsuario.CAJERO}`)
       .emit('pedido:creado', pedido);
   }
 
@@ -92,27 +90,29 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
    * Emite el cambio de estado global de un pedido
    */
   broadcastEstadoPedido(pedidoId: string, estado: string) {
-    this.server.emit('pedido:estado-actualizado', { pedidoId, estado });
+    this.server
+      .to(`role:${RolUsuario.MESERO}`)
+      .to(`role:${RolUsuario.ADMIN}`)
+      .emit('pedido:estado-actualizado', { pedidoId, estado });
   }
 
   /**
    * Emite el cambio de estado de un item individual del pedido
    */
   broadcastEstadoItem(pedidoId: string, itemId: string, estado: string) {
-    this.server.emit('item:estado-actualizado', { pedidoId, itemId, estado });
+    this.server
+      .to(`role:${RolUsuario.MESERO}`)
+      .to(`role:${RolUsuario.ADMIN}`)
+      .emit('item:estado-actualizado', { pedidoId, itemId, estado });
   }
 
   /**
    * Emite la actualización de estado de una mesa en tiempo real
    */
   broadcastMesaEstado(mesaId: number, estado: string) {
-    this.server.emit('mesa:estado-actualizado', { mesaId, estado });
-  }
-
-  /**
-   * Emite señal de que el menú cambió (debido a stock crítico)
-   */
-  broadcastMenuActualizado() {
-    this.server.emit('menu:actualizado');
+    this.server
+      .to(`role:${RolUsuario.MESERO}`)
+      .to(`role:${RolUsuario.ADMIN}`)
+      .emit('mesa:estado-actualizado', { mesaId, estado });
   }
 }

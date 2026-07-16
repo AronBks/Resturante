@@ -1,21 +1,15 @@
 <div class="login-wrapper">
-  <!-- Glowing neon background circles -->
+  <!-- Decorative warm spheres -->
   <div class="glow-sphere sphere-1"></div>
   <div class="glow-sphere sphere-2"></div>
+  <div class="glow-sphere sphere-3"></div>
 
   <div class="login-container glass-panel">
     <!-- Brand / Logo Area -->
     <div class="logo-area">
-      <div class="logo-icon pulse-primary">
-        <!-- SVG Chef Hat / Tech logo -->
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 2c-.6 0-1.1.2-1.5.6L8 5.2c-.4.4-.6.9-.6 1.4v2.8c0 .8.5 1.5 1.2 1.8 1.1.5 2.3.7 3.4.7s2.3-.2 3.4-.7c.7-.3 1.2-1 1.2-1.8V6.6c0-.5-.2-1-.6-1.4l-2.5-2.6c-.4-.4-.9-.6-1.5-.6z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 12v3a6 6 0 0012 0v-3" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 18v2m6-2v2M4 22h16" />
-        </svg>
-      </div>
-      <h1 class="brand-title">SGGI</h1>
-      <p class="brand-subtitle">Gastronómico Inteligente</p>
+      <div class="logo-isotipo">T</div>
+      <h1 class="brand-title">Tukuypaj</h1>
+      <p class="brand-subtitle">Peña & Restaurant — Cochabamba</p>
     </div>
 
     <!-- Login Form -->
@@ -27,7 +21,7 @@
           id="email"
           name="email"
           [(ngModel)]="email"
-          placeholder="ejemplo@sggi.com"
+          placeholder="usuario&#64;tukuypaj.com"
           required
           [disabled]="loading()"
           autocomplete="email"
@@ -48,7 +42,7 @@
         />
       </div>
 
-      <!-- Error message container with micro-animations -->
+      <!-- Error message container -->
       @if (errorMessage()) {
         <div class="error-container">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -63,9 +57,9 @@
       <button type="submit" class="btn-primary login-btn" [disabled]="loading()">
         @if (loading()) {
           <span class="spinner"></span>
-          <span>Iniciando sesión...</span>
+          <span>Ingresando...</span>
         } @else {
-          <span>Entrar al Sistema</span>
+          <span>Ingresar al Sistema</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <line x1="5" y1="12" x2="19" y2="12" />
             <polyline points="12 5 19 12 12 19" />
@@ -73,5 +67,10 @@
         }
       </button>
     </form>
+
+    <!-- Footer sutil -->
+    <div class="login-footer">
+      <span>Sistema de Gestión Gastronómica</span>
+    </div>
   </div>
 </div>

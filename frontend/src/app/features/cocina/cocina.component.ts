@@ -47,19 +47,21 @@ interface Pedido {
   imports: [CommonModule],
   template: `
     <div class="cocina-container">
-      <div class="header-section glass-panel">
+      <div class="header-section glass-panel animate-in">
         <div>
-          <h1>Monitor de Cocina (KDS)</h1>
-          <p>Gestión de comandas y estado de preparación de platos en tiempo real.</p>
+          <h1>Cocina en Vivo (KDS)</h1>
+          <p>Monitoreo y avance de comandas para los cocineros de <strong>Peña Restaurant Tukuypaj</strong>.</p>
         </div>
       </div>
 
       <div class="tickets-grid">
         @for (pedido of pedidos(); track pedido.id) {
-          <div class="ticket-card glass-panel" [ngClass]="getTicketClass(pedido)">
+          <div class="ticket-card glass-panel animate-in" [ngClass]="getTicketClass(pedido)">
             <div class="ticket-header">
               <span class="mesa-badge">Mesa {{ pedido.mesa.numero }}</span>
-              <span class="time-badge">{{ getTiempoTranscurrido(pedido.createdAt) }} min</span>
+              <span class="time-badge" [class.delayed]="getTiempoTranscurrido(pedido.createdAt) >= 15">
+                {{ getTiempoTranscurrido(pedido.createdAt) }} min
+              </span>
             </div>
             
             <div class="ticket-meta">
@@ -77,7 +79,7 @@ interface Pedido {
                       <span class="quantity">{{ item.cantidad }}x</span>
                       <span class="name">{{ item.plato.nombre }}</span>
                       
-                      @if (item.notas) {
+                      @if (notesFormat(item.notas)) {
                         <span class="item-notes">({{ item.notas }})</span>
                       }
                     </div>
@@ -109,7 +111,7 @@ interface Pedido {
               
               <!-- Botón para completar comanda completa si todos están listos -->
               @if (puedeEntregarComanda(pedido)) {
-                <button class="btn-complete" (click)="marcarPedidoEntregado(pedido.id)">
+                <button class="btn-complete btn-primary" (click)="marcarPedidoEntregado(pedido.id)">
                   Marcar como Entregado
                 </button>
               }
@@ -128,13 +130,15 @@ interface Pedido {
     .cocina-container {
       display: flex;
       flex-direction: column;
-      gap: 30px;
+      gap: 24px;
     }
 
     .header-section {
       padding: 24px 30px;
-      h1 { font-family: var(--font-title); font-size: 1.6rem; font-weight: 700; }
-      p { color: var(--text-muted); font-size: 0.9rem; }
+      background: var(--gradient-brand-subtle);
+      border: 1px solid var(--border-warm);
+      h1 { font-family: var(--font-display); font-size: 1.55rem; font-weight: 700; color: var(--text-warm); }
+      p { color: var(--text-muted); font-size: 0.88rem; strong { color: var(--primary); } }
     }
 
     .tickets-grid {
@@ -146,14 +150,14 @@ interface Pedido {
     .ticket-card {
       display: flex;
       flex-direction: column;
-      padding: 20px;
+      padding: 22px;
       border-top: 4px solid var(--text-muted);
-      background: rgba(255, 255, 255, 0.02);
-      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
 
-      &.abierto { border-top-color: #94a3b8; }
-      &.en-cocina { border-top-color: var(--accent); }
-      &.listo { border-top-color: var(--primary); }
+      &.abierto { border-top-color: var(--info); }
+      &.en-cocina { border-top-color: var(--warning); }
+      &.listo { border-top-color: var(--success); }
     }
 
     .ticket-header {
@@ -165,34 +169,42 @@ interface Pedido {
       .mesa-badge {
         font-family: var(--font-title);
         font-weight: 800;
-        font-size: 1.2rem;
-        color: #ffffff;
+        font-size: 1.25rem;
+        color: var(--text-warm);
       }
 
       .time-badge {
-        font-size: 0.78rem;
-        background: rgba(255,255,255,0.05);
+        font-size: 0.75rem;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--border-glass);
         padding: 4px 8px;
         border-radius: var(--radius-sm);
         color: var(--text-muted);
         font-weight: 600;
+
+        &.delayed {
+          background: var(--danger-glow);
+          color: #e08a8a;
+          border-color: rgba(201, 74, 74, 0.2);
+          animation: pulse-dot 2s infinite;
+        }
       }
     }
 
     .ticket-meta {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--text-muted);
       margin-bottom: 15px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid var(--border-glass);
       padding-bottom: 10px;
 
       .ticket-notes {
-        margin-top: 6px;
-        padding: 6px 10px;
-        background: rgba(245, 158, 11, 0.05);
-        border: 1px dashed rgba(245, 158, 11, 0.2);
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: var(--warning-glow);
+        border: 1px dashed rgba(212, 148, 58, 0.25);
         border-radius: var(--radius-sm);
-        color: #fcd34d;
+        color: #e8b76a;
       }
     }
 
@@ -204,30 +216,30 @@ interface Pedido {
         list-style: none;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
 
         li {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 0.9rem;
-          padding: 8px;
+          font-size: 0.88rem;
+          padding: 8px 12px;
           border-radius: var(--radius-sm);
           background: rgba(255,255,255,0.01);
-          border: 1px solid rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.02);
 
           &.preparando {
-            background: rgba(245, 158, 11, 0.03);
-            border-color: rgba(245, 158, 11, 0.1);
-            .quantity { color: var(--accent); }
+            background: var(--warning-glow);
+            border-color: rgba(212, 148, 58, 0.12);
+            .quantity { color: var(--warning); }
           }
 
           &.listo {
-            background: rgba(16, 185, 129, 0.03);
-            border-color: rgba(16, 185, 129, 0.1);
-            opacity: 0.8;
+            background: var(--success-glow);
+            border-color: rgba(90, 158, 111, 0.12);
+            opacity: 0.75;
             .name { text-decoration: line-through; color: var(--text-muted); }
-            .quantity { color: var(--primary); }
+            .quantity { color: var(--success); }
           }
 
           .item-main {
@@ -239,17 +251,17 @@ interface Pedido {
 
           .quantity {
             font-weight: 800;
-            color: #94a3b8;
+            color: var(--text-muted);
           }
 
           .name {
-            color: #ffffff;
+            color: var(--text-warm);
             font-weight: 500;
           }
 
           .item-notes {
             font-size: 0.75rem;
-            color: #fca5a5;
+            color: #e08a8a;
             font-style: italic;
           }
         }
@@ -261,39 +273,40 @@ interface Pedido {
         padding: 4px 10px;
         font-size: 0.75rem;
         font-weight: 700;
-        border-radius: var(--radius-sm);
+        border-radius: var(--radius-xs);
         cursor: pointer;
         border: none;
         transition: var(--transition-fast);
       }
 
       .preparar-btn {
-        background: rgba(245, 158, 11, 0.15);
-        color: var(--accent);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        &:hover { background: var(--accent); color: #000; }
+        background: var(--warning-glow);
+        color: var(--warning);
+        border: 1px solid rgba(212, 148, 58, 0.25);
+        &:hover { background: var(--warning); color: #1a1410; }
       }
 
       .listo-btn {
-        background: rgba(16, 185, 129, 0.15);
-        color: var(--primary);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        &:hover { background: var(--primary); color: #102a1e; }
+        background: var(--success-glow);
+        color: var(--success);
+        border: 1px solid rgba(90, 158, 111, 0.25);
+        &:hover { background: var(--success); color: #1a1410; }
       }
 
       .ready-badge {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 700;
-        color: var(--primary);
-        background: var(--primary-glow);
+        color: var(--success);
+        background: var(--success-glow);
         padding: 2px 6px;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
+        border: 1px solid rgba(90, 158, 111, 0.15);
       }
     }
 
     .ticket-footer {
-      border-top: 1px solid rgba(255,255,255,0.05);
-      padding-top: 12px;
+      border-top: 1px solid var(--border-glass);
+      padding-top: 14px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -303,37 +316,27 @@ interface Pedido {
         justify-content: space-between;
         font-size: 0.85rem;
         color: var(--text-muted);
+        align-items: center;
 
         .estado-label {
           font-weight: 700;
           text-transform: uppercase;
-          font-size: 0.75rem;
-          padding: 2px 6px;
-          border-radius: 4px;
+          font-size: 0.68rem;
+          padding: 3px 8px;
+          border-radius: var(--radius-xs);
 
-          &.abierto { background: rgba(148, 163, 184, 0.1); color: #cbd5e1; }
-          &.en-cocina { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
-          &.listo { background: rgba(16, 185, 129, 0.15); color: var(--primary); }
+          &.abierto { background: rgba(124, 158, 184, 0.1); color: #a3c4db; }
+          &.en-cocina { background: var(--warning-glow); color: #e8b76a; }
+          &.listo { background: var(--success-glow); color: var(--success); }
         }
       }
     }
 
     .btn-complete {
       width: 100%;
-      background: var(--primary);
-      border: none;
-      color: #0c4a24;
-      padding: 10px;
-      border-radius: var(--radius-sm);
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: var(--transition-fast);
-
-      &:hover {
-        background: var(--primary-hover);
-        box-shadow: 0 0 15px var(--primary-glow);
-      }
+      height: 38px;
+      padding: 0;
+      font-size: 0.82rem;
     }
 
     .empty-tickets {
@@ -345,13 +348,14 @@ interface Pedido {
       padding: 60px 20px;
       text-align: center;
       color: var(--text-muted);
-      border: 1px dashed rgba(255,255,255,0.08);
+      border: 1px dashed var(--border-glass);
 
       svg {
         width: 48px;
         height: 48px;
         margin-bottom: 16px;
-        opacity: 0.5;
+        opacity: 0.4;
+        color: var(--primary);
       }
     }
   `],
@@ -374,6 +378,10 @@ export class CocinaComponent implements OnInit, OnDestroy {
     this.subs.forEach(s => s.unsubscribe());
   }
 
+  notesFormat(val: any): boolean {
+    return val && String(val).trim().length > 0;
+  }
+
   cargarPedidosActivos() {
     this.http.get<any>(`${this.baseUrl}/pedidos/activos`).subscribe({
       next: (res) => this.pedidos.set(res.data || []),
@@ -382,25 +390,18 @@ export class CocinaComponent implements OnInit, OnDestroy {
   }
 
   suscribirAActualizaciones() {
-    // Escuchar nuevas comandas entrantes
     const subNuevo = this.socketService
       .onEvent<Pedido>('pedido:creado')
       .subscribe((nuevoPedido) => {
-        console.log('🔌 WebSocket Recibido - Nueva comanda creada:', nuevoPedido);
         this.pedidos.update((lista) => [nuevoPedido, ...lista]);
       });
 
-    // Escuchar cambios de estado global de pedidos
     const subEstado = this.socketService
       .onEvent<{ pedidoId: string; estado: string }>('pedido:estado-actualizado')
       .subscribe((data) => {
-        console.log(`🔌 WebSocket Recibido - Pedido ${data.pedidoId} cambió a: ${data.estado}`);
-        
-        // Si el pedido fue entregado o cancelado, lo quitamos de la cola de cocina
         if (data.estado === 'ENTREGADO' || data.estado === 'CANCELADO') {
           this.pedidos.update((lista) => lista.filter((p) => p.id !== data.pedidoId));
         } else {
-          // Si no, actualizamos el estado en la lista
           this.pedidos.update((lista) => {
             return lista.map((p) => {
               if (p.id === data.pedidoId) {
@@ -412,11 +413,9 @@ export class CocinaComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Escuchar cambios de estado de platos individuales en tiempo real
     const subItem = this.socketService
       .onEvent<{ pedidoId: string; itemId: string; estado: string }>('item:estado-actualizado')
       .subscribe((data) => {
-        console.log(`🔌 WebSocket Recibido - Item ${data.itemId} del Pedido ${data.pedidoId} cambió a: ${data.estado}`);
         this.pedidos.update((lista) => {
           return lista.map((pedido) => {
             if (pedido.id === data.pedidoId) {
@@ -446,7 +445,6 @@ export class CocinaComponent implements OnInit, OnDestroy {
   }
 
   puedeEntregarComanda(pedido: Pedido): boolean {
-    // Si todos los platos están LISTOS o CANCELADOS, y el pedido no se ha entregado
     return pedido.detalles.every(
       (i) => i.estadoItem === 'LISTO' || i.estadoItem === 'CANCELADO'
     );

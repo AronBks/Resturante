@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EstadoMesa } from '@prisma/client';
+import { PedidosGateway } from '../pedidos/pedidos.gateway';
 
 @Injectable()
 export class MesasService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gateway: PedidosGateway,
+  ) {}
 
   async findAll() {
     return this.prisma.mesa.findMany({
@@ -87,10 +91,12 @@ export class MesasService {
 
   async cambiarEstado(id: number, estado: EstadoMesa) {
     await this.findOne(id);
-    return this.prisma.mesa.update({
+    const mesaActualizada = await this.prisma.mesa.update({
       where: { id },
       data: { estado },
     });
+    this.gateway.broadcastMesaEstado(id, estado);
+    return mesaActualizada;
   }
 
   async toggleActive(id: number) {

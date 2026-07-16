@@ -1,0 +1,215 @@
+<div class="drawer-backdrop" *ngIf="isOpen" (click)="close.emit()"></div>
+
+<div class="comanda-drawer" [class.open]="isOpen">
+  <!-- Drawer Header -->
+  <div class="drawer-header">
+    <div class="title-area">
+      <h2>Mesa {{ mesa?.numero }}</h2>
+      <span class="zone-tag">{{ mesa?.posicion?.zona || 'Zona Central' }}</span>
+    </div>
+    
+    <div class="header-actions">
+      <!-- Selector de Mesero -->
+      <div class="waiter-select-wrapper">
+        <label for="drawer-waiter">Mesero:</label>
+        <select id="drawer-waiter" [ngModel]="selectedWaitership()" (ngModelChange)="selectedWaitership.set($event)">
+          <option value="">Seleccionar...</option>
+          <option *ngFor="let w of waiters()" [value]="w.id">{{ w.nombre }}</option>
+        </select>
+      </div>
+      
+      <button class="close-drawer-btn" (click)="close.emit()">×</button>
+    </div>
+  </div>
+
+  <div class="drawer-body">
+    <!-- Error Alert -->
+    <div class="error-alert" *ngIf="errorMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+
+    <!-- MAIN INTERACTIVE COMANDA FLOW (If LIBRE or OCUPADA, waitstaff can edit) -->
+    <div class="drawer-grid" *ngIf="mesa?.estado !== 'POR_COBRAR'; else billingView">
+      
+      <!-- Left side: Dish Search and Quick Buttons -->
+      <div class="search-panel">
+        <div class="search-box-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input 
+            type="text" 
+            placeholder="Buscar platos o bebidas..." 
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            class="search-input"
+          />
+        </div>
+
+        <!-- Quick Categories -->
+        <div class="drawer-categories-tabs">
+          <button 
+            class="cat-tab-btn" 
+            [class.active]="selectedCategoryId() === null"
+            (click)="selectedCategoryId.set(null)"
+          >
+            Todos
+          </button>
+          <button 
+            *ngFor="let cat of categories()" 
+            class="cat-tab-btn" 
+            [class.active]="selectedCategoryId() === cat.id"
+            (click)="selectedCategoryId.set(cat.id)"
+          >
+            {{ cat.nombre }}
+          </button>
+        </div>
+
+        <!-- Search Results List -->
+        <div class="search-results scrollbar-custom">
+          <div 
+            *ngFor="let plato of filteredPlatos()" 
+            class="plato-search-item glass-panel"
+            [class.plato-agotado]="!plato.disponible"
+            (click)="plato.disponible && agregarPlato(plato)"
+          >
+            <div class="plato-details">
+              <h4>{{ plato.nombre }}</h4>
+              <span class="plato-price">Bs. {{ plato.precioVenta }}</span>
+            </div>
+            <button 
+              class="add-item-btn" 
+              [disabled]="!plato.disponible"
+            >
+              +
+            </button>
+          </div>
+          <div *ngIf="filteredPlatos().length === 0" class="empty-results">
+            No se encontraron platos.
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side: Selected comanda items -->
+      <div class="comanda-items-panel">
+        <h3>Ítems de la Comanda</h3>
+        
+        <div class="comanda-items-list scrollbar-custom">
+          <div *ngFor="let item of comandaItems()" class="comanda-item glass-panel">
+            <div class="item-header-row">
+              <span class="item-name">{{ item.nombre }}</span>
+              <span class="item-subtotal">Bs. {{ (item.precio * item.cantidad).toFixed(2) }}</span>
+            </div>
+            
+            <div class="item-controls-row">
+              <!-- Item Notes Input -->
+              <input 
+                type="text" 
+                placeholder="Notas de preparación..." 
+                [(ngModel)]="item.notas"
+                class="item-note-input"
+              />
+              
+              <!-- Quantity Selectors -->
+              <div class="quantity-selectors">
+                <button (click)="decrementarCantidad(item)" class="qty-btn">-</button>
+                <span class="qty-val">{{ item.cantidad }}</span>
+                <button (click)="incrementarCantidad(item)" class="qty-btn">+</button>
+              </div>
+
+              <!-- Delete Button -->
+              <button (click)="quitarItem(item.platoId)" class="delete-item-btn" title="Quitar item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div *ngIf="comandaItems().length === 0" class="empty-comanda-msg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <p>Selecciona platos del buscador para armar el pedido.</p>
+          </div>
+        </div>
+
+        <!-- General Notes -->
+        <div class="general-notes-wrapper">
+          <label for="general-notes-textarea">Indicaciones Generales:</label>
+          <textarea 
+            id="general-notes-textarea" 
+            [ngModel]="generalNotes()" 
+            (ngModelChange)="generalNotes.set($event)"
+            placeholder="Escribe comentarios generales para cocina..."
+          ></textarea>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CONDITIONAL VIEW: POR COBRAR (ReadOnly summary for payment processing) -->
+    <ng-template #billingView>
+      <div class="billing-summary-panel">
+        <div class="billing-badge">
+          <span class="dot por-cobrar"></span>
+          <span>ESTADO: POR COBRAR</span>
+        </div>
+        
+        <h3>Resumen Detallado de Cuenta</h3>
+        <div class="billing-items-list scrollbar-custom">
+          <div *ngFor="let item of comandaItems()" class="billing-item glass-panel">
+            <div class="b-details">
+              <span class="b-name"><strong>{{ item.nombre }}</strong> x{{ item.cantidad }}</span>
+              <span class="b-notes" *ngIf="item.notas"><em>Nota: "{{ item.notas }}"</em></span>
+            </div>
+            <span class="b-subtotal">Bs. {{ (item.precio * item.cantidad).toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <div class="billing-general-notes" *ngIf="generalNotes()">
+          <h4>Notas generales:</h4>
+          <p>{{ generalNotes() }}</p>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Drawer Footer (Sticky at the bottom) -->
+  <div class="drawer-footer">
+    <div class="total-summary-row">
+      <span>Monto Total:</span>
+      <span class="total-value">Bs. {{ getComandaTotal().toFixed(2) }}</span>
+    </div>
+
+    <div class="action-buttons">
+      <!-- LIBRE: Send Comanda -->
+      <button 
+        *ngIf="mesa?.estado === 'LIBRE'"
+        class="action-btn submit-btn" 
+        [disabled]="comandaItems().length === 0 || isSubmitting() || !selectedWaitership()" 
+        (click)="submitComanda()"
+      >
+        <span *ngIf="!isSubmitting()">Enviar Comanda (WebSocket)</span>
+        <span *ngIf="isSubmitting()">Enviando comanda...</span>
+      </button>
+
+      <!-- OCUPADA: Request Bill (Solicitar Cuenta) -->
+      <button 
+        *ngIf="mesa?.estado === 'OCUPADA'"
+        class="action-btn request-bill-btn" 
+        [disabled]="isSubmitting()" 
+        (click)="solicitarCuenta()"
+      >
+        <span *ngIf="!isSubmitting()">Solicitar Cuenta</span>
+        <span *ngIf="isSubmitting()">Procesando cuenta...</span>
+      </button>
+
+      <!-- POR COBRAR: Liberate Table -->
+      <button 
+        *ngIf="mesa?.estado === 'POR_COBRAR'"
+        class="action-btn release-btn" 
+        [disabled]="isSubmitting()" 
+        (click)="cobrarLiberar()"
+      >
+        <span *ngIf="!isSubmitting()">Cobrar & Liberar Mesa</span>
+        <span *ngIf="isSubmitting()">Liberando...</span>
+      </button>
+    </div>
+  </div>
+</div>

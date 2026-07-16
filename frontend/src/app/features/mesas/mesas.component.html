@@ -1,0 +1,136 @@
+<div class="mesas-container">
+  <div class="header-section glass-panel animate-in">
+    <div>
+      <h1>Salón & Mesas</h1>
+      <p>Distribución interactiva del salón principal. Selecciona una mesa para gestionar comandas y cuentas.</p>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="dot libre"></span> Libre</div>
+      <div class="legend-item"><span class="dot ocupada"></span> Ocupada</div>
+      <div class="legend-item"><span class="dot por-cobrar"></span> Por Cobrar</div>
+    </div>
+  </div>
+
+  <!-- Plano del Salón -->
+  <div class="salon-layout glass-panel animate-in" style="animation-delay:0.05s">
+    
+    <!-- Zona Central -->
+    <div class="zone-section">
+      <div class="zone-label-bar"><span class="zone-tag central">Zona Central</span></div>
+      <div class="tables-row">
+        @for (mesa of mesasCentral(); track mesa.id) {
+          <div 
+            class="table-card" 
+            [ngClass]="getMesaClass(mesa)" 
+            (click)="onMesaClick(mesa)"
+          >
+            <div class="card-header">
+              <span class="table-number">{{ mesa.numero }}</span>
+              <span class="table-cap">{{ mesa.capacidad }} pers.</span>
+            </div>
+            <div class="card-body">
+              <ng-container *ngTemplateOutlet="cardContent; context: { $implicit: mesa }"></ng-container>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Zona Ventanales -->
+    <div class="zone-section">
+      <div class="zone-label-bar"><span class="zone-tag ventanales">Zona Ventanales</span></div>
+      <div class="tables-row">
+        @for (mesa of mesasVentanales(); track mesa.id) {
+          <div 
+            class="table-card" 
+            [ngClass]="getMesaClass(mesa)" 
+            (click)="onMesaClick(mesa)"
+          >
+            <div class="card-header">
+              <span class="table-number">{{ mesa.numero }}</span>
+              <span class="table-cap">{{ mesa.capacidad }} pers.</span>
+            </div>
+            <div class="card-body">
+              <ng-container *ngTemplateOutlet="cardContent; context: { $implicit: mesa }"></ng-container>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Barra -->
+    <div class="zone-section">
+      <div class="zone-label-bar"><span class="zone-tag barra">🍺 Barra</span></div>
+      <div class="tables-row barra-row">
+        @for (mesa of mesasBarra(); track mesa.id) {
+          <div 
+            class="table-card barra-card" 
+            [ngClass]="getMesaClass(mesa)" 
+            (click)="onMesaClick(mesa)"
+          >
+            <div class="card-header">
+              <span class="table-number">{{ mesa.numero }}</span>
+              <span class="table-cap">{{ mesa.capacidad }} pers.</span>
+            </div>
+            <div class="card-body">
+              <ng-container *ngTemplateOutlet="cardContent; context: { $implicit: mesa }"></ng-container>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Reusable Card Content Template -->
+  <ng-template #cardContent let-mesa>
+    <div class="card-inner-wrapper">
+      <ng-container [ngSwitch]="mesa.estado">
+        
+        <!-- Estado OCUPADA -->
+        <div *ngSwitchCase="'OCUPADA'" class="occupied-details animate-fade-in">
+          <div class="detail-row waiter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="val">{{ mesa.pedidos?.[0]?.mesero?.nombre || 'Mesero' }}</span>
+          </div>
+          <div class="detail-row timer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="val">{{ elapsedTimes()[mesa.id] || '00:00:00' }}</span>
+          </div>
+          <div class="amount-badge">
+            Bs. {{ (mesa.pedidos?.[0]?.total || 0) | number:'1.2-2' }}
+          </div>
+        </div>
+
+        <!-- Estado POR COBRAR -->
+        <div *ngSwitchCase="'POR_COBRAR'" class="billing-details animate-fade-in">
+          <div class="billing-pulse-icon">
+            <span class="pulse-dot"></span>
+            <span class="lbl">POR COBRAR</span>
+          </div>
+          <div class="detail-row timer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="val">{{ elapsedTimes()[mesa.id] || '00:00:00' }}</span>
+          </div>
+          <div class="amount-badge primary">
+            Total: Bs. {{ (mesa.pedidos?.[0]?.total || 0) | number:'1.2-2' }}
+          </div>
+        </div>
+
+        <!-- Estado LIBRE -->
+        <div *ngSwitchDefault class="free-details animate-fade-in">
+          <span class="status-pill libre">Disponible</span>
+        </div>
+
+      </ng-container>
+    </div>
+  </ng-template>
+
+  <!-- Sidebar de Comandas (Drawer Component) -->
+  <app-comanda-drawer
+    [mesa]="selectedMesa"
+    [platos]="platos()"
+    [isOpen]="isDrawerOpen"
+    (close)="closeDrawer()"
+    (saved)="cargarMesas()"
+  ></app-comanda-drawer>
+</div>
