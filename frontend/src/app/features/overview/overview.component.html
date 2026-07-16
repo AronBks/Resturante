@@ -139,4 +139,31 @@
       </div>
     </div>
   </div>
+
+  <!-- Contenedor de Alertas de Pedidos por IA -->
+  <div class="toast-overlay" id="ia-toast-container">
+    @for (toast of toasts(); track toast.id) {
+      <div class="ia-toast glass-panel animate-slide-in-right" [id]="'toast-' + toast.id">
+        <div class="toast-header">
+          <span class="toast-icon">🤖</span>
+          <div class="toast-title">
+            <h4>¡Pedido por IA Recibido!</h4>
+            <span class="toast-mesa">Mesa {{ toast.mesaNumero }}</span>
+          </div>
+          <button class="toast-close" (click)="removerToast(toast.id)" [id]="'btn-close-toast-' + toast.id">&times;</button>
+        </div>
+        <div class="toast-body">
+          <p>Se ha registrado un pedido autónomo con <strong>{{ toast.count }} platos</strong>.</p>
+          <div class="toast-total">
+            <span>Total comanda:</span>
+            <strong>Bs. {{ toast.total | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+        <div class="toast-progress">
+          <div class="toast-progress-fill"></div>
+        </div>
+      </div>
+    }
+  </div>
 </div>
+

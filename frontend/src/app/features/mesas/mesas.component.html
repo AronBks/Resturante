@@ -88,9 +88,14 @@
         
         <!-- Estado OCUPADA -->
         <div *ngSwitchCase="'OCUPADA'" class="occupied-details animate-fade-in">
-          <div class="detail-row waiter">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span class="val">{{ mesa.pedidos?.[0]?.mesero?.nombre || 'Mesero' }}</span>
+          <div class="detail-row waiter" [class.ia-service]="mesa.pedidos?.[0]?.mesero?.nombre === 'Asistente IA Tukuypaj'">
+            @if (mesa.pedidos?.[0]?.mesero?.nombre === 'Asistente IA Tukuypaj') {
+              <span class="ia-icon-mini">🤖</span>
+              <span class="val ia-val">Asistente IA</span>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="val">{{ mesa.pedidos?.[0]?.mesero?.nombre || 'Mesero' }}</span>
+            }
           </div>
           <div class="detail-row timer">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>

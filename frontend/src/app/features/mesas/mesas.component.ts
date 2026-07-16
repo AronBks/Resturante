@@ -128,8 +128,21 @@ export class MesasComponent implements OnInit, OnDestroy {
     // We should also listen to order creations to update table list totals
     const subPedido = this.socketService.onEvent<any>('pedido:creado').subscribe(() => this.cargarMesas());
     const subPedidoAct = this.socketService.onEvent<any>('pedido:estado-actualizado').subscribe(() => this.cargarMesas());
+    
+    // Listen to AI order creation to trigger visual updates on the table map
+    const subPedidoIa = this.socketService.onEvent<any>('pedido:ia-creado').subscribe((data) => {
+      // Trigger flashing effect on the mesa
+      const mesaId = data.pedido?.mesaId;
+      if (mesaId) {
+        this.flashingMesas.update((fm) => ({ ...fm, [mesaId]: true }));
+        setTimeout(() => {
+          this.flashingMesas.update((fm) => ({ ...fm, [mesaId]: false }));
+        }, 1500);
+      }
+      this.cargarMesas();
+    });
 
-    this.subs.push(subMesa, subMenu, subPedido, subPedidoAct);
+    this.subs.push(subMesa, subMenu, subPedido, subPedidoAct, subPedidoIa);
   }
 
   iniciarTemporizador() {

@@ -27,8 +27,9 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
   comandasActivas = signal(0);
   platoEstrella = signal('Ninguno');
 
-  // Live Feed
+  // Live Feed & Toasts
   movimientos = signal<any[]>([]);
+  toasts = signal<any[]>([]);
 
   private subs: Subscription[] = [];
 
@@ -80,7 +81,77 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
         this.cargarResumenHoy();
       });
 
-    this.subs.push(subMesa, subPedido, subPedidoAct);
+    // Escuchar alertas de nuevos pedidos autónomos creados por la IA
+    const subPedidoIa = this.socketService
+      .onEvent<any>('pedido:ia-creado')
+      .subscribe((payload) => {
+        this.cargarResumenHoy();
+        this.mostrarToastIa(payload);
+      });
+
+    this.subs.push(subMesa, subPedido, subPedidoAct, subPedidoIa);
+  }
+
+  mostrarToastIa(payload: any) {
+    const pedido = payload.pedido || {};
+    const mesaNumero = payload.mesaNumero || 'Mesa';
+    const total = Number(pedido.total || 0);
+    const count = pedido.detalles?.length || 0;
+
+    const id = Date.now() + Math.random();
+    const nuevoToast = {
+      id,
+      mesaNumero,
+      total,
+      count,
+      detalles: pedido.detalles || [],
+      timestamp: new Date()
+    };
+
+    // Agregar toast
+    this.toasts.update((arr) => [...arr, nuevoToast]);
+
+    // Sonido de campana doble
+    this.playNotificationSound();
+
+    // Auto-dismiss en 8 segundos
+    setTimeout(() => {
+      this.removerToast(id);
+    }, 8000);
+  }
+
+  removerToast(id: number) {
+    this.toasts.update((arr) => arr.filter((t) => t.id !== id));
+  }
+
+  playNotificationSound() {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!ctx) return;
+
+      const playTone = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        
+        gain.gain.setValueAtTime(0.08, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+
+        osc.start(start);
+        osc.stop(start + duration);
+      };
+
+      const now = ctx.currentTime;
+      // Acorde de dos notas consecutivas para un sonido premium de comanda
+      playTone(523.25, now, 0.2); // C5
+      playTone(659.25, now + 0.12, 0.35); // E5
+    } catch (e) {
+      console.warn('AudioContext no inicializado (requiere interacción previa):', e);
+    }
   }
 
   formatRelativeTime(dateStr: string): string {

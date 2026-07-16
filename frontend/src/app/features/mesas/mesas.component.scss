@@ -340,3 +340,29 @@
   from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Badge de Servicio IA ── */
+.detail-row.ia-service {
+  background: rgba(212, 168, 83, 0.08);
+  border: 1px solid rgba(212, 168, 83, 0.18);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  width: fit-content;
+
+  .ia-icon-mini {
+    font-size: 0.75rem;
+  }
+
+  .ia-val {
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
