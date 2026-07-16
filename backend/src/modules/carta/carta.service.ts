@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CartaGateway } from './carta.gateway';
+import { PedidosGateway } from '../pedidos/pedidos.gateway';
 
 @Injectable()
 export class CartaService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cartaGateway: CartaGateway,
+    @Inject(forwardRef(() => PedidosGateway))
+    private readonly pedidosGateway: PedidosGateway,
+  ) {}
 
   // ── Categorías ──
 
@@ -12,8 +19,7 @@ export class CartaService {
       where: { activa: true },
       include: {
         platos: {
-          where: { disponible: true },
-          select: { id: true, nombre: true, precioVenta: true, imagenUrl: true },
+          select: { id: true, nombre: true, precioVenta: true, imagenUrl: true, disponible: true },
           orderBy: { nombre: 'asc' },
         },
       },
@@ -33,16 +39,9 @@ export class CartaService {
 
   async findAllPlatos(categoriaId?: number) {
     return this.prisma.plato.findMany({
-      where: categoriaId ? { categoriaId, disponible: true } : { disponible: true },
+      where: categoriaId ? { categoriaId } : {},
       include: {
         categoria: { select: { id: true, nombre: true } },
-        recetaDetalles: {
-          include: {
-            ingrediente: {
-              select: { id: true, nombre: true, unidadMedida: true, precioUnitario: true },
-            },
-          },
-        },
       },
       orderBy: { nombre: 'asc' },
     });
@@ -53,13 +52,6 @@ export class CartaService {
       where: { id },
       include: {
         categoria: { select: { id: true, nombre: true } },
-        recetaDetalles: {
-          include: {
-            ingrediente: {
-              select: { id: true, nombre: true, unidadMedida: true, stockActual: true, precioUnitario: true },
-            },
-          },
-        },
       },
     });
 
@@ -110,9 +102,55 @@ export class CartaService {
 
   async toggleDisponible(id: string) {
     const plato = await this.findOnePlato(id);
-    return this.prisma.plato.update({
+    const updated = await this.prisma.plato.update({
       where: { id },
       data: { disponible: !plato.disponible },
+    });
+
+    // 📡 Broadcast al namespace público (/publica) — Client-App
+    this.cartaGateway.broadcastDisponibilidad(id, updated.disponible);
+
+    // 📡 Broadcast al namespace autenticado — Admin-App (meseros, admin)
+    this.pedidosGateway.server.emit('menu:actualizado', {
+      platoId: id,
+      disponible: updated.disponible,
+    });
+
+    return updated;
+  }
+
+  // ── Carta Pública (Client-App — Menú Digital) ──
+
+  /**
+   * Retorna la carta optimizada para consumo público:
+   * - Solo categorías activas con al menos un plato disponible
+   * - Solo platos con disponible: true
+   * - Sin campos sensibles (costoReceta, timestamps internos)
+   * - Ordenada por el campo 'orden' de la categoría
+   */
+  async findCartaPublica() {
+    return this.prisma.categoriaPlato.findMany({
+      where: {
+        activa: true,
+        platos: { some: { disponible: true } },
+      },
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        platos: {
+          where: { disponible: true },
+          select: {
+            id: true,
+            nombre: true,
+            descripcion: true,
+            precioVenta: true,
+            imagenUrl: true,
+          },
+          orderBy: { nombre: 'asc' },
+        },
+      },
+      orderBy: { orden: 'asc' },
     });
   }
 }

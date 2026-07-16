@@ -26,6 +26,7 @@ export class CartaController {
     return this.cartaService.findAllCategorias();
   }
 
+
   @Post('categorias')
   @Roles('ADMIN')
   createCategoria(
