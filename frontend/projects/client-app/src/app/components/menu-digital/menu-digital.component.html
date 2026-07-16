@@ -1,0 +1,146 @@
+<!-- ============================================================
+     MENÚ DIGITAL — Carta Interactiva en Tiempo Real
+     Peña Restaurant Tukuypaj — Cochabamba, Bolivia
+     ============================================================ -->
+
+<!-- ── Header Compacto ── -->
+<header class="menu-header">
+  <div class="menu-header__top">
+    <a routerLink="/" class="menu-header__back" id="btn-back-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </a>
+    <div class="menu-header__brand">
+      <h1>Nuestra Carta</h1>
+      <p>Peña Restaurant Tukuypaj</p>
+    </div>
+    <div class="menu-header__live" [class.active]="isLive()">
+      <span class="live-dot"></span>
+      <span class="live-text">{{ isLive() ? 'En vivo' : 'Offline' }}</span>
+    </div>
+  </div>
+
+  <!-- ── Category Tabs (Sticky) ── -->
+  <nav class="category-tabs" id="category-tabs">
+    <button
+      class="category-tab"
+      [class.active]="selectedCategoryId() === null"
+      (click)="selectCategory(null)"
+      id="tab-all"
+    >
+      🍽️ Todo
+      <span class="tab-count">{{ totalPlatos() }}</span>
+    </button>
+    @for (cat of cartaService.categorias(); track cat.id) {
+      <button
+        class="category-tab"
+        [class.active]="selectedCategoryId() === cat.id"
+        (click)="selectCategory(cat.id)"
+        [id]="'tab-cat-' + cat.id"
+      >
+        {{ cat.nombre }}
+        <span class="tab-count">{{ cat.platos.length }}</span>
+      </button>
+    }
+  </nav>
+</header>
+
+<!-- ── Contenido Principal ── -->
+<div class="menu-content">
+
+  <!-- Loading Skeleton -->
+  @if (cartaService.loading()) {
+    <div class="skeleton-grid">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="skeleton-card">
+          <div class="skeleton-img shimmer-loading"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line skeleton-title shimmer-loading"></div>
+            <div class="skeleton-line skeleton-desc shimmer-loading"></div>
+            <div class="skeleton-line skeleton-price shimmer-loading"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (cartaService.error()) {
+    <div class="error-state">
+      <div class="error-icon">⚠️</div>
+      <p>{{ cartaService.error() }}</p>
+      <button class="retry-btn" (click)="cartaService.cargarCarta()" id="btn-retry">
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <!-- Carta Sections -->
+  @if (!cartaService.loading() && !cartaService.error()) {
+    @for (cat of filteredCategorias(); track cat.id) {
+      <section class="category-section animate-in" [style.animation-delay]="($index * 0.06) + 's'">
+        <div class="category-section__header">
+          <h2>{{ cat.nombre }}</h2>
+          @if (cat.descripcion) {
+            <p>{{ cat.descripcion }}</p>
+          }
+        </div>
+
+        <div class="platos-grid">
+          @for (plato of cat.platos; track plato.id) {
+            <article
+              class="plato-card"
+              [class.removing]="isPlatoRemoving(plato.id)"
+              [id]="'plato-' + plato.id"
+            >
+              <!-- Image / Emoji Fallback -->
+              <div class="plato-card__visual">
+                @if (plato.imagenUrl) {
+                  <img
+                    [src]="plato.imagenUrl"
+                    [alt]="plato.nombre"
+                    class="plato-card__img"
+                    loading="lazy"
+                    (error)="plato.imagenUrl = ''"
+                  >
+                } @else {
+                  <div class="plato-card__emoji-box">
+                    <span class="plato-card__emoji">{{ getFoodEmoji(plato.nombre) }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Info -->
+              <div class="plato-card__body">
+                <div class="plato-card__top">
+                  <h3 class="plato-card__name">{{ plato.nombre }}</h3>
+                  <span class="plato-card__price">Bs. {{ plato.precioVenta | number:'1.2-2' }}</span>
+                </div>
+
+                @if (plato.descripcion) {
+                  <p class="plato-card__desc">{{ plato.descripcion }}</p>
+                } @else {
+                  <p class="plato-card__desc">Especialidad tradicional de la casa.</p>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    } @empty {
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>No hay platos disponibles en este momento.</p>
+        <span>Vuelve pronto para ver nuestro menú actualizado.</span>
+      </div>
+    }
+  }
+</div>
+
+<!-- ── Footer Compacto ── -->
+<footer class="menu-footer">
+  <p>Precios en Bolivianos (Bs.) • Menú sujeto a disponibilidad</p>
+  <p class="menu-footer__brand">Peña Restaurant Tukuypaj © 2026</p>
+</footer>

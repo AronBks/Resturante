@@ -164,3 +164,29 @@ export interface IWsEventoInventario {
   nivel: string;
   timestamp: Date;
 }
+
+// ── Carta Pública (Client-App — Menú Digital) ──
+
+export interface IPlatoPublico {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  precioVenta: number;
+  imagenUrl?: string;
+}
+
+export interface ICategoriaPublica {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  platos: IPlatoPublico[];
+}
+
+// ── WebSocket Eventos Públicos ──
+
+export interface IWsEventoDisponibilidad {
+  evento: 'plato:disponibilidad-actualizada';
+  platoId: string;
+  disponible: boolean;
+  timestamp: Date;
+}

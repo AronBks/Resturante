@@ -1,0 +1,357 @@
+/* ==========================================================================
+   LANDING HERO — Pantalla Principal de Bienvenida
+   Mobile-first, fullscreen hero con info del restaurante
+   ========================================================================== */
+
+/* ── Hero Section ── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: linear-gradient(
+    180deg,
+    #f4ede4 0%,
+    #faf6f1 35%,
+    #fff8f0 70%,
+    #faf6f1 100%
+  );
+  overflow: hidden;
+
+  /* Textured overlay — subtle warmth */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 80%, rgba(200, 149, 108, 0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(212, 168, 83, 0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+}
+
+.hero__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.hero__content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 480px;
+}
+
+/* ── Brand Badge ── */
+.hero__brand-badge {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(200, 149, 108, 0.12) 0%, rgba(212, 168, 83, 0.08) 100%);
+  border: 1.5px solid rgba(200, 149, 108, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: float 4s ease-in-out infinite;
+}
+
+.hero__brand-icon {
+  font-size: 2.4rem;
+  filter: drop-shadow(0 2px 8px rgba(200, 149, 108, 0.2));
+}
+
+/* ── Typography ── */
+.hero__eyebrow {
+  font-family: var(--font-title);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.hero__subtitle {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+/* ── Decorative Divider ── */
+.hero__divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.hero__divider-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0.5;
+}
+
+.hero__divider-line {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.hero__description {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+}
+
+/* ── CTA Button ── */
+.hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
+  color: var(--text-on-brand);
+  font-family: var(--font-title);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+  box-shadow: 0 6px 24px rgba(200, 149, 108, 0.25);
+  transition: var(--transition-fast);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 35px rgba(200, 149, 108, 0.35);
+    filter: brightness(1.05);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.hero__cta-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Scroll Indicator ── */
+.hero__scroll-indicator {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: float 2.5s ease-in-out infinite;
+}
+
+.hero__scroll-mouse {
+  width: 24px;
+  height: 38px;
+  border: 2px solid rgba(200, 149, 108, 0.25);
+  border-radius: 12px;
+  position: relative;
+}
+
+.hero__scroll-wheel {
+  width: 3px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 2px;
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: pulseWarm 2s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   INFO SECTION — Horarios, Ubicación, Contacto
+   ========================================================================== */
+
+.info {
+  padding: 60px 20px 48px;
+  background: var(--bg-base);
+}
+
+.info__container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.info__title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: center;
+  margin-bottom: 32px;
+
+  &::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: var(--gradient-brand);
+    margin: 10px auto 0;
+    border-radius: 1px;
+  }
+}
+
+.info__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+.info__card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 24px 20px;
+  text-align: center;
+  transition: var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    border-color: var(--border-warm);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-3px);
+  }
+
+  h3 {
+    font-family: var(--font-title);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+  }
+}
+
+.info__card-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(200, 149, 108, 0.1) 0%, rgba(212, 168, 83, 0.06) 100%);
+  border: 1px solid rgba(200, 149, 108, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+  }
+}
+
+.info__detail {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.info__highlight {
+  font-family: var(--font-title);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.info__link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: var(--transition-fast);
+
+  &:hover {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+}
+
+/* ── Social Links ── */
+.info__social {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.info__social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  background: rgba(200, 149, 108, 0.06);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: var(--transition-fast);
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: var(--primary);
+  }
+
+  &:hover {
+    background: rgba(200, 149, 108, 0.12);
+    border-color: var(--border-warm);
+    color: var(--text-main);
+  }
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+
+.footer {
+  padding: 28px 20px;
+  text-align: center;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-warm);
+
+  p {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    letter-spacing: 0.3px;
+  }
+}

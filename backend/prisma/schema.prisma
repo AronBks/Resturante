@@ -1,13 +1,9 @@
 // ============================================================
-// SGGI — Prisma Schema
+// SGGI — Prisma Schema (Cleaned)
 // Sistema de Gestión Gastronómica Inteligente
 //
-// Modelo relacional completo con:
-// - UUIDs para entidades de negocio
-// - Integers para catálogos estáticos
-// - Snapshots de precios para integridad histórica
-// - Event Sourcing simplificado en inventario
-// - Índices optimizados para queries analíticos
+// Modelo relacional simplificado para flujo diario sin inventario:
+// - Usuario, Mesa, Pedido, DetallePedido, Plato
 // ============================================================
 
 generator client {
@@ -41,21 +37,19 @@ model Usuario {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relaciones
-  pedidos                Pedido[]
-  cajasAbiertas          Caja[]
-  movimientosInventario  MovimientoInventario[]
+  pedidos       Pedido[]
+  cajasAbiertas Caja[]
 
   @@map("usuarios")
 }
 
 // ─────────────────────────────────────────────
-// MESAS — Layout del Restaurante
+// MESAS — Layout del Restaurante Diario
 // ─────────────────────────────────────────────
 
 enum EstadoMesa {
   LIBRE
   OCUPADA
-  RESERVADA
   POR_COBRAR
 }
 
@@ -64,8 +58,8 @@ model Mesa {
   numero    String     @unique @db.VarChar(10)
   capacidad Int        @default(4)
   estado    EstadoMesa @default(LIBRE)
-  /// Coordenadas {x, y, rotacion} para el mapa visual interactivo
-  posicion  Json       @default("{\"x\": 0, \"y\": 0, \"rotacion\": 0}")
+  /// Coordenadas {x, y, zona} para el mapa visual interactivo
+  posicion  Json       @default("{\"x\": 0, \"y\": 0, \"zona\": \"Zona Central\"}")
   activa    Boolean    @default(true)
   createdAt DateTime   @default(now()) @map("created_at")
 
@@ -76,7 +70,7 @@ model Mesa {
 }
 
 // ─────────────────────────────────────────────
-// CARTA — Categorías, Platos y Recetas
+// CARTA — Categorías y Platos
 // ─────────────────────────────────────────────
 
 model CategoriaPlato {
@@ -101,8 +95,6 @@ model Plato {
   precioVenta  Decimal  @map("precio_venta") @db.Decimal(10, 2)
   imagenUrl    String?  @map("imagen_url") @db.VarChar(500)
   disponible   Boolean  @default(true)
-  /// Costo calculado a partir de la receta (Σ ingredientes × precio unitario)
-  costoReceta  Decimal  @default(0) @map("costo_receta") @db.Decimal(10, 2)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -111,95 +103,11 @@ model Plato {
   categoria    CategoriaPlato @relation(fields: [categoriaId], references: [id])
 
   // Relaciones
-  recetaDetalles  RecetaDetalle[]
   detallesPedido  DetallePedido[]
 
   @@index([categoriaId])
   @@index([disponible])
   @@map("platos")
-}
-
-// ─────────────────────────────────────────────
-// INVENTARIO — Ingredientes y Recetario Dinámico
-// ─────────────────────────────────────────────
-
-enum UnidadMedida {
-  KG
-  G
-  L
-  ML
-  UNIDAD
-}
-
-model Ingrediente {
-  id             String      @id @default(uuid()) @db.Uuid
-  nombre         String      @unique @db.VarChar(120)
-  unidadMedida   UnidadMedida @map("unidad_medida")
-  stockActual    Decimal     @default(0) @map("stock_actual") @db.Decimal(12, 4)
-  /// Nivel por debajo del cual se genera alerta amarilla
-  umbralMinimo   Decimal     @default(0) @map("umbral_minimo") @db.Decimal(12, 4)
-  /// Nivel por debajo del cual se desactivan platos asociados
-  umbralCritico  Decimal     @default(0) @map("umbral_critico") @db.Decimal(12, 4)
-  /// Costo por unidad de medida (Ej: precio por KG)
-  precioUnitario Decimal     @default(0) @map("precio_unitario") @db.Decimal(10, 4)
-  activo         Boolean     @default(true)
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-
-  // Relaciones
-  recetaDetalles  RecetaDetalle[]
-  movimientos     MovimientoInventario[]
-
-  @@map("ingredientes")
-}
-
-/// Tabla pivote: composición de un plato (receta)
-model RecetaDetalle {
-  id                String      @id @default(uuid()) @db.Uuid
-  cantidadRequerida Decimal     @map("cantidad_requerida") @db.Decimal(10, 4)
-  unidad            UnidadMedida
-
-  // FKs
-  platoId       String      @map("plato_id") @db.Uuid
-  plato         Plato       @relation(fields: [platoId], references: [id], onDelete: Cascade)
-  ingredienteId String      @map("ingrediente_id") @db.Uuid
-  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id], onDelete: Cascade)
-
-  @@unique([platoId, ingredienteId])
-  @@map("recetas_detalle")
-}
-
-// ─────────────────────────────────────────────
-// MOVIMIENTOS DE INVENTARIO (Event Sourcing simplificado)
-// Cada movimiento es inmutable y mantiene un snapshot del stock resultante.
-// ─────────────────────────────────────────────
-
-enum TipoMovimientoInventario {
-  ENTRADA
-  SALIDA_VENTA
-  SALIDA_MERMA
-  AJUSTE
-}
-
-model MovimientoInventario {
-  id              String                  @id @default(uuid()) @db.Uuid
-  tipo            TipoMovimientoInventario
-  cantidad        Decimal                 @db.Decimal(12, 4)
-  /// Snapshot del stock después de aplicar el movimiento
-  stockResultante Decimal                 @map("stock_resultante") @db.Decimal(12, 4)
-  /// Referencia cruzada: pedido_id para ventas, nota para manuales
-  referencia      String?                 @db.VarChar(255)
-  createdAt       DateTime                @default(now()) @map("created_at")
-
-  // FKs
-  ingredienteId String      @map("ingrediente_id") @db.Uuid
-  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id])
-  usuarioId     String      @map("usuario_id") @db.Uuid
-  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
-
-  @@index([ingredienteId, createdAt])
-  @@index([tipo])
-  @@map("movimientos_inventario")
 }
 
 // ─────────────────────────────────────────────
