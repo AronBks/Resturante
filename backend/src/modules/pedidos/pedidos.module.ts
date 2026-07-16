@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PedidosService } from './pedidos.service';
+import { IaPedidosService } from './ia-pedidos.service';
 import { PedidosController } from './pedidos.controller';
 import { PedidosGateway } from './pedidos.gateway';
 import { PrismaModule } from '../../prisma/prisma.module';
@@ -20,7 +21,8 @@ import { PrismaModule } from '../../prisma/prisma.module';
     }),
   ],
   controllers: [PedidosController],
-  providers: [PedidosService, PedidosGateway],
-  exports: [PedidosService, PedidosGateway],
+  providers: [PedidosService, IaPedidosService, PedidosGateway],
+  exports: [PedidosService, IaPedidosService, PedidosGateway],
 })
 export class PedidosModule {}
+

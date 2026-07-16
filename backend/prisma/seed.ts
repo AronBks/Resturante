@@ -6,6 +6,18 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed limpio — Peña Restaurant Tukuypaj...\n');
 
+  // ── Limpieza previa de la Base de Datos ──
+  console.log('🗑️ Limpiando registros anteriores...');
+  await prisma.transaccion.deleteMany({});
+  await prisma.caja.deleteMany({});
+  await prisma.detallePedido.deleteMany({});
+  await prisma.pedido.deleteMany({});
+  await prisma.plato.deleteMany({});
+  await prisma.categoriaPlato.deleteMany({});
+  await prisma.mesa.deleteMany({});
+  await prisma.usuario.deleteMany({});
+  console.log('🗑️ Base de datos limpia.\n');
+
   // ── 1. Usuarios del sistema ──
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('admin123', salt);
@@ -65,7 +77,20 @@ async function main() {
     },
   });
 
-  console.log('✅ Equipo de trabajo creado (5)');
+  // Usuario virtual del Sistema IA — actúa como mesero en pedidos autónomos
+  await prisma.usuario.upsert({
+    where: { email: 'ia@tukuypaj.com' },
+    update: {},
+    create: {
+      nombre: 'Asistente IA Tukuypaj',
+      email: 'ia@tukuypaj.com',
+      passwordHash: await bcrypt.hash('ia-system-no-login', salt),
+      rol: RolUsuario.MESERO,
+      activo: true,
+    },
+  });
+
+  console.log('✅ Equipo de trabajo creado (6 — incluye Asistente IA)');
 
   // ── 2. Mesas — Distribución Diaria normal ──
   const mesasData = [

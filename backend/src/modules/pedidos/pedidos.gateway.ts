@@ -115,4 +115,25 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
       .to(`role:${RolUsuario.ADMIN}`)
       .emit('mesa:estado-actualizado', { mesaId, estado });
   }
+
+  /**
+   * Emite un pedido autónomo creado por IA al panel administrativo.
+   * Incluye metadata especial para que el frontend muestre alerta diferenciada.
+   */
+  broadcastPedidoIA(pedido: any, mesaNumero: string) {
+    const payload = {
+      pedido,
+      mesaNumero,
+      esIA: true,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server
+      .to(`role:${RolUsuario.MESERO}`)
+      .to(`role:${RolUsuario.ADMIN}`)
+      .to(`role:${RolUsuario.CHEF}`)
+      .emit('pedido:ia-creado', payload);
+
+    this.logger.log(`🤖 Pedido IA emitido para Mesa ${mesaNumero}`);
+  }
 }
