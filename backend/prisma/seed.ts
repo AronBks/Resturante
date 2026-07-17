@@ -95,12 +95,12 @@ async function main() {
   // ── 2. Mesas — Distribución Diaria normal ──
   const mesasData = [
     // Zona Central
-    { numero: 'M01', capacidad: 6, posicion: { x: 80,  y: 180, zona: 'Zona Central' } },
+    { numero: 'M01', capacidad: 6, posicion: { x: 80, y: 180, zona: 'Zona Central' } },
     { numero: 'M02', capacidad: 4, posicion: { x: 230, y: 180, zona: 'Zona Central' } },
     { numero: 'M03', capacidad: 4, posicion: { x: 380, y: 180, zona: 'Zona Central' } },
     { numero: 'M04', capacidad: 6, posicion: { x: 530, y: 180, zona: 'Zona Central' } },
     // Zona Ventanales
-    { numero: 'M05', capacidad: 4, posicion: { x: 80,  y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M05', capacidad: 4, posicion: { x: 80, y: 320, zona: 'Zona Ventanales' } },
     { numero: 'M06', capacidad: 2, posicion: { x: 230, y: 320, zona: 'Zona Ventanales' } },
     { numero: 'M07', capacidad: 4, posicion: { x: 380, y: 320, zona: 'Zona Ventanales' } },
     { numero: 'M08', capacidad: 2, posicion: { x: 530, y: 320, zona: 'Zona Ventanales' } },

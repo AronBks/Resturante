@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { SocketService } from '../../core/services/socket.service';
 import { Subscription } from 'rxjs';
@@ -16,6 +17,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private socketService = inject(SocketService);
+  private router = inject(Router);
   private readonly baseUrl = 'http://localhost:3000/api';
 
   user = this.authService.currentUserSignal;
@@ -31,15 +33,110 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
   movimientos = signal<any[]>([]);
   toasts = signal<any[]>([]);
 
+  // Tables State for Donut Chart
+  mesas = signal<any[]>([]);
+
+  // Drawer States
+  isDrawerOpen = signal(false);
+  pedidosActivos = signal<any[]>([]);
+  cargandoActivos = signal(false);
+
+  // Live Update Flash States
+  flashRecaudado = signal(false);
+  flashOcupacion = signal(false);
+  flashComandas = signal(false);
+  flashPlato = signal(false);
+
   private subs: Subscription[] = [];
+
+  // Computed properties for occupancy distribution donut
+  mesasPorZona = computed(() => {
+    const lista = this.mesas();
+    const stats = {
+      central: { total: 0, ocupadas: 0, pct: 0 },
+      ventanales: { total: 0, ocupadas: 0, pct: 0 },
+      barra: { total: 0, ocupadas: 0, pct: 0 }
+    };
+    
+    for (const m of lista) {
+      const pos = typeof m.posicion === 'string' ? JSON.parse(m.posicion) : m.posicion;
+      const zona = pos?.zona || '';
+      const esOcupada = m.estado === 'OCUPADA' || m.estado === 'POR_COBRAR';
+      
+      if (zona === 'Zona Ventanales') {
+        stats.ventanales.total++;
+        if (esOcupada) stats.ventanales.ocupadas++;
+      } else if (zona === 'Barra') {
+        stats.barra.total++;
+        if (esOcupada) stats.barra.ocupadas++;
+      } else {
+        stats.central.total++;
+        if (esOcupada) stats.central.ocupadas++;
+      }
+    }
+    
+    stats.central.pct = stats.central.total > 0 ? Math.round((stats.central.ocupadas / stats.central.total) * 100) : 0;
+    stats.ventanales.pct = stats.ventanales.total > 0 ? Math.round((stats.ventanales.ocupadas / stats.ventanales.total) * 100) : 0;
+    stats.barra.pct = stats.barra.total > 0 ? Math.round((stats.barra.ocupadas / stats.barra.total) * 100) : 0;
+    
+    return stats;
+  });
+
+  donutStyle = computed(() => {
+    const stats = this.mesasPorZona();
+    const c = stats.central.ocupadas;
+    const v = stats.ventanales.ocupadas;
+    const b = stats.barra.ocupadas;
+    const total = c + v + b;
+    if (total === 0) {
+      return 'conic-gradient(rgba(255, 255, 255, 0.05) 0% 100%)';
+    }
+    const pc = Math.round((c / total) * 100);
+    const pv = Math.round((v / total) * 100);
+    
+    return `conic-gradient(
+      var(--accent) 0% ${pc}%, 
+      #c94a4a ${pc}% ${pc + pv}%, 
+      #7c9eb8 ${pc + pv}% 100%
+    )`;
+  });
 
   ngOnInit() {
     this.cargarResumenHoy();
+    this.cargarMesas();
     this.suscribirAActualizaciones();
   }
 
   ngOnDestroy() {
     this.subs.forEach((s) => s.unsubscribe());
+  }
+
+  getSaludo(): string {
+    const hora = new Date().getHours();
+    const nombre = this.user()?.nombre || 'Operador';
+    if (hora >= 6 && hora < 12) {
+      return `¡Buen día, ${nombre}!`;
+    } else if (hora >= 12 && hora < 19) {
+      return `¡Buenas tardes, ${nombre}!`;
+    } else {
+      return `¡Buenas noches, ${nombre}!`;
+    }
+  }
+
+  triggerFlash(kpi: 'recaudado' | 'ocupacion' | 'comandas' | 'plato') {
+    if (kpi === 'recaudado') {
+      this.flashRecaudado.set(true);
+      setTimeout(() => this.flashRecaudado.set(false), 1500);
+    } else if (kpi === 'ocupacion') {
+      this.flashOcupacion.set(true);
+      setTimeout(() => this.flashOcupacion.set(false), 1500);
+    } else if (kpi === 'comandas') {
+      this.flashComandas.set(true);
+      setTimeout(() => this.flashComandas.set(false), 1500);
+    } else if (kpi === 'plato') {
+      this.flashPlato.set(true);
+      setTimeout(() => this.flashPlato.set(false), 1500);
+    }
   }
 
   cargarResumenHoy() {
@@ -61,31 +158,83 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
     });
   }
 
+  cargarMesas() {
+    this.http.get<any>(`${this.baseUrl}/mesas`).subscribe({
+      next: (res) => {
+        this.mesas.set(res.data || []);
+      },
+      error: (err) => console.error('Error cargando mesas para gráfico', err)
+    });
+  }
+
+  navegarAMesas() {
+    this.router.navigate(['/dashboard/mesas']);
+  }
+
+  toggleDrawer() {
+    this.isDrawerOpen.update((v) => !v);
+    if (this.isDrawerOpen()) {
+      this.cargarPedidosActivos();
+    }
+  }
+
+  cargarPedidosActivos() {
+    this.cargandoActivos.set(true);
+    this.http.get<any>(`${this.baseUrl}/pedidos/activos`).subscribe({
+      next: (res) => {
+        this.pedidosActivos.set(res || []);
+        this.cargandoActivos.set(false);
+      },
+      error: (err) => {
+        console.error('Error cargando pedidos activos', err);
+        this.cargandoActivos.set(false);
+      }
+    });
+  }
+
   suscribirAActualizaciones() {
-    // Escuchar actualizaciones de mesas, comandas y pedidos
     const subMesa = this.socketService
       .onEvent<any>('mesa:estado-actualizado')
       .subscribe(() => {
         this.cargarResumenHoy();
+        this.cargarMesas();
+        this.triggerFlash('ocupacion');
       });
 
     const subPedido = this.socketService
       .onEvent<any>('pedido:creado')
       .subscribe(() => {
         this.cargarResumenHoy();
+        this.cargarMesas();
+        if (this.isDrawerOpen()) {
+          this.cargarPedidosActivos();
+        }
+        this.triggerFlash('comandas');
+        this.triggerFlash('recaudado');
       });
 
     const subPedidoAct = this.socketService
       .onEvent<any>('pedido:estado-actualizado')
       .subscribe(() => {
         this.cargarResumenHoy();
+        this.cargarMesas();
+        if (this.isDrawerOpen()) {
+          this.cargarPedidosActivos();
+        }
+        this.triggerFlash('comandas');
+        this.triggerFlash('recaudado');
       });
 
-    // Escuchar alertas de nuevos pedidos autónomos creados por la IA
     const subPedidoIa = this.socketService
       .onEvent<any>('pedido:ia-creado')
       .subscribe((payload) => {
         this.cargarResumenHoy();
+        this.cargarMesas();
+        if (this.isDrawerOpen()) {
+          this.cargarPedidosActivos();
+        }
+        this.triggerFlash('comandas');
+        this.triggerFlash('recaudado');
         this.mostrarToastIa(payload);
       });
 
@@ -108,13 +257,9 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
       timestamp: new Date()
     };
 
-    // Agregar toast
     this.toasts.update((arr) => [...arr, nuevoToast]);
-
-    // Sonido de campana doble
     this.playNotificationSound();
 
-    // Auto-dismiss en 8 segundos
     setTimeout(() => {
       this.removerToast(id);
     }, 8000);
@@ -146,7 +291,6 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
       };
 
       const now = ctx.currentTime;
-      // Acorde de dos notas consecutivas para un sonido premium de comanda
       playTone(523.25, now, 0.2); // C5
       playTone(659.25, now + 0.12, 0.35); // E5
     } catch (e) {
@@ -170,3 +314,4 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
     return date.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
   }
 }
+
