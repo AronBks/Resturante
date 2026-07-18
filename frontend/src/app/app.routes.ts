@@ -34,6 +34,15 @@ export const routes: Routes = [
           import('./features/mesas/mesas.component').then((m) => m.MesasComponent),
       },
       {
+        path: 'control-caja',
+        canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.CAJERO])],
+        loadComponent: () =>
+          import('./features/control-caja/control-caja.component').then(
+            (m) => m.ControlCajaComponent,
+          ),
+      },
+
+      {
         path: 'carta',
         canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO])],
         loadComponent: () =>

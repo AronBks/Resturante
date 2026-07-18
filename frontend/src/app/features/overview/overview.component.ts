@@ -182,7 +182,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
     this.cargandoActivos.set(true);
     this.http.get<any>(`${this.baseUrl}/pedidos/activos`).subscribe({
       next: (res) => {
-        this.pedidosActivos.set(res || []);
+        this.pedidosActivos.set(res.data || []);
         this.cargandoActivos.set(false);
       },
       error: (err) => {

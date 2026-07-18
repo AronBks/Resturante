@@ -38,11 +38,18 @@ export class LayoutComponent {
         roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CAJERO],
       },
       {
+        label: 'Control de Caja',
+        route: '/dashboard/control-caja',
+        iconPath: 'dollar-sign',
+        roles: [RolUsuario.ADMIN, RolUsuario.CAJERO],
+      },
+      {
         label: 'Nuestra Carta',
         route: '/dashboard/carta',
         iconPath: 'book-open',
         roles: [RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO],
       },
+
       {
         label: 'Equipo de Trabajo',
         route: '/dashboard/usuarios',

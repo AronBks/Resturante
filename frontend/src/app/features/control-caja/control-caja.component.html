@@ -1,0 +1,334 @@
+<div class="section-header animate-in">
+  <h1>Auditoría & Control de Caja</h1>
+  <p>Monitoreo en tiempo real de ventas, arqueos de caja y flujo de caja inmutable de Peña Restaurant Tukuypaj.</p>
+</div>
+
+<!-- Contenedor Principal -->
+<div class="control-caja-container animate-in">
+
+  <!-- Selector de Pestañas (Tabs) -->
+  <div class="tabs-nav no-print">
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'caja'" 
+      (click)="cambiarPestana('caja')"
+    >
+      💼 Caja Activa (Turno)
+    </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'historial'" 
+      (click)="cambiarPestana('historial')"
+    >
+      📜 Historial de Ventas (Hoy)
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PESTAÑA 1: RESUMEN DE CAJA ACTIVA
+       ═══════════════════════════════════════════ -->
+  <div *ngIf="activeTab() === 'caja'" class="tab-content">
+    
+    <!-- Loader de Caja -->
+    <div *ngIf="loadingCaja()" class="skeleton-container">
+      <div class="shimmer skeleton-kpi-grid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+
+    <!-- Sin Caja Activa -->
+    <div *ngIf="!loadingCaja() && !activeCaja()" class="no-data-panel glass-panel">
+      <div class="icon">🔒</div>
+      <h3>No hay caja abierta actualmente</h3>
+      <p>El sistema abrirá una nueva caja automáticamente en el próximo cobro de mesa.</p>
+      <button class="btn-primary" (click)="cargarDatosCaja()">🔄 Recargar Estado</button>
+    </div>
+
+    <!-- Detalles de la Caja Abierta -->
+    <div *ngIf="!loadingCaja() && activeCaja()" class="caja-activa-wrapper">
+      
+      <!-- Encabezado del turno activo -->
+      <div class="caja-header glass-panel">
+        <div class="caja-info-main">
+          <div class="caja-cajero-tag">
+            <span class="lbl">Cajero de Turno</span>
+            <h3>{{ activeCaja().cajero }}</h3>
+          </div>
+          <div class="caja-apertura-tag">
+            <span class="lbl">Apertura</span>
+            <p>{{ activeCaja().apertura | date:'medium' }}</p>
+          </div>
+        </div>
+        <div class="caja-status-wrapper">
+          <span class="badge" [class.badge-success]="activeCaja().estado === 'ABIERTA'" [class.badge-danger]="activeCaja().estado === 'CERRADA'">
+            ● Turno {{ activeCaja().estado }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Grid de KPIs (Consolidación de PostgreSQL) -->
+      <div class="kpis-grid">
+        <!-- Apertura -->
+        <div class="kpi-card glass-panel">
+          <span class="kpi-label">Monto Apertura</span>
+          <h2 class="kpi-val text-muted">Bs. {{ montoApertura().toFixed(2) }}</h2>
+          <span class="kpi-sub">Fondo de sencillo inicial</span>
+        </div>
+
+        <!-- Ventas Efectivo -->
+        <div class="kpi-card glass-panel">
+          <span class="kpi-label">Ventas en Efectivo</span>
+          <h2 class="kpi-val text-success">Bs. {{ ventasEfectivo().toFixed(2) }}</h2>
+          <span class="kpi-sub">Ingresos físicos recibidos</span>
+        </div>
+
+        <!-- Ventas QR -->
+        <div class="kpi-card glass-panel">
+          <span class="kpi-label">Ventas QR</span>
+          <h2 class="kpi-val text-accent">Bs. {{ ventasQr().toFixed(2) }}</h2>
+          <span class="kpi-sub">Transferencias directas</span>
+        </div>
+
+        <!-- Ventas Tarjeta -->
+        <div class="kpi-card glass-panel">
+          <span class="kpi-label">Ventas Tarjeta</span>
+          <h2 class="kpi-val text-info">Bs. {{ ventasTarjeta().toFixed(2) }}</h2>
+          <span class="kpi-sub">Pasarela de débito/crédito</span>
+        </div>
+      </div>
+
+      <!-- Balance de Efectivo Físico -->
+      <div class="balance-sec glass-panel-warm pulse-warm">
+        <div class="balance-info">
+          <span class="label-warm">Efectivo Físico Esperado en Caja</span>
+          <h1>Bs. {{ balanceTeorico().toFixed(2) }}</h1>
+          <p class="desc-warm">Suma teórica: Monto de Apertura (Bs. {{ montoApertura().toFixed(2) }}) + Ventas en Efectivo (Bs. {{ ventasEfectivo().toFixed(2) }}). Tarjetas y Transferencias QR no forman parte del efectivo físico.</p>
+        </div>
+        <div class="balance-actions">
+          <button 
+            *ngIf="isAdmin()" 
+            class="btn-primary closing-box-btn"
+            (click)="abrirCerrarCajaModal()"
+          >
+            🔒 Realizar Arqueo y Cerrar Caja
+          </button>
+          <div *ngIf="!isAdmin()" class="cajero-warning">
+            ⚠️ Solo los administradores pueden realizar el arqueo final.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PESTAÑA 2: HISTORIAL DE TRANSACCIONES (LIVE FEED)
+       ═══════════════════════════════════════════ -->
+  <div *ngIf="activeTab() === 'historial'" class="tab-content">
+    
+    <!-- Loader del Historial -->
+    <div *ngIf="loadingHistorial()" class="skeleton-container">
+      <div class="shimmer skeleton-table"></div>
+    </div>
+
+    <!-- Sin Transacciones -->
+    <div *ngIf="!loadingHistorial() && transacciones().length === 0" class="no-data-panel glass-panel">
+      <div class="icon">💸</div>
+      <h3>Sin transacciones registradas hoy</h3>
+      <p>Las facturas y comprobantes aparecerán aquí tan pronto como sean liquidadas.</p>
+    </div>
+
+    <!-- Tabla de Transacciones -->
+    <div *ngIf="!loadingHistorial() && transacciones().length > 0" class="table-wrapper glass-panel">
+      <table class="premium-table">
+        <thead>
+          <tr>
+            <th>Nro. Transacción</th>
+            <th>Hora</th>
+            <th>Mesa</th>
+            <th>Mesero</th>
+            <th>Método Pago</th>
+            <th class="text-right">Descuento</th>
+            <th class="text-right">Total Neto</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of transacciones()" class="table-row">
+            <td class="td-bold">{{ t.nroRecibo }}</td>
+            <td class="text-muted">{{ formatearFechaHora(t.fecha) }}</td>
+            <td>
+              <span class="mesa-badge">Mesa {{ t.mesa.numero }}</span>
+            </td>
+            <td>{{ t.mesero.nombre }}</td>
+            <td>
+              <span class="badge" [ngClass]="getMetodoBadgeClass(t.metodoPago)">
+                {{ getMetodoLabel(t.metodoPago) }}
+              </span>
+            </td>
+            <td class="text-right text-muted">
+              Bs. {{ t.descuento.toFixed(2) }}
+            </td>
+            <td class="text-right td-bold text-success">
+              Bs. {{ t.total.toFixed(2) }}
+            </td>
+            <td class="text-center">
+              <button 
+                class="action-btn" 
+                title="Visualizar Comprobante"
+                (click)="verRecibo(t)"
+              >
+                👁️ Ver Recibo
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL DE ARQUEO Y CIERRE DE CAJA
+     ═══════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="cerrarCajaModalOpen()" (click)="cerrarCajaModal()"></div>
+
+<div class="modal-card glass-panel" [class.open]="cerrarCajaModalOpen()">
+  
+  <!-- Paso 1: Formulario de arqueo -->
+  <div *ngIf="!cierreExitosoResult()">
+    <div class="modal-header">
+      <h2>🔒 Arqueo Final y Cierre de Caja</h2>
+      <button class="close-x-btn" (click)="cerrarCajaModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="audit-summary-box">
+        <div class="summary-item">
+          <span>Efectivo Esperado (Teórico):</span>
+          <span class="val">Bs. {{ balanceTeorico().toFixed(2) }}</span>
+        </div>
+        <div class="summary-item">
+          <span>Apertura de Turno:</span>
+          <span>Bs. {{ montoApertura().toFixed(2) }}</span>
+        </div>
+        <div class="summary-item">
+          <span>Ventas Efectivo:</span>
+          <span>Bs. {{ ventasEfectivo().toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <!-- Input de conteo físico -->
+      <div class="input-group">
+        <label for="montoFisico">Efectivo Físico Contado (Bs.)</label>
+        <input 
+          id="montoFisico"
+          type="number" 
+          step="0.01" 
+          placeholder="Ingrese el monto total contado"
+          [value]="montoCierreFisico()"
+          (input)="onMontoCierreInput($any($event.target).value)"
+          [disabled]="isCerrando()"
+        />
+      </div>
+
+      <!-- Resultados de discrepancia (Auditoría) -->
+      <div class="discrepancy-alert" [ngClass]="{
+        'sobrante': diferenciaArqueo() > 0,
+        'faltante': diferenciaArqueo() < 0,
+        'cuadrado': diferenciaArqueo() === 0
+      }">
+        <span class="alert-title">Auditoría de Arqueo:</span>
+        <h3 *ngIf="diferenciaArqueo() === 0">✓ Caja Cuadrada (Bs. 0.00 de diferencia)</h3>
+        <h3 *ngIf="diferenciaArqueo() > 0">💵 Sobrante en Caja: +Bs. {{ diferenciaArqueo().toFixed(2) }}</h3>
+        <h3 *ngIf="diferenciaArqueo() < 0">⚠️ Faltante en Caja: -Bs. {{ diferenciaAbsoluta().toFixed(2) }}</h3>
+        <p class="alert-desc">El arqueo registrará de manera inmutable esta diferencia en la base de datos para auditorías administrativas.</p>
+      </div>
+
+      <div class="error-banner" *ngIf="cierreError()">
+        {{ cierreError() }}
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarCajaModal()" [disabled]="isCerrando()">Cancelar</button>
+      <button class="btn-primary danger" (click)="confirmarCerrarCaja()" [disabled]="isCerrando() || montoCierreFisico() === null">
+        {{ isCerrando() ? 'Procesando Cierre...' : '🔒 Confirmar y Cerrar Caja' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Paso 2: Éxito de Cierre (Resumen de Auditoría) -->
+  <div *ngIf="cierreExitosoResult()">
+    <div class="modal-header">
+      <h2>🎉 Caja Cerrada Exitosamente</h2>
+      <button class="close-x-btn" (click)="cerrarCajaModal()">×</button>
+    </div>
+
+    <div class="modal-body success-summary">
+      <div class="success-icon">✓</div>
+      <p class="success-desc">El turno de caja ha sido bloqueado de forma inmutable. Se ha emitido el reporte de auditoría a la gerencia.</p>
+
+      <div class="audit-details-table">
+        <div class="row">
+          <span>Identificador de Turno:</span>
+          <span class="val">{{ cierreExitosoResult().cajaId.substring(0, 8) }}...</span>
+        </div>
+        <div class="row">
+          <span>Cajero:</span>
+          <span class="val">{{ cierreExitosoResult().cajero }}</span>
+        </div>
+        <div class="row">
+          <span>Cierre de Turno:</span>
+          <span class="val">{{ cierreExitosoResult().cierre | date:'medium' }}</span>
+        </div>
+        <div class="row-divider"></div>
+        <div class="row">
+          <span>Monto Apertura:</span>
+          <span>Bs. {{ cierreExitosoResult().montoApertura.toFixed(2) }}</span>
+        </div>
+        <div class="row">
+          <span>Ventas Efectivo:</span>
+          <span>Bs. {{ cierreExitosoResult().totalEfectivo.toFixed(2) }}</span>
+        </div>
+        <div class="row highlight">
+          <span>Efectivo Esperado:</span>
+          <span>Bs. {{ cierreExitosoResult().balanceEsperado.toFixed(2) }}</span>
+        </div>
+        <div class="row highlight">
+          <span>Efectivo Declarado:</span>
+          <span>Bs. {{ cierreExitosoResult().montoCierre.toFixed(2) }}</span>
+        </div>
+        <div class="row-divider"></div>
+        <div class="row discrepancy" [ngClass]="{
+          'sobrante': cierreExitosoResult().diferencia > 0,
+          'faltante': cierreExitosoResult().diferencia < 0,
+          'cuadrado': cierreExitosoResult().diferencia === 0
+        }">
+          <span>Diferencia (Arqueo):</span>
+          <span class="val-diff">
+            {{ cierreExitosoResult().diferencia >= 0 ? '+' : '' }}Bs. {{ cierreExitosoResult().diferencia.toFixed(2) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-primary" (click)="cerrarCajaModal()">Entendido</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     COMPROBANTE MODAL (REUTILIZACIÓN)
+     ═══════════════════════════════════════════ -->
+<app-comprobante
+  [isOpen]="verComprobanteModal()"
+  [datos]="datosComprobanteSelected()"
+  (close)="cerrarReciboModal()"
+></app-comprobante>

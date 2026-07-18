@@ -7,31 +7,30 @@ export class AnaliticaService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getResumenHoy() {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const hoy = new Date();
+    const hace24Horas = new Date(hoy.getTime() - 24 * 60 * 60 * 1000);
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const hace24Horas = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-    // 1. Total Recaudado (Suma de pedidos cerrados/pagados hoy: estado ENTREGADO y mesa libre)
-    const sumResult = await this.prisma.pedido.aggregate({
+    // 1. Total Recaudado (Suma de transacciones en las últimas 24h o de la caja activa)
+    const sumResult = await this.prisma.transaccion.aggregate({
       _sum: {
-        total: true,
+        monto: true,
       },
       where: {
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-        estado: EstadoPedido.ENTREGADO,
-        mesa: {
-          estado: EstadoMesa.LIBRE,
-        },
+        OR: [
+          {
+            createdAt: {
+              gte: hace24Horas,
+            },
+          },
+          {
+            caja: {
+              estado: 'ABIERTA',
+            },
+          },
+        ],
       },
     });
-    const totalRecaudado = Number(sumResult._sum.total || 0);
+    const totalRecaudado = Number(sumResult._sum.monto || 0);
 
     // 2. Ocupación Actual del Salón (Mesas OCUPADA o POR_COBRAR vs Total Activas)
     const totalMesas = await this.prisma.mesa.count({
@@ -48,10 +47,12 @@ export class AnaliticaService {
     const ocupacionPorcentaje = totalMesas > 0 ? Math.round((mesasOcupadas / totalMesas) * 100) : 0;
     const ocupacionActual = `${mesasOcupadas} / ${totalMesas} Mesas`;
 
-    // 3. Comandas Activas (Pedidos en estado ABIERTO)
+    // 3. Comandas Activas (Pedidos en estado ABIERTO o EN_COCINA o LISTO)
     const comandasActivas = await this.prisma.pedido.count({
       where: {
-        estado: EstadoPedido.ABIERTO,
+        estado: {
+          in: [EstadoPedido.ABIERTO, EstadoPedido.EN_COCINA, EstadoPedido.LISTO],
+        },
       },
     });
 
@@ -94,11 +95,11 @@ export class AnaliticaService {
     }
     const platoEstrellaText = cantidadEstrella > 0 ? `${platoEstrella} (${cantidadEstrella} uds)` : 'Ninguno';
 
-    // 5. Historial reciente del Live Feed
+    // 5. Historial reciente del Live Feed (últimas 24 horas)
     const pedidosRecientes = await this.prisma.pedido.findMany({
       where: {
         createdAt: {
-          gte: startOfDay,
+          gte: hace24Horas,
         },
       },
       include: {

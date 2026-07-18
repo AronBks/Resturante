@@ -12,7 +12,6 @@ export class AnaliticaController {
   @Get('resumen-hoy')
   @Roles('ADMIN', 'CAJERO', 'MESERO', 'CHEF')
   async getResumenHoy() {
-    const data = await this.analiticaService.getResumenHoy();
-    return { data };
+    return this.analiticaService.getResumenHoy();
   }
 }
