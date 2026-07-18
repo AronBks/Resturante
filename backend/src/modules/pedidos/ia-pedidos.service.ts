@@ -32,7 +32,9 @@ export interface ItemInterpretado {
   cantidad: number;
   notas: string;
   precioUnitario: number;
+  variantes?: { id: string; nombre: string; precio: number }[];
 }
+
 
 export interface ResultadoInterpretacion {
   items: ItemInterpretado[];
@@ -177,8 +179,15 @@ Si no puedes identificar NINGÚN plato, responde:
           let nombreConVariante = plato.nombre;
           let varianteIdValida: string | undefined = undefined;
 
-          if (item.varianteId && plato.variantes) {
-            const variante = plato.variantes.find((v) => v.id === item.varianteId);
+          if (plato.variantes && plato.variantes.length > 0) {
+            let variante = null;
+            if (item.varianteId) {
+              variante = plato.variantes.find((v) => v.id === item.varianteId);
+            }
+            if (!variante) {
+              const sorted = [...plato.variantes].sort((a, b) => Number(a.precio) - Number(b.precio));
+              variante = sorted[0];
+            }
             if (variante) {
               precio = Number(variante.precio);
               nombreConVariante = `${plato.nombre} (${variante.nombre})`;
@@ -193,6 +202,9 @@ Si no puedes identificar NINGÚN plato, responde:
             cantidad: Math.max(1, Math.round(item.cantidad || 1)),
             notas: item.notas || '',
             precioUnitario: precio,
+            variantes: plato.variantes && plato.variantes.length > 0
+              ? plato.variantes.map((v) => ({ id: v.id, nombre: v.nombre, precio: Number(v.precio) }))
+              : undefined,
           });
           total += precio * Math.max(1, Math.round(item.cantidad || 1));
         }
@@ -240,12 +252,39 @@ Si no puedes identificar NINGÚN plato, responde:
         // Extraer notas de preparación
         const notas = this.extraerNotas(textoNorm);
 
+        let precioUnitario = Number(plato.precioVenta);
+        let varianteId: string | null = null;
+        let nombreMostrar = plato.nombre;
+
+        if (plato.variantes && plato.variantes.length > 0) {
+          const variantesOrdenadas = [...plato.variantes].sort((a, b) => a.precio - b.precio);
+          let varianteEncontrada = null;
+
+          for (const v of variantesOrdenadas) {
+            const vNombreNorm = this.normalizar(v.nombre);
+            if (textoNorm.includes(vNombreNorm)) {
+              varianteEncontrada = v;
+              break;
+            }
+          }
+
+          // Fallback a la variante más barata (por defecto, la menor/personal)
+          const vElegida = varianteEncontrada || variantesOrdenadas[0];
+          varianteId = vElegida.id;
+          precioUnitario = vElegida.precio;
+          nombreMostrar = `${plato.nombre} (${vElegida.nombre})`;
+        }
+
         itemsEncontrados.push({
           platoId: plato.id,
-          nombre: plato.nombre,
+          varianteId: varianteId || undefined,
+          nombre: nombreMostrar,
           cantidad,
           notas,
-          precioUnitario: Number(plato.precioVenta),
+          precioUnitario,
+          variantes: plato.variantes && plato.variantes.length > 0
+            ? plato.variantes.map((v) => ({ id: v.id, nombre: v.nombre, precio: Number(v.precio) }))
+            : undefined,
         });
       }
     }

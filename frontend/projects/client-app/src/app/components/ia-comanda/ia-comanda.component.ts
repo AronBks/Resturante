@@ -177,6 +177,7 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
       this.mesaNumero(),
       resultado.items.map((i) => ({
         platoId: i.platoId,
+        varianteId: i.varianteId || undefined,
         cantidad: i.cantidad,
         notas: i.notas || undefined,
       })),
@@ -224,6 +225,59 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
     this.shouldScroll = true;
     // Focus en input
     setTimeout(() => this.inputRef?.nativeElement?.focus(), 100);
+  }
+
+  seleccionarVarianteIA(msg: ChatMessage, item: ItemInterpretado, v: any) {
+    item.varianteId = v.id;
+    item.precioUnitario = v.precio;
+    item.nombre = `${item.nombre.split('(')[0].trim()} (${v.nombre})`;
+    
+    // Recalcular total
+    msg.totalEstimado = msg.items?.reduce((sum, i) => sum + i.precioUnitario * i.cantidad, 0);
+
+    // Sincronizar con el service signal
+    this.iaService.resultado.update(res => {
+      if (!res) return null;
+      return {
+        ...res,
+        items: res.items.map(i => i.platoId === item.platoId ? {
+          ...i,
+          varianteId: v.id,
+          nombre: item.nombre,
+          precioUnitario: v.precio
+        } : i),
+        totalEstimado: msg.totalEstimado || 0
+      };
+    });
+  }
+
+  cambiarCantidadIA(msg: ChatMessage, item: ItemInterpretado, diff: number) {
+    const newQty = item.cantidad + diff;
+    if (newQty < 0) return;
+
+    item.cantidad = newQty;
+
+    if (newQty === 0) {
+      msg.items = msg.items?.filter(i => !(i.platoId === item.platoId && i.varianteId === item.varianteId));
+    }
+
+    // Recalcular total
+    msg.totalEstimado = msg.items?.reduce((sum, i) => sum + i.precioUnitario * i.cantidad, 0);
+
+    // Sincronizar con el service signal
+    this.iaService.resultado.update(res => {
+      if (!res) return null;
+      const newItems = res.items.map(i => (i.platoId === item.platoId && i.varianteId === item.varianteId) ? {
+        ...i,
+        cantidad: newQty
+      } : i).filter(i => i.cantidad > 0);
+
+      return {
+        ...res,
+        items: newItems,
+        totalEstimado: msg.totalEstimado || 0
+      };
+    });
   }
 
   private scrollToBottom() {

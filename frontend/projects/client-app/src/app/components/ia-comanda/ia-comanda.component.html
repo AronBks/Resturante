@@ -47,7 +47,7 @@
           <!-- Items interpretados (si los hay) -->
           @if (msg.items && msg.items.length > 0) {
             <div class="items-preview">
-              @for (item of msg.items; track item.platoId) {
+              @for (item of msg.items; track item.platoId + (item.varianteId || '')) {
                 <div class="item-card">
                   <span class="item-emoji">{{ getFoodEmoji(item.nombre) }}</span>
                   <div class="item-details">
@@ -55,9 +55,29 @@
                     @if (item.notas) {
                       <span class="item-notes">📝 {{ item.notas }}</span>
                     }
+
+                    <!-- Variant Selection Chip Buttons -->
+                    @if (item.variantes && item.variantes.length > 0) {
+                      <div class="item-variants-chips">
+                        @for (v of item.variantes; track v.id) {
+                          <button
+                            class="ia-variant-chip"
+                            [class.active]="item.varianteId === v.id"
+                            (click)="seleccionarVarianteIA(msg, item, v)"
+                          >
+                            {{ v.nombre }} (Bs. {{ v.precio.toFixed(2) }})
+                          </button>
+                        }
+                      </div>
+                    }
                   </div>
                   <div class="item-meta">
-                    <span class="item-qty">×{{ item.cantidad }}</span>
+                    <!-- Stepper -->
+                    <div class="ia-qty-stepper">
+                      <button (click)="cambiarCantidadIA(msg, item, -1)" class="ia-stepper-btn">-</button>
+                      <span class="item-qty-val">{{ item.cantidad }}</span>
+                      <button (click)="cambiarCantidadIA(msg, item, 1)" class="ia-stepper-btn">+</button>
+                    </div>
                     <span class="item-price">Bs. {{ (item.precioUnitario * item.cantidad).toFixed(2) }}</span>
                   </div>
                 </div>
@@ -146,7 +166,7 @@
 }
 
 <!-- ── Input Area (sticky bottom) ── -->
-@if (!iaService.pedidoConfirmado() && !hayItemsPendientes()) {
+@if (!iaService.pedidoConfirmado()) {
   <div class="input-bar">
     <div class="input-wrapper">
       <input

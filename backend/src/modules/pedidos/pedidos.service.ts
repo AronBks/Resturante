@@ -73,7 +73,10 @@ export class PedidosService {
         let precioVenta = Number(plato.precioVenta);
         let varianteNombreSnapshot: string | null = null;
 
-        if (item.varianteId) {
+        if (plato.variantes && plato.variantes.length > 0) {
+          if (!item.varianteId) {
+            throw new BadRequestException(`Debe especificar una variante (tamaño/porción) para el plato "${plato.nombre}"`);
+          }
           const variante = plato.variantes.find((v) => v.id === item.varianteId);
           if (!variante) {
             throw new NotFoundException(`La variante con ID ${item.varianteId} no pertenece al plato o no existe`);
@@ -83,6 +86,10 @@ export class PedidosService {
           }
           precioVenta = Number(variante.precio);
           varianteNombreSnapshot = variante.nombre;
+        } else {
+          if (item.varianteId) {
+            throw new BadRequestException(`El plato "${plato.nombre}" no tiene variantes`);
+          }
         }
 
         subtotal += precioVenta * item.cantidad;
@@ -183,16 +190,33 @@ export class PedidosService {
         where: { id: item.platoId },
         include: { variantes: true },
       });
-      if (!plato || !plato.disponible) continue;
+      if (!plato) {
+        throw new NotFoundException(`El plato con ID ${item.platoId} no existe`);
+      }
+      if (!plato.disponible) {
+        throw new BadRequestException(`El plato "${plato.nombre}" no está disponible`);
+      }
 
       let precio = Number(plato.precioVenta);
       let varianteNombreSnapshot: string | null = null;
 
-      if (item.varianteId) {
+      if (plato.variantes && plato.variantes.length > 0) {
+        if (!item.varianteId) {
+          throw new BadRequestException(`Debe especificar una variante (tamaño/porción) para el plato "${plato.nombre}"`);
+        }
         const variante = plato.variantes.find((v: any) => v.id === item.varianteId);
-        if (!variante || !variante.disponible) continue;
+        if (!variante) {
+          throw new NotFoundException(`La variante con ID ${item.varianteId} no pertenece al plato o no existe`);
+        }
+        if (!variante.disponible) {
+          throw new BadRequestException(`La variante "${variante.nombre}" del plato "${plato.nombre}" no está disponible`);
+        }
         precio = Number(variante.precio);
         varianteNombreSnapshot = variante.nombre;
+      } else {
+        if (item.varianteId) {
+          throw new BadRequestException(`El plato "${plato.nombre}" no tiene variantes`);
+        }
       }
 
       subtotalNuevo += precio * item.cantidad;

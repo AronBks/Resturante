@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Param,
   Body,
   Query,
@@ -94,5 +95,20 @@ export class CartaController {
   @Roles('ADMIN')
   toggleDisponible(@Param('id') id: string) {
     return this.cartaService.toggleDisponible(id);
+  }
+
+  @Patch('variantes/:id/toggle')
+  @Roles('ADMIN')
+  toggleVarianteDisponible(@Param('id') id: string) {
+    return this.cartaService.toggleVarianteDisponible(id);
+  }
+
+  @Put('variantes/:id/precio')
+  @Roles('ADMIN')
+  updateVariantePrecio(
+    @Param('id') id: string,
+    @Body() body: { precio: number },
+  ) {
+    return this.cartaService.updateVariantePrecio(id, body.precio);
   }
 }

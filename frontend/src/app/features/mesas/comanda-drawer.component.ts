@@ -58,6 +58,9 @@ export class ComandaDrawerComponent implements OnChanges {
   @Output() close = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
+  // Reactive signal wrapping the input array to enable computed signal tracking
+  platosSignal = signal<Plato[]>([]);
+
   // Form states
   comandaItems = signal<ItemComanda[]>([]);
   generalNotes = signal('');
@@ -87,7 +90,7 @@ export class ComandaDrawerComponent implements OnChanges {
     const list: { id: number; nombre: string }[] = [];
     const ids = new Set<number>();
     
-    this.platos.forEach(p => {
+    this.platosSignal().forEach(p => {
       if (p.categoriaId && !ids.has(p.categoriaId)) {
         ids.add(p.categoriaId);
         list.push({ id: p.categoriaId, nombre: this.getCategoryName(p.categoriaId) });
@@ -101,7 +104,7 @@ export class ComandaDrawerComponent implements OnChanges {
     const query = this.searchQuery().toLowerCase().trim();
     const catId = this.selectedCategoryId();
     
-    const matchedDishes = this.platos.filter(plato => {
+    const matchedDishes = this.platosSignal().filter(plato => {
       const matchesQuery = !query || plato.nombre.toLowerCase().includes(query) || (plato.descripcion && plato.descripcion.toLowerCase().includes(query));
       const matchesCat = catId === null || plato.categoriaId === catId;
       return matchesQuery && matchesCat;
@@ -142,6 +145,10 @@ export class ComandaDrawerComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    if (changes['platos']) {
+      this.platosSignal.set(this.platos || []);
+    }
+
     if (changes['mesa'] && this.mesa) {
       this.errorMessage.set('');
       this.activePedidoId.set(null);

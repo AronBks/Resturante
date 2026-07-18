@@ -11,10 +11,12 @@ import { HttpClient } from '@angular/common/http';
 
 export interface ItemInterpretado {
   platoId: string;
+  varianteId?: string;
   nombre: string;
   cantidad: number;
   notas: string;
   precioUnitario: number;
+  variantes?: { id: string; nombre: string; precio: number }[];
 }
 
 export interface ResultadoIA {
@@ -70,7 +72,7 @@ export class IaComandaService {
    */
   confirmarPedido(
     mesaNumero: string,
-    items: { platoId: string; cantidad: number; notas?: string }[],
+    items: { platoId: string; varianteId?: string; cantidad: number; notas?: string }[],
   ): void {
     this.confirmando.set(true);
     this.error.set(null);

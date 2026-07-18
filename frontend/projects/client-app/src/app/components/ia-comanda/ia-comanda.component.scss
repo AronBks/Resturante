@@ -667,3 +667,76 @@
     width: 100%;
   }
 }
+
+/* ── Stepper interactivo dentro del chat de la IA ── */
+.ia-qty-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(200, 149, 108, 0.08);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  margin-bottom: 2px;
+}
+
+.ia-stepper-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    background: rgba(200, 149, 108, 0.15);
+  }
+}
+
+.item-qty-val {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  min-width: 14px;
+  text-align: center;
+}
+
+/* ── Chips de selección de variante ── */
+.item-variants-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.ia-variant-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+
+  &:hover {
+    background: rgba(200, 149, 108, 0.05);
+    border-color: var(--border-warm);
+  }
+
+  &.active {
+    background: var(--gradient-brand);
+    color: var(--text-on-brand);
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(200, 149, 108, 0.25);
+  }
+}

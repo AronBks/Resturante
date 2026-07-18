@@ -43,7 +43,6 @@ export class CartaService {
       include: {
         categoria: { select: { id: true, nombre: true } },
         variantes: {
-          where: { disponible: true },
           select: {
             id: true,
             nombre: true,
@@ -124,6 +123,60 @@ export class CartaService {
     this.pedidosGateway.server.emit('menu:actualizado', {
       platoId: id,
       disponible: updated.disponible,
+    });
+
+    return updated;
+  }
+
+  async toggleVarianteDisponible(id: string) {
+    const variante = await this.prisma.variantePlato.findUnique({
+      where: { id },
+      select: { disponible: true, platoId: true },
+    });
+    if (!variante) {
+      throw new NotFoundException('Variante no encontrada');
+    }
+
+    const updated = await this.prisma.variantePlato.update({
+      where: { id },
+      data: { disponible: !variante.disponible },
+    });
+
+    // 📡 Broadcast al namespace público (/publica) — Client-App
+    this.cartaGateway.broadcastDisponibilidad(updated.platoId, true);
+
+    // 📡 Broadcast al namespace autenticado — Admin-App (meseros, admin)
+    this.pedidosGateway.server.emit('menu:actualizado', {
+      platoId: updated.platoId,
+      varianteId: id,
+      disponible: updated.disponible,
+    });
+
+    return updated;
+  }
+
+  async updateVariantePrecio(id: string, precio: number) {
+    const variante = await this.prisma.variantePlato.findUnique({
+      where: { id },
+      select: { platoId: true },
+    });
+    if (!variante) {
+      throw new NotFoundException('Variante no encontrada');
+    }
+
+    const updated = await this.prisma.variantePlato.update({
+      where: { id },
+      data: { precio },
+    });
+
+    // 📡 Broadcast al namespace público (/publica) — Client-App
+    this.cartaGateway.broadcastDisponibilidad(updated.platoId, true);
+
+    // 📡 Broadcast al namespace autenticado — Admin-App (meseros, admin)
+    this.pedidosGateway.server.emit('menu:actualizado', {
+      platoId: updated.platoId,
+      varianteId: id,
+      precio: updated.precio,
     });
 
     return updated;
