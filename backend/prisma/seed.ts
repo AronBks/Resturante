@@ -162,14 +162,19 @@ async function main() {
 
   console.log('✅ Categorías creadas (6)');
 
-  // ── 4. Platos sin recetas ni ingredientes ──
-  const platos = [
+  // ── 4. Platos con y sin variantes ──
+  const platosData = [
     // Tradicionales Cochabambinos
     {
       nombre: 'Pique Macho Tukuypaj',
       descripcion: 'Trozos de lomo de res y salchicha salteados con papas fritas, locoto, tomate, cebolla y huevo. El orgullo de Cochabamba.',
       precioVenta: 55,
       categoriaId: catTradicionales.id,
+      variantes: [
+        { nombre: 'Personal', precio: 40 },
+        { nombre: 'Mediano', precio: 90 },
+        { nombre: 'Grande', precio: 150 },
+      ]
     },
     {
       nombre: 'Silpancho Cochabambino',
@@ -182,6 +187,11 @@ async function main() {
       descripcion: 'Carne de cerdo cocida en su propia grasa hasta dorar, servida con mote, llajua y chuño.',
       precioVenta: 48,
       categoriaId: catTradicionales.id,
+      variantes: [
+        { nombre: 'Personal', precio: 35 },
+        { nombre: 'Mediano', precio: 65 },
+        { nombre: 'Grande', precio: 90 },
+      ]
     },
     {
       nombre: 'Trancapecho',
@@ -195,6 +205,11 @@ async function main() {
       descripcion: 'Lomo, costilla, chorizo criollo y pollo a la parrilla con papas doradas, ensalada mixta y llajua.',
       precioVenta: 130,
       categoriaId: catParrillas.id,
+      variantes: [
+        { nombre: 'Simple', precio: 70 },
+        { nombre: 'Doble (2 personas)', precio: 130 },
+        { nombre: 'Familiar (4 personas)', precio: 240 },
+      ]
     },
     {
       nombre: 'Lomo a la Plancha',
@@ -240,6 +255,11 @@ async function main() {
       descripcion: 'Jugo de limón natural con hierba buena fresca y un toque de azúcar.',
       precioVenta: 10,
       categoriaId: catBebidas.id,
+      variantes: [
+        { nombre: 'Vaso', precio: 10 },
+        { nombre: 'Jarra 1Lt', precio: 25 },
+        { nombre: 'Jarra 2Lt', precio: 45 },
+      ]
     },
     {
       nombre: 'Refresco en Botella',
@@ -262,13 +282,24 @@ async function main() {
     },
   ];
 
-  for (const plato of platos) {
+  for (const plato of platosData) {
+    const { variantes, ...platoRest } = plato;
     await prisma.plato.create({
-      data: plato,
+      data: {
+        ...platoRest,
+        variantes: variantes
+          ? {
+              create: variantes.map((v) => ({
+                nombre: v.nombre,
+                precio: v.precio,
+              })),
+            }
+          : undefined,
+      },
     });
   }
 
-  console.log('✅ Platos creados sin recetas (15)');
+  console.log('✅ Platos creados con variantes (15)');
 
   // ── Resumen ──
   console.log('\n════════════════════════════════════════');

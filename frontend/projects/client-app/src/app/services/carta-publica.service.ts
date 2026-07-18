@@ -9,12 +9,20 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
+export interface VariantePublica {
+  id: string;
+  nombre: string;
+  precio: number;
+  disponible: boolean;
+}
+
 export interface PlatoPublico {
   id: string;
   nombre: string;
   descripcion?: string;
   precioVenta: number;
   imagenUrl?: string;
+  variantes?: VariantePublica[];
 }
 
 export interface CategoriaPublica {

@@ -48,6 +48,8 @@ export class PedidosService {
 
       const itemsDetalle: {
         platoId: string;
+        varianteId?: string;
+        varianteNombreSnapshot?: string;
         cantidad: number;
         precioUnitario: number;
         notas?: string;
@@ -58,6 +60,7 @@ export class PedidosService {
       for (const item of items) {
         const plato = await tx.plato.findUnique({
           where: { id: item.platoId },
+          include: { variantes: true },
         });
 
         if (!plato) {
@@ -67,11 +70,27 @@ export class PedidosService {
           throw new BadRequestException(`El plato "${plato.nombre}" no está disponible temporalmente`);
         }
 
-        const precioVenta = Number(plato.precioVenta);
+        let precioVenta = Number(plato.precioVenta);
+        let varianteNombreSnapshot: string | null = null;
+
+        if (item.varianteId) {
+          const variante = plato.variantes.find((v) => v.id === item.varianteId);
+          if (!variante) {
+            throw new NotFoundException(`La variante con ID ${item.varianteId} no pertenece al plato o no existe`);
+          }
+          if (!variante.disponible) {
+            throw new BadRequestException(`La variante "${variante.nombre}" del plato "${plato.nombre}" no está disponible`);
+          }
+          precioVenta = Number(variante.precio);
+          varianteNombreSnapshot = variante.nombre;
+        }
+
         subtotal += precioVenta * item.cantidad;
 
         itemsDetalle.push({
           platoId: plato.id,
+          varianteId: item.varianteId,
+          varianteNombreSnapshot: varianteNombreSnapshot || undefined,
           cantidad: item.cantidad,
           precioUnitario: precioVenta,
           notas: item.notas,
@@ -94,6 +113,8 @@ export class PedidosService {
               notas: item.notas,
               estadoItem: EstadoItemPedido.PENDIENTE,
               platoId: item.platoId,
+              varianteId: item.varianteId || null,
+              varianteNombreSnapshot: item.varianteNombreSnapshot || null,
             })),
           },
         },
@@ -138,7 +159,7 @@ export class PedidosService {
     tx: any,
     mesaId: number,
     meseroId: string,
-    items: { platoId: string; cantidad: number; notas?: string }[],
+    items: { platoId: string; varianteId?: string; cantidad: number; notas?: string }[],
     notas?: string,
   ) {
     // Buscar pedido activo de esta mesa
@@ -158,16 +179,30 @@ export class PedidosService {
 
     // Validar y crear los nuevos items
     for (const item of items) {
-      const plato = await tx.plato.findUnique({ where: { id: item.platoId } });
+      const plato = await tx.plato.findUnique({
+        where: { id: item.platoId },
+        include: { variantes: true },
+      });
       if (!plato || !plato.disponible) continue;
 
-      const precio = Number(plato.precioVenta);
+      let precio = Number(plato.precioVenta);
+      let varianteNombreSnapshot: string | null = null;
+
+      if (item.varianteId) {
+        const variante = plato.variantes.find((v: any) => v.id === item.varianteId);
+        if (!variante || !variante.disponible) continue;
+        precio = Number(variante.precio);
+        varianteNombreSnapshot = variante.nombre;
+      }
+
       subtotalNuevo += precio * item.cantidad;
 
       await tx.detallePedido.create({
         data: {
           pedidoId: pedidoActivo.id,
           platoId: item.platoId,
+          varianteId: item.varianteId || null,
+          varianteNombreSnapshot: varianteNombreSnapshot,
           cantidad: item.cantidad,
           precioUnitario: new Prisma.Decimal(precio),
           notas: item.notas || null,

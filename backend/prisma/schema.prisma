@@ -104,6 +104,7 @@ model Plato {
 
   // Relaciones
   detallesPedido  DetallePedido[]
+  variantes       VariantePlato[]
 
   @@index([categoriaId])
   @@index([disponible])
@@ -171,8 +172,13 @@ model DetallePedido {
   platoId  String @map("plato_id") @db.Uuid
   plato    Plato  @relation(fields: [platoId], references: [id])
 
+  varianteId             String?        @map("variante_id") @db.Uuid
+  variante               VariantePlato? @relation(fields: [varianteId], references: [id], onDelete: SetNull)
+  varianteNombreSnapshot String?        @map("variante_nombre_snapshot") @db.VarChar(100)
+
   @@index([pedidoId])
   @@index([estadoItem])
+  @@index([varianteId])
   @@map("detalles_pedido")
 }
 
@@ -235,4 +241,20 @@ model Transaccion {
   @@index([cajaId])
   @@index([createdAt])
   @@map("transacciones")
+}
+
+model VariantePlato {
+  id         String   @id @default(uuid()) @db.Uuid
+  platoId    String   @map("plato_id") @db.Uuid
+  plato      Plato    @relation(fields: [platoId], references: [id], onDelete: Cascade)
+  nombre     String   @db.VarChar(50)
+  precio     Decimal  @db.Decimal(10, 2)
+  disponible Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  detallesPedido DetallePedido[]
+
+  @@index([platoId])
+  @@map("variantes_plato")
 }

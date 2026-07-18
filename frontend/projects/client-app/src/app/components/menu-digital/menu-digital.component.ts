@@ -22,7 +22,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { CartaPublicaService, CategoriaPublica } from '../../services/carta-publica.service';
+import { CartaPublicaService, CategoriaPublica, PlatoPublico, VariantePublica } from '../../services/carta-publica.service';
 import { SocketPublicoService } from '../../services/socket-publico.service';
 import { CarritoService } from '../../services/carrito.service';
 import { CarritoDrawerComponent } from '../carrito-drawer/carrito-drawer.component';
@@ -50,6 +50,10 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   // ── Estado local del UI ──
   selectedCategoryId = signal<number | null>(null);
   removingPlatoIds = signal<Set<string>>(new Set());
+
+  // Selector modal de variantes
+  selectedPlatoParaVariante = signal<PlatoPublico | null>(null);
+  selectedVariante = signal<VariantePublica | null>(null);
 
   // WebSocket connection status
   isLive = this.socketService.isConnected;
@@ -111,6 +115,48 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
 
   selectCategory(catId: number | null): void {
     this.selectedCategoryId.set(catId);
+  }
+
+  // ── Operaciones con Variantes ──
+
+  abrirSelectorVariante(plato: PlatoPublico): void {
+    this.selectedPlatoParaVariante.set(plato);
+    const disponible = plato.variantes?.find((v) => v.disponible);
+    this.selectedVariante.set(disponible || null);
+  }
+
+  seleccionarVariante(variante: VariantePublica): void {
+    this.selectedVariante.set(variante);
+  }
+
+  cerrarSelectorVariante(): void {
+    this.selectedPlatoParaVariante.set(null);
+    this.selectedVariante.set(null);
+  }
+
+  agregarPlatoConVariante(plato: PlatoPublico): void {
+    const varSel = this.selectedVariante();
+    if (varSel) {
+      this.carritoService.agregarPlato(plato, varSel);
+      this.cerrarSelectorVariante();
+    }
+  }
+
+  obtenerCantidadTotalPlato(plato: PlatoPublico): number {
+    if (!plato.variantes || plato.variantes.length === 0) {
+      return this.carritoService.obtenerCantidad(plato.id);
+    }
+    return this.carritoService.items()
+      .filter((item) => item.platoId === plato.id)
+      .reduce((sum, item) => sum + item.cantidad, 0);
+  }
+
+  obtenerPrecioMostrar(plato: PlatoPublico): number {
+    if (!plato.variantes || plato.variantes.length === 0) {
+      return plato.precioVenta;
+    }
+    const precios = plato.variantes.map((v) => v.precio);
+    return Math.min(...precios);
   }
 
   /**

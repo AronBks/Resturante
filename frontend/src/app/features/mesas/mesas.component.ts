@@ -21,6 +21,12 @@ interface Plato {
   descripcion?: string;
   disponible: boolean;
   categoriaId: number;
+  variantes?: {
+    id: string;
+    nombre: string;
+    precio: number;
+    disponible: boolean;
+  }[];
 }
 
 @Component({

@@ -42,6 +42,16 @@ export class CartaService {
       where: categoriaId ? { categoriaId } : {},
       include: {
         categoria: { select: { id: true, nombre: true } },
+        variantes: {
+          where: { disponible: true },
+          select: {
+            id: true,
+            nombre: true,
+            precio: true,
+            disponible: true,
+          },
+          orderBy: { precio: 'asc' },
+        },
       },
       orderBy: { nombre: 'asc' },
     });
@@ -146,6 +156,16 @@ export class CartaService {
             descripcion: true,
             precioVenta: true,
             imagenUrl: true,
+            variantes: {
+              where: { disponible: true },
+              select: {
+                id: true,
+                nombre: true,
+                precio: true,
+                disponible: true,
+              },
+              orderBy: { precio: 'asc' },
+            },
           },
           orderBy: { nombre: 'asc' },
         },

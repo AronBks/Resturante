@@ -6,6 +6,10 @@ export class CrearPedidoItemDto {
   @IsNotEmpty()
   platoId: string;
 
+  @IsUUID()
+  @IsOptional()
+  varianteId?: string;
+
   @IsInt()
   @Min(1)
   cantidad: number;

@@ -1,10 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { PlatoPublico } from './carta-publica.service';
+import { PlatoPublico, VariantePublica } from './carta-publica.service';
 import { Observable } from 'rxjs';
 
 export interface ItemCarrito {
   platoId: string;
+  varianteId?: string;
+  varianteNombre?: string;
   nombre: string;
   precioUnitario: number;
   cantidad: number;
@@ -41,9 +43,11 @@ export class CarritoService {
 
   // ── Operaciones del Carrito ──
 
-  agregarPlato(plato: PlatoPublico): void {
+  agregarPlato(plato: PlatoPublico, variante?: VariantePublica): void {
     this.items.update((currentItems) => {
-      const index = currentItems.findIndex((item) => item.platoId === plato.id);
+      const index = currentItems.findIndex(
+        (item) => item.platoId === plato.id && item.varianteId === (variante?.id || undefined)
+      );
       let updated: ItemCarrito[];
 
       if (index > -1) {
@@ -55,8 +59,10 @@ export class CarritoService {
           ...currentItems,
           {
             platoId: plato.id,
+            varianteId: variante?.id,
+            varianteNombre: variante?.nombre,
             nombre: plato.nombre,
-            precioUnitario: plato.precioVenta,
+            precioUnitario: variante ? variante.precio : plato.precioVenta,
             cantidad: 1,
             notas: '',
             imagenUrl: plato.imagenUrl,
@@ -68,9 +74,11 @@ export class CarritoService {
     });
   }
 
-  removerPlato(platoId: string): void {
+  removerPlato(platoId: string, varianteId?: string): void {
     this.items.update((currentItems) => {
-      const index = currentItems.findIndex((item) => item.platoId === platoId);
+      const index = currentItems.findIndex(
+        (item) => item.platoId === platoId && item.varianteId === (varianteId || undefined)
+      );
       if (index === -1) return currentItems;
 
       let updated: ItemCarrito[];
@@ -88,10 +96,12 @@ export class CarritoService {
     });
   }
 
-  actualizarCantidad(platoId: string, cantidad: number): void {
+  actualizarCantidad(platoId: string, varianteId: string | undefined, cantidad: number): void {
     if (cantidad <= 0) {
       this.items.update((currentItems) => {
-        const updated = currentItems.filter((item) => item.platoId !== platoId);
+        const updated = currentItems.filter(
+          (item) => !(item.platoId === platoId && item.varianteId === (varianteId || undefined))
+        );
         this.guardarEnLocalStorage(updated);
         return updated;
       });
@@ -100,25 +110,31 @@ export class CarritoService {
 
     this.items.update((currentItems) => {
       const updated = currentItems.map((item) =>
-        item.platoId === platoId ? { ...item, cantidad } : item
+        item.platoId === platoId && item.varianteId === (varianteId || undefined)
+          ? { ...item, cantidad }
+          : item
       );
       this.guardarEnLocalStorage(updated);
       return updated;
     });
   }
 
-  actualizarNotas(platoId: string, notas: string): void {
+  actualizarNotas(platoId: string, varianteId: string | undefined, notas: string): void {
     this.items.update((currentItems) => {
       const updated = currentItems.map((item) =>
-        item.platoId === platoId ? { ...item, notas } : item
+        item.platoId === platoId && item.varianteId === (varianteId || undefined)
+          ? { ...item, notas }
+          : item
       );
       this.guardarEnLocalStorage(updated);
       return updated;
     });
   }
 
-  obtenerCantidad(platoId: string): number {
-    const item = this.items().find((it) => it.platoId === platoId);
+  obtenerCantidad(platoId: string, varianteId?: string): number {
+    const item = this.items().find(
+      (it) => it.platoId === platoId && it.varianteId === (varianteId || undefined)
+    );
     return item ? item.cantidad : 0;
   }
 
@@ -139,6 +155,7 @@ export class CarritoService {
       mesaNumero,
       items: this.items().map((item) => ({
         platoId: item.platoId,
+        varianteId: item.varianteId || undefined,
         cantidad: item.cantidad,
         notas: item.notas || undefined,
       })),

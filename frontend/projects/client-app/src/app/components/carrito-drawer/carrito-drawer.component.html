@@ -77,7 +77,12 @@
             <!-- Detalles -->
             <div class="item-details">
               <div class="item-info">
-                <span class="item-name">{{ item.nombre }}</span>
+                <span class="item-name">
+                  {{ item.nombre }}
+                  @if (item.varianteNombre) {
+                    <span class="item-variant-label">({{ item.varianteNombre }})</span>
+                  }
+                </span>
                 <span class="item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
               </div>
 
@@ -93,14 +98,14 @@
                     class="item-notes-input"
                     placeholder="Notas (ej. sin picante, extra llajua...)"
                     [value]="item.notas"
-                    (change)="actualizarNotas(item.platoId, $event)"
+                    (change)="actualizarNotas(item.platoId, item.varianteId, $event)"
                   />
                 </div>
 
                 <div class="item-stepper">
                   <button
                     class="stepper-btn minus"
-                    (click)="cambiarCantidad(item.platoId, item.cantidad - 1)"
+                    (click)="cambiarCantidad(item.platoId, item.varianteId, item.cantidad - 1)"
                     aria-label="Disminuir"
                   >
                     −
@@ -108,7 +113,7 @@
                   <span class="stepper-count">{{ item.cantidad }}</span>
                   <button
                     class="stepper-btn plus"
-                    (click)="cambiarCantidad(item.platoId, item.cantidad + 1)"
+                    (click)="cambiarCantidad(item.platoId, item.varianteId, item.cantidad + 1)"
                     aria-label="Aumentar"
                   >
                     +

@@ -18,10 +18,16 @@ interface PlatoDisponible {
   nombre: string;
   precioVenta: number;
   categoriaId: number;
+  variantes?: {
+    id: string;
+    nombre: string;
+    precio: number;
+  }[];
 }
 
 export interface ItemInterpretado {
   platoId: string;
+  varianteId?: string;
   nombre: string;
   cantidad: number;
   notas: string;
@@ -88,28 +94,31 @@ export class IaPedidosService {
     const cartaJSON = platos.map((p) => ({
       id: p.id,
       nombre: p.nombre,
-      precio: Number(p.precioVenta),
+      precioBase: Number(p.precioVenta),
+      variantes: p.variantes || [],
     }));
 
     const systemPrompt = `Eres el asistente de pedidos de "Peña Restaurant Tukuypaj" en Cochabamba, Bolivia.
-Tu ÚNICA función es interpretar el pedido del cliente y mapearlo a platos de nuestra carta REAL.
+Tu ÚNICA función es interpretar el pedido del cliente y mapearlo a platos de nuestra carta REAL y sus variantes de tamaño/porción correspondientes.
 
-CARTA DISPONIBLE (estos son los ÚNICOS platos que puedes usar):
+CARTA DISPONIBLE (estos son los ÚNICOS platos y variantes disponibles):
 ${JSON.stringify(cartaJSON, null, 2)}
 
 REGLAS ESTRICTAS:
-1. SOLO puedes mapear a platos que existan en la carta de arriba. NO inventes platos.
-2. Si el cliente pide algo que no existe, ignóralo y menciona en el mensaje que ese plato no está disponible.
-3. Extrae cantidades numéricas: "dos" = 2, "un" = 1, "tres" = 3, etc. Si no especifica cantidad, asume 1.
-4. Extrae notas de preparación: "sin locoto", "extra picante", "bien cocido", "sin cebolla", etc.
-5. La moneda es Bolivianos (Bs.).
+1. SOLO puedes mapear a platos y variantes que existan en la carta de arriba.
+2. Si un plato tiene variantes en la carta y el cliente especifica un tamaño o porción (ej: "un pique personal", "una jarra de limonada de dos litros", "chicharrón mediano", "parrillada familiar"), DEBES mapear al 'id' de la variante correspondiente en la propiedad 'varianteId'.
+3. Si el cliente NO especifica un tamaño para un plato que tiene variantes, asume por defecto la variante de menor tamaño/precio.
+4. Si el plato NO tiene variantes, la propiedad 'varianteId' debe ser null.
+5. Extrae cantidades numéricas: "dos" = 2, "un" = 1, "tres" = 3, etc. Si no especifica cantidad, asume 1.
+6. Extrae notas de preparación: "sin locoto", "extra picante", "bien cocido", etc.
+7. La moneda es Bolivianos (Bs.).
 
 RESPONDE SOLO con un JSON válido con esta estructura exacta:
 {
   "items": [
-    { "platoId": "uuid-del-plato", "nombre": "nombre exacto", "cantidad": 1, "notas": "sin locoto" }
+    { "platoId": "uuid-del-plato", "varianteId": "uuid-de-la-variante-o-null", "nombre": "nombre exacto", "cantidad": 1, "notas": "sin locoto" }
   ],
-  "mensaje": "Un mensaje amigable y breve en español confirmando lo que entendiste, mencionando los platos y el total en Bs."
+  "mensaje": "Un mensaje amigable y breve en español confirmando lo que entendiste, mencionando los platos, sus tamaños y el total en Bs."
 }
 
 Si no puedes identificar NINGÚN plato, responde:
@@ -164,10 +173,23 @@ Si no puedes identificar NINGÚN plato, responde:
       for (const item of parsed.items || []) {
         const plato = platosMap.get(item.platoId);
         if (plato) {
-          const precio = Number(plato.precioVenta);
+          let precio = Number(plato.precioVenta);
+          let nombreConVariante = plato.nombre;
+          let varianteIdValida: string | undefined = undefined;
+
+          if (item.varianteId && plato.variantes) {
+            const variante = plato.variantes.find((v) => v.id === item.varianteId);
+            if (variante) {
+              precio = Number(variante.precio);
+              nombreConVariante = `${plato.nombre} (${variante.nombre})`;
+              varianteIdValida = variante.id;
+            }
+          }
+
           itemsValidados.push({
             platoId: plato.id,
-            nombre: plato.nombre,
+            varianteId: varianteIdValida,
+            nombre: nombreConVariante,
             cantidad: Math.max(1, Math.round(item.cantidad || 1)),
             notas: item.notas || '',
             precioUnitario: precio,
@@ -438,11 +460,26 @@ Si no puedes identificar NINGÚN plato, responde:
         nombre: true,
         precioVenta: true,
         categoriaId: true,
+        variantes: {
+          where: { disponible: true },
+          select: {
+            id: true,
+            nombre: true,
+            precio: true,
+          },
+        },
       },
     });
     return platos.map((p) => ({
-      ...p,
+      id: p.id,
+      nombre: p.nombre,
       precioVenta: Number(p.precioVenta),
+      categoriaId: p.categoriaId,
+      variantes: p.variantes.map((v) => ({
+        id: v.id,
+        nombre: v.nombre,
+        precio: Number(v.precio),
+      })),
     }));
   }
 

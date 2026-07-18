@@ -116,7 +116,13 @@
               <div class="plato-card__body">
                 <div class="plato-card__top">
                   <h3 class="plato-card__name">{{ plato.nombre }}</h3>
-                  <span class="plato-card__price">Bs. {{ plato.precioVenta | number:'1.2-2' }}</span>
+                  <span class="plato-card__price">
+                    @if (plato.variantes && plato.variantes.length > 0) {
+                      Desde Bs. {{ obtenerPrecioMostrar(plato) | number:'1.2-2' }}
+                    } @else {
+                      Bs. {{ plato.precioVenta | number:'1.2-2' }}
+                    }
+                  </span>
                 </div>
 
                 @if (plato.descripcion) {
@@ -127,32 +133,49 @@
 
                 <!-- Contenedor Interactivo (Añadir / Stepper) -->
                 <div class="plato-card__interactive">
-                  @if (carritoService.obtenerCantidad(plato.id) === 0) {
-                    <button
-                      class="add-to-cart-btn"
-                      (click)="carritoService.agregarPlato(plato); $event.stopPropagation()"
-                      [id]="'btn-add-' + plato.id"
-                    >
-                      Añadir +
-                    </button>
-                  } @else {
-                    <div class="card-stepper" (click)="$event.stopPropagation()">
+                  @if (plato.variantes && plato.variantes.length > 0) {
+                    <!-- Caso Plato con Variantes -->
+                    <div class="variant-add-wrapper">
+                      @if (obtenerCantidadTotalPlato(plato) > 0) {
+                        <span class="variant-badge">{{ obtenerCantidadTotalPlato(plato) }}</span>
+                      }
                       <button
-                        class="card-stepper-btn minus"
-                        (click)="carritoService.removerPlato(plato.id)"
-                        [id]="'btn-minus-' + plato.id"
+                        class="add-to-cart-btn variant-btn"
+                        (click)="abrirSelectorVariante(plato); $event.stopPropagation()"
+                        [id]="'btn-add-var-' + plato.id"
                       >
-                        −
-                      </button>
-                      <span class="card-stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
-                      <button
-                        class="card-stepper-btn plus"
-                        (click)="carritoService.agregarPlato(plato)"
-                        [id]="'btn-plus-' + plato.id"
-                      >
-                        +
+                        {{ obtenerCantidadTotalPlato(plato) > 0 ? 'Añadir más' : 'Añadir +' }}
                       </button>
                     </div>
+                  } @else {
+                    <!-- Caso Plato Simple (Sin Variantes) -->
+                    @if (carritoService.obtenerCantidad(plato.id) === 0) {
+                      <button
+                        class="add-to-cart-btn"
+                        (click)="carritoService.agregarPlato(plato); $event.stopPropagation()"
+                        [id]="'btn-add-' + plato.id"
+                      >
+                        Añadir +
+                      </button>
+                    } @else {
+                      <div class="card-stepper" (click)="$event.stopPropagation()">
+                        <button
+                          class="card-stepper-btn minus"
+                          (click)="carritoService.removerPlato(plato.id)"
+                          [id]="'btn-minus-' + plato.id"
+                        >
+                          −
+                        </button>
+                        <span class="card-stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
+                        <button
+                          class="card-stepper-btn plus"
+                          (click)="carritoService.agregarPlato(plato)"
+                          [id]="'btn-plus-' + plato.id"
+                        >
+                          +
+                        </button>
+                      </div>
+                    }
                   }
                 </div>
               </div>
@@ -220,3 +243,56 @@
   (close)="drawerOpen.set(false)"
 ></client-carrito-drawer>
 
+<!-- Modal Selector de Variantes (Bottom Sheet estilo iOS) -->
+@if (selectedPlatoParaVariante(); as plato) {
+  <div class="variant-modal-overlay open" (click)="cerrarSelectorVariante()"></div>
+  <div class="variant-modal-container open">
+    <div class="drawer-handle" (click)="cerrarSelectorVariante()"></div>
+    <div class="variant-modal-header">
+      <h3>Selecciona el tamaño</h3>
+      <p class="variant-modal-plato">{{ plato.nombre }}</p>
+    </div>
+    <div class="variant-modal-body">
+      <div class="variant-options">
+        @for (v of plato.variantes; track v.id) {
+          <label
+            class="variant-option-card"
+            [class.selected]="selectedVariante()?.id === v.id"
+            [class.disabled]="!v.disponible"
+          >
+            <div class="variant-option-left">
+              <input
+                type="radio"
+                name="plato-variante"
+                [value]="v"
+                [checked]="selectedVariante()?.id === v.id"
+                (change)="seleccionarVariante(v)"
+                [disabled]="!v.disponible"
+                class="variant-radio-input"
+              />
+              <div class="variant-option-info">
+                <span class="variant-option-name">{{ v.nombre }}</span>
+                <span class="variant-option-status" [class.danger]="!v.disponible">
+                  {{ v.disponible ? 'Disponible' : 'Agotado' }}
+                </span>
+              </div>
+            </div>
+            <span class="variant-option-price">Bs. {{ v.precio | number:'1.2-2' }}</span>
+          </label>
+        }
+      </div>
+    </div>
+    <div class="variant-modal-footer">
+      <button class="variant-modal-cancel" (click)="cerrarSelectorVariante()">
+        Cancelar
+      </button>
+      <button
+        class="variant-modal-confirm"
+        [disabled]="!selectedVariante()"
+        (click)="agregarPlatoConVariante(plato)"
+      >
+        Agregar al Pedido (Bs. {{ (selectedVariante()?.precio || 0) | number:'1.2-2' }})
+      </button>
+    </div>
+  </div>
+}

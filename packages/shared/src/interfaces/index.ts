@@ -50,6 +50,16 @@ export interface ICategoriaPlato {
   orden: number;
 }
 
+export interface IVariantePlato {
+  id: string;
+  platoId: string;
+  nombre: string;
+  precio: number;
+  disponible: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface IPlato {
   id: string;
   nombre: string;
@@ -60,6 +70,7 @@ export interface IPlato {
   categoriaId: number;
   costoReceta: number;
   createdAt: Date;
+  variantes?: IVariantePlato[];
 }
 
 // ── Inventario ──
@@ -100,6 +111,8 @@ export interface IDetallePedido {
   id: string;
   pedidoId: string;
   platoId: string;
+  varianteId?: string;
+  varianteNombreSnapshot?: string;
   cantidad: number;
   precioUnitario: number;
   notas?: string;

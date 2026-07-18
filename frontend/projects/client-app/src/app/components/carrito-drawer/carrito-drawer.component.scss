@@ -476,3 +476,15 @@
     box-shadow: 0 6px 18px rgba(200, 149, 108, 0.35);
   }
 }
+
+.item-variant-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--primary-deep);
+  background: var(--primary-glow);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  width: fit-content;
+  margin-top: 2px;
+  font-weight: 600;
+}

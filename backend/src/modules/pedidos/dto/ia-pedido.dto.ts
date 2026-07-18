@@ -39,6 +39,10 @@ export class ConfirmarPedidoIaItemDto {
   @IsNotEmpty()
   platoId: string;
 
+  @IsString()
+  @IsOptional()
+  varianteId?: string;
+
   @IsInt()
   @Min(1)
   cantidad: number;

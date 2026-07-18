@@ -21,10 +21,18 @@ interface Plato {
   descripcion?: string;
   disponible: boolean;
   categoriaId: number;
+  variantes?: {
+    id: string;
+    nombre: string;
+    precio: number;
+    disponible: boolean;
+  }[];
 }
 
 interface ItemComanda {
   platoId: string;
+  varianteId?: string;
+  varianteNombre?: string;
   nombre: string;
   precio: number;
   cantidad: number;
@@ -88,16 +96,45 @@ export class ComandaDrawerComponent implements OnChanges {
     return list;
   });
 
-  // Filtered dishes for quick search
+  // Filtered dishes for quick search (flattened with variants)
   filteredPlatos = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const catId = this.selectedCategoryId();
     
-    return this.platos.filter(plato => {
+    const matchedDishes = this.platos.filter(plato => {
       const matchesQuery = !query || plato.nombre.toLowerCase().includes(query) || (plato.descripcion && plato.descripcion.toLowerCase().includes(query));
       const matchesCat = catId === null || plato.categoriaId === catId;
       return matchesQuery && matchesCat;
     });
+
+    const list: any[] = [];
+    matchedDishes.forEach(plato => {
+      if (plato.variantes && plato.variantes.length > 0) {
+        plato.variantes.forEach(v => {
+          list.push({
+            id: plato.id,
+            varianteId: v.id,
+            nombre: `${plato.nombre} (${v.nombre})`,
+            precioVenta: v.precio,
+            disponible: v.disponible && plato.disponible,
+            categoriaId: plato.categoriaId,
+            descripcion: plato.descripcion
+          });
+        });
+      } else {
+        list.push({
+          id: plato.id,
+          varianteId: null,
+          nombre: plato.nombre,
+          precioVenta: plato.precioVenta,
+          disponible: plato.disponible,
+          categoriaId: plato.categoriaId,
+          descripcion: plato.descripcion
+        });
+      }
+    });
+
+    return list;
   });
 
   constructor() {
@@ -154,7 +191,9 @@ export class ComandaDrawerComponent implements OnChanges {
           
           const items: ItemComanda[] = (pedido.detalles || []).map((d: any) => ({
             platoId: d.platoId,
-            nombre: d.plato?.nombre || 'Plato',
+            varianteId: d.varianteId || undefined,
+            varianteNombre: d.varianteNombreSnapshot || undefined,
+            nombre: d.varianteNombreSnapshot ? `${d.plato?.nombre} (${d.varianteNombreSnapshot})` : (d.plato?.nombre || 'Plato'),
             precio: Number(d.precioUnitario || d.plato?.precioVenta),
             cantidad: d.cantidad,
             notas: d.notas || ''
@@ -184,9 +223,9 @@ export class ComandaDrawerComponent implements OnChanges {
     }
   }
 
-  agregarPlato(plato: Plato) {
+  agregarPlato(plato: any) {
     this.comandaItems.update(items => {
-      const idx = items.findIndex(i => i.platoId === plato.id);
+      const idx = items.findIndex(i => i.platoId === plato.id && i.varianteId === (plato.varianteId || undefined));
       if (idx > -1) {
         const n = [...items];
         n[idx].cantidad += 1;
@@ -194,6 +233,8 @@ export class ComandaDrawerComponent implements OnChanges {
       }
       return [...items, {
         platoId: plato.id,
+        varianteId: plato.varianteId || undefined,
+        varianteNombre: plato.varianteId ? plato.nombre.split('(')[1]?.replace(')', '') : undefined,
         nombre: plato.nombre,
         precio: Number(plato.precioVenta),
         cantidad: 1,
@@ -204,14 +245,14 @@ export class ComandaDrawerComponent implements OnChanges {
 
   incrementarCantidad(item: ItemComanda) {
     this.comandaItems.update(items => {
-      return items.map(i => i.platoId === item.platoId ? { ...i, cantidad: i.cantidad + 1 } : i);
+      return items.map(i => (i.platoId === item.platoId && i.varianteId === item.varianteId) ? { ...i, cantidad: i.cantidad + 1 } : i);
     });
   }
 
   decrementarCantidad(item: ItemComanda) {
     this.comandaItems.update(items => {
       return items.map(i => {
-        if (i.platoId === item.platoId) {
+        if (i.platoId === item.platoId && i.varianteId === item.varianteId) {
           const newQty = i.cantidad - 1;
           return { ...i, cantidad: newQty };
         }
@@ -220,8 +261,8 @@ export class ComandaDrawerComponent implements OnChanges {
     });
   }
 
-  quitarItem(platoId: string) {
-    this.comandaItems.update(items => items.filter(i => i.platoId !== platoId));
+  quitarItem(platoId: string, varianteId?: string) {
+    this.comandaItems.update(items => items.filter(i => !(i.platoId === platoId && i.varianteId === (varianteId || undefined))));
   }
 
   getComandaTotal(): number {
@@ -238,6 +279,7 @@ export class ComandaDrawerComponent implements OnChanges {
       notas: this.generalNotes(),
       items: this.comandaItems().map(i => ({
         platoId: i.platoId,
+        varianteId: i.varianteId || undefined,
         cantidad: i.cantidad,
         notas: i.notas
       }))

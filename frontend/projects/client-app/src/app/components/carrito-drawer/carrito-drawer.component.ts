@@ -22,13 +22,13 @@ export class CarritoDrawerComponent {
     this.close.emit();
   }
 
-  cambiarCantidad(platoId: string, cantidad: number): void {
-    this.carritoService.actualizarCantidad(platoId, cantidad);
+  cambiarCantidad(platoId: string, varianteId: string | undefined, cantidad: number): void {
+    this.carritoService.actualizarCantidad(platoId, varianteId, cantidad);
   }
 
-  actualizarNotas(platoId: string, event: Event): void {
+  actualizarNotas(platoId: string, varianteId: string | undefined, event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.carritoService.actualizarNotas(platoId, target.value);
+    this.carritoService.actualizarNotas(platoId, varianteId, target.value);
   }
 
   enviarPedido(): void {
@@ -49,6 +49,6 @@ export class CarritoDrawerComponent {
   }
 
   trackByPlatoId(index: number, item: ItemCarrito): string {
-    return item.platoId;
+    return `${item.platoId}-${item.varianteId || ''}`;
   }
 }
