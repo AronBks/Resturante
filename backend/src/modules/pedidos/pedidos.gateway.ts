@@ -62,7 +62,11 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
       // Unimos al usuario a una sala específica de su rol
       socket.join(`role:${user.rol}`);
     } catch (error) {
-      this.logger.error(`Error de autenticación en handshake de WebSocket: ${error.message}`);
+      if (error.name === 'TokenExpiredError' || error.message?.includes('expired')) {
+        this.logger.warn(`Conexión WebSocket rechazada: Token expirado (${socket.id})`);
+      } else {
+        this.logger.error(`Error de autenticación en handshake de WebSocket: ${error.message}`);
+      }
       socket.disconnect();
     }
   }
@@ -93,6 +97,7 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.server
       .to(`role:${RolUsuario.MESERO}`)
       .to(`role:${RolUsuario.ADMIN}`)
+      .to(`role:${RolUsuario.CAJERO}`)
       .emit('pedido:estado-actualizado', { pedidoId, estado });
   }
 
@@ -113,6 +118,7 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.server
       .to(`role:${RolUsuario.MESERO}`)
       .to(`role:${RolUsuario.ADMIN}`)
+      .to(`role:${RolUsuario.CAJERO}`)
       .emit('mesa:estado-actualizado', { mesaId, estado });
   }
 
@@ -136,4 +142,27 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
     this.logger.log(`🤖 Pedido IA emitido para Mesa ${mesaNumero}`);
   }
+
+  /**
+   * Emite la creación de una nueva transacción en tiempo real
+   */
+  broadcastTransaccionCreada(transaccion: any) {
+    this.server
+      .to(`role:${RolUsuario.ADMIN}`)
+      .to(`role:${RolUsuario.CAJERO}`)
+      .emit('transaccion:creada', transaccion);
+    this.logger.log(`💳 Transacción emitida: ${transaccion.nroRecibo}`);
+  }
+
+  /**
+   * Emite el evento de cierre de caja en tiempo real
+   */
+  broadcastCajaCerrada(data: any) {
+    this.server
+      .to(`role:${RolUsuario.ADMIN}`)
+      .to(`role:${RolUsuario.CAJERO}`)
+      .emit('caja:cerrada', data);
+    this.logger.log(`🔒 Caja Cerrada emitida: ${data.cajaId}`);
+  }
 }
+
