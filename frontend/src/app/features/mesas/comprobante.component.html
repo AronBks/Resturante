@@ -1,0 +1,142 @@
+<!-- Overlay de previsualización -->
+<div class="comprobante-overlay" *ngIf="isOpen" (click)="cerrar()"></div>
+
+<div class="comprobante-wrapper" [class.open]="isOpen">
+
+  <!-- Toolbar de acciones -->
+  <div class="comprobante-toolbar no-print">
+    <button class="print-btn" (click)="imprimirRecibo()">🖨️ Imprimir Recibo</button>
+    <button class="close-btn" (click)="cerrar()">Cerrar</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TICKET TÉRMICO 80mm — Zona Imprimible
+       ═══════════════════════════════════════════ -->
+  <div class="recibo-ticket" id="recibo-ticket" *ngIf="datos">
+
+    <!-- Cabecera -->
+    <div class="ticket-header">
+      <h1>PEÑA RESTAURANT</h1>
+      <h2>TUKUYPAJ</h2>
+      <div class="ticket-separator-double">════════════════════════════</div>
+      <p>NIT: 12345678016 (Ficticio)</p>
+      <p>Av. d'Orbigny esq. Jordán</p>
+      <p>Cochabamba, Bolivia</p>
+      <p>Tel: (4) 452-XXXX</p>
+    </div>
+
+    <div class="ticket-separator">────────────────────────────</div>
+
+    <!-- Datos del Recibo -->
+    <div class="ticket-info">
+      <div class="info-row">
+        <span>Recibo Nro:</span>
+        <span class="info-val">{{ datos.nroRecibo }}</span>
+      </div>
+      <div class="info-row">
+        <span>Fecha:</span>
+        <span class="info-val">{{ fechaFormateada }}</span>
+      </div>
+      <div class="info-row">
+        <span>Hora:</span>
+        <span class="info-val">{{ horaFormateada }}</span>
+      </div>
+      <div class="info-row">
+        <span>Mesa:</span>
+        <span class="info-val">{{ datos.mesa.numero }}</span>
+      </div>
+      <div class="info-row">
+        <span>Mesero:</span>
+        <span class="info-val">{{ datos.mesero.nombre }}</span>
+      </div>
+      <div class="info-row">
+        <span>Cajero:</span>
+        <span class="info-val">{{ datos.cajero.nombre }}</span>
+      </div>
+      <!-- Datos de Factura/Cliente -->
+      <div class="info-row">
+        <span>Cliente:</span>
+        <span class="info-val">{{ datos.razonSocial || 'Sin Nombre (S.N.)' }}</span>
+      </div>
+      <div class="info-row" *ngIf="datos.nit">
+        <span>NIT/CI:</span>
+        <span class="info-val">{{ datos.nit }}</span>
+      </div>
+    </div>
+
+    <div class="ticket-separator">────────────────────────────</div>
+
+    <!-- Detalle de Consumo -->
+    <div class="ticket-detail-header">
+      <span class="col-qty">Cant</span>
+      <span class="col-desc">Detalle</span>
+      <span class="col-sub">Subtotal</span>
+    </div>
+
+    <div class="ticket-separator-light">· · · · · · · · · · · · · · ·</div>
+
+    <div class="ticket-items">
+      <div class="ticket-item" *ngFor="let item of datos.items">
+        <span class="col-qty">{{ item.cantidad }}</span>
+        <span class="col-desc">{{ item.nombre }}</span>
+        <span class="col-sub">{{ item.subtotal.toFixed(2) }}</span>
+      </div>
+      <div class="ticket-item-note" *ngFor="let item of datos.items">
+        <span *ngIf="item.notas" class="item-note-text">  ↳ {{ item.notas }}</span>
+      </div>
+    </div>
+
+    <div class="ticket-separator">────────────────────────────</div>
+
+    <!-- Totales -->
+    <div class="ticket-totals">
+      <div class="total-row">
+        <span>Subtotal:</span>
+        <span>Bs. {{ datos.subtotal.toFixed(2) }}</span>
+      </div>
+      <div class="total-row" *ngIf="datos.descuento > 0">
+        <span>Descuento:</span>
+        <span>- Bs. {{ datos.descuento.toFixed(2) }}</span>
+      </div>
+      <div class="ticket-separator-double">════════════════════════════</div>
+      <div class="total-row total-final">
+        <span>TOTAL:</span>
+        <span>Bs. {{ datos.total.toFixed(2) }}</span>
+      </div>
+      <div class="ticket-separator-double">════════════════════════════</div>
+    </div>
+
+    <!-- Método de pago -->
+    <div class="ticket-payment">
+      <div class="total-row">
+        <span>Método:</span>
+        <span>{{ metodoPagoLabel }}</span>
+      </div>
+      <div class="total-row" *ngIf="datos.metodoPago === 'EFECTIVO'">
+        <span>Recibido:</span>
+        <span>Bs. {{ datos.montoRecibido.toFixed(2) }}</span>
+      </div>
+      <div class="total-row" *ngIf="datos.cambio > 0">
+        <span>Cambio:</span>
+        <span>Bs. {{ datos.cambio.toFixed(2) }}</span>
+      </div>
+    </div>
+
+    <div class="ticket-separator">────────────────────────────</div>
+
+    <!-- QR de Control -->
+    <div class="ticket-qr">
+      <img [src]="qrControlUrl" alt="QR Control" width="100" height="100" />
+      <p class="qr-hash">Control: {{ hashControl }}</p>
+    </div>
+
+    <div class="ticket-separator-light">· · · · · · · · · · · · · · ·</div>
+
+    <!-- Pie de ticket -->
+    <div class="ticket-footer">
+      <p>¡Gracias por su visita!</p>
+      <p>Vuelva pronto a Tukuypaj 🎶</p>
+      <p class="ticket-legal">Este documento no tiene validez fiscal</p>
+    </div>
+  </div>
+</div>

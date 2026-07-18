@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
+import { CajaCobroComponent, PedidoParaCobro } from './caja-cobro.component';
+import { ComprobanteComponent, DatosRecibo } from './comprobante.component';
 
 interface Mesa {
   id: number;
@@ -32,7 +34,7 @@ interface ItemComanda {
 @Component({
   selector: 'app-comanda-drawer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CajaCobroComponent, ComprobanteComponent],
   templateUrl: './comanda-drawer.component.html',
   styleUrls: ['./comanda-drawer.component.scss']
 })
@@ -57,6 +59,7 @@ export class ComandaDrawerComponent implements OnChanges {
 
   // Active order ID if occupied
   activePedidoId = signal<string | null>(null);
+  activeMeseroNombre = signal('');
 
   // Search & Filter
   searchQuery = signal('');
@@ -65,13 +68,17 @@ export class ComandaDrawerComponent implements OnChanges {
   // Users / Waiters
   waiters = signal<any[]>([]);
 
+  // ── Caja & Comprobante States ──
+  showCajaModal = signal(false);
+  showComprobante = signal(false);
+  pedidoParaCobro = signal<PedidoParaCobro | null>(null);
+  datosRecibo = signal<DatosRecibo | null>(null);
+
   // Computed Categories from inputs
   categories = computed(() => {
     const list: { id: number; nombre: string }[] = [];
     const ids = new Set<number>();
     
-    // We can infer categories from the dishes list or fetch them.
-    // Inferring is safer as it uses the active dishes in context.
     this.platos.forEach(p => {
       if (p.categoriaId && !ids.has(p.categoriaId)) {
         ids.add(p.categoriaId);
@@ -101,6 +108,7 @@ export class ComandaDrawerComponent implements OnChanges {
     if (changes['mesa'] && this.mesa) {
       this.errorMessage.set('');
       this.activePedidoId.set(null);
+      this.activeMeseroNombre.set('');
       
       // Default waiter to logged-in user
       const currentUser = this.authService.currentUserSignal();
@@ -124,7 +132,6 @@ export class ComandaDrawerComponent implements OnChanges {
         this.waiters.set(list.filter((u: any) => u.rol === 'MESERO' || u.rol === 'ADMIN'));
       },
       error: () => {
-        // Fallback waitstaff
         this.waiters.set([
           { id: '1', nombre: 'Don Roberto Mamani', rol: 'ADMIN' },
           { id: '2', nombre: 'Carlos Condori', rol: 'MESERO' },
@@ -143,6 +150,7 @@ export class ComandaDrawerComponent implements OnChanges {
           this.activePedidoId.set(pedido.id);
           this.generalNotes.set(pedido.notas || '');
           this.selectedWaitership.set(pedido.meseroId);
+          this.activeMeseroNombre.set(pedido.mesero?.nombre || 'Mesero');
           
           const items: ItemComanda[] = (pedido.detalles || []).map((d: any) => ({
             platoId: d.platoId,
@@ -270,21 +278,46 @@ export class ComandaDrawerComponent implements OnChanges {
     });
   }
 
-  cobrarLiberar() {
-    if (!this.mesa) return;
-    this.isSubmitting.set(true);
-    this.errorMessage.set('');
+  // ── Flujo de Cobro & Facturación ──
 
-    this.http.patch(`${this.baseUrl}/mesas/${this.mesa.id}/estado`, { estado: 'LIBRE' }).subscribe({
-      next: () => {
-        this.isSubmitting.set(false);
-        this.saved.emit();
-        this.close.emit();
-      },
-      error: (err) => {
-        this.isSubmitting.set(false);
-        this.errorMessage.set(err.error?.message || 'Error al liberar la mesa.');
-      }
+  abrirCajaModal() {
+    const pedidoId = this.activePedidoId();
+    if (!pedidoId || !this.mesa) {
+      this.errorMessage.set('No hay un pedido activo para cobrar.');
+      return;
+    }
+
+    this.pedidoParaCobro.set({
+      pedidoId,
+      mesaNumero: this.mesa.numero,
+      meseroNombre: this.activeMeseroNombre(),
+      items: this.comandaItems().map(i => ({
+        nombre: i.nombre,
+        precio: i.precio,
+        cantidad: i.cantidad,
+        notas: i.notas
+      })),
+      subtotal: this.getComandaTotal(),
     });
+
+    this.showCajaModal.set(true);
+  }
+
+  onCajaCerrar() {
+    this.showCajaModal.set(false);
+  }
+
+  onPagoCompletado(datosTransaccion: any) {
+    this.showCajaModal.set(false);
+    this.datosRecibo.set(datosTransaccion as DatosRecibo);
+    this.showComprobante.set(true);
+    // Emitir que los datos cambiaron (mesa liberada)
+    this.saved.emit();
+  }
+
+  onComprobanteCerrar() {
+    this.showComprobante.set(false);
+    this.datosRecibo.set(null);
+    this.close.emit();
   }
 }

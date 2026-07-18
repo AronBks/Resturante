@@ -50,6 +50,16 @@ export class SocketService {
       console.log('🔌 Conectado al servidor de WebSockets');
     });
 
+    this.socket.on('connect_error', (error) => {
+      console.error('🔌 Error de conexión WebSocket:', error.message);
+      if (error.message === 'jwt expired' || error.message.includes('autenticación') || error.message.includes('auth')) {
+        console.warn('🔑 Token JWT expirado o inválido, deteniendo reconexión y cerrando sesión...');
+        // Detenemos la reconexión inmediatamente
+        this.disconnect();
+        this.authService.logout();
+      }
+    });
+
     this.socket.on('disconnect', () => {
       this.isConnectedSignal.set(false);
       console.log('🔌 Desconectado del servidor de WebSockets');

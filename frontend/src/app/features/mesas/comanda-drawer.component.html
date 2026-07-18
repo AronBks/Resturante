@@ -200,16 +200,30 @@
         <span *ngIf="isSubmitting()">Procesando cuenta...</span>
       </button>
 
-      <!-- POR COBRAR: Liberate Table -->
+      <!-- POR COBRAR: Abrir Modal de Cobro & Facturación -->
       <button 
         *ngIf="mesa?.estado === 'POR_COBRAR'"
         class="action-btn release-btn" 
         [disabled]="isSubmitting()" 
-        (click)="cobrarLiberar()"
+        (click)="abrirCajaModal()"
       >
-        <span *ngIf="!isSubmitting()">Cobrar & Liberar Mesa</span>
-        <span *ngIf="isSubmitting()">Liberando...</span>
+        💳 Cobrar & Facturar
       </button>
     </div>
   </div>
 </div>
+
+<!-- ═══ Sub-componentes de Caja y Comprobante ═══ -->
+
+<app-caja-cobro
+  [isOpen]="showCajaModal()"
+  [pedido]="pedidoParaCobro()"
+  (close)="onCajaCerrar()"
+  (pagado)="onPagoCompletado($event)"
+></app-caja-cobro>
+
+<app-comprobante
+  [isOpen]="showComprobante()"
+  [datos]="datosRecibo()"
+  (close)="onComprobanteCerrar()"
+></app-comprobante>

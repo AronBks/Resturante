@@ -1,0 +1,215 @@
+<!-- Overlay -->
+<div class="caja-overlay" *ngIf="isOpen" (click)="cerrarModal()"></div>
+
+<!-- Modal Panel -->
+<div class="caja-modal" [class.open]="isOpen">
+
+  <!-- Header -->
+  <div class="caja-header">
+    <div class="caja-title-group">
+      <span class="caja-icon">💳</span>
+      <div>
+        <h2>Cobro & Facturación</h2>
+        <span class="caja-mesa-tag">Mesa {{ pedido?.mesaNumero }}</span>
+      </div>
+    </div>
+    <button class="caja-close" (click)="cerrarModal()" [disabled]="isProcessing()">×</button>
+  </div>
+
+  <!-- Error Alert -->
+  <div class="caja-error" *ngIf="errorMsg()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ errorMsg() }}
+  </div>
+
+  <!-- Body Grid -->
+  <div class="caja-body">
+
+    <!-- ─── Left: Order Summary ─── -->
+    <div class="caja-resumen">
+      <h3>Resumen del Pedido</h3>
+      <div class="resumen-items scrollbar-custom">
+        <div class="resumen-item" *ngFor="let item of pedido?.items || []">
+          <div class="ri-left">
+            <span class="ri-qty">{{ item.cantidad }}×</span>
+            <div class="ri-info">
+              <span class="ri-name">{{ item.nombre }}</span>
+              <span class="ri-note" *ngIf="item.notas">{{ item.notas }}</span>
+            </div>
+          </div>
+          <span class="ri-price">Bs. {{ (item.precio * item.cantidad).toFixed(2) }}</span>
+        </div>
+      </div>
+
+
+
+      <!-- Facturación opcional (NIT / Razón Social) -->
+      <div class="caja-facturacion-toggle-panel">
+        <label class="factura-toggle-lbl">
+          <input type="checkbox" [checked]="facturaRequerida()" (change)="toggleFactura($event)" />
+          <span>¿Requiere Factura / NIT?</span>
+        </label>
+        
+        <div class="factura-inputs-anim" *ngIf="facturaRequerida()">
+          <div class="fact-input-row">
+            <div class="fact-input-col">
+              <label for="nit-ci-input">NIT / CI</label>
+              <input
+                id="nit-ci-input"
+                type="text"
+                placeholder="Ej. 1234567"
+                [value]="nit()"
+                (input)="onNitInput($any($event.target).value)"
+              />
+            </div>
+            <div class="fact-input-col">
+              <label for="razon-social-input">Razón Social</label>
+              <input
+                id="razon-social-input"
+                type="text"
+                placeholder="Ej. Juan Pérez"
+                [value]="razonSocial()"
+                (input)="onRazonSocialInput($any($event.target).value)"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtotals -->
+      <div class="resumen-totals">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span>Bs. {{ (pedido?.subtotal || 0).toFixed(2) }}</span>
+        </div>
+        <div class="total-row descuento-row">
+          <label for="descuento-input">Descuento (Bs.)</label>
+          <input
+            id="descuento-input"
+            type="number"
+            min="0"
+            [max]="pedido?.subtotal || 0"
+            step="0.50"
+            [value]="descuento()"
+            (input)="onDescuentoInput($any($event.target).value)"
+            placeholder="0.00"
+          />
+        </div>
+        <div class="total-row total-final">
+          <span>TOTAL A COBRAR</span>
+          <span class="total-value">Bs. {{ totalConDescuento().toFixed(2) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Right: Payment Method ─── -->
+    <div class="caja-pago">
+      <h3>Método de Pago</h3>
+
+      <!-- Payment Method Selector -->
+      <div class="metodo-selector">
+        <button
+          class="metodo-btn"
+          [class.active]="metodoPago() === 'EFECTIVO'"
+          (click)="seleccionarMetodo('EFECTIVO')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
+          <span>Efectivo</span>
+        </button>
+        <button
+          class="metodo-btn"
+          [class.active]="metodoPago() === 'TARJETA'"
+          (click)="seleccionarMetodo('TARJETA')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>Tarjeta</span>
+        </button>
+        <button
+          class="metodo-btn"
+          [class.active]="metodoPago() === 'QR'"
+          (click)="seleccionarMetodo('QR')"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="4" height="4"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="14" y1="21" x2="21" y2="21"/></svg>
+          <span>QR</span>
+        </button>
+      </div>
+
+      <!-- Conditional: Cash Amount Input -->
+      <div class="cash-section" *ngIf="metodoPago() === 'EFECTIVO'">
+        <div class="cash-input-group">
+          <label for="monto-recibido">Monto Recibido (Bs.)</label>
+          <input
+            id="monto-recibido"
+            type="number"
+            min="0"
+            step="5"
+            [value]="montoRecibido()"
+            (input)="onMontoInput($any($event.target).value)"
+            placeholder="0.00"
+            class="cash-input"
+            autofocus
+          />
+        </div>
+
+        <!-- Quick amount buttons -->
+        <div class="quick-amounts">
+          <button *ngFor="let amt of [50, 100, 200, 500]" class="quick-btn" (click)="montoRecibido.set(amt)">
+            Bs. {{ amt }}
+          </button>
+          <button class="quick-btn exact" (click)="montoRecibido.set(totalConDescuento())">
+            Exacto
+          </button>
+        </div>
+
+        <div class="cambio-display" [class.insuficiente]="!esMontoSuficiente()">
+          <span class="cambio-label">{{ esMontoSuficiente() ? 'Cambio a devolver:' : 'Monto insuficiente' }}</span>
+          <span class="cambio-value" *ngIf="esMontoSuficiente()">Bs. {{ cambioCalculado().toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <!-- Conditional: QR Payment View -->
+      <div class="qr-section" *ngIf="metodoPago() === 'QR'">
+        <div class="qr-banco-card">
+          <img
+            [src]="'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent('Banco BNB|Cta Ahorro: 2500-1234567|Peña Restaurant Tukuypaj|NIT: 12345678')"
+            alt="QR Cuenta Bancaria"
+            width="180"
+            height="180"
+          />
+          <div class="qr-info">
+            <p><strong>Banco BNB</strong></p>
+            <p>Cta. Ahorro: 2500-1234567</p>
+            <p>Titular: Peña Tukuypaj</p>
+            <p class="qr-amount">Monto: <strong>Bs. {{ totalConDescuento().toFixed(2) }}</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conditional: Card Payment View -->
+      <div class="card-section" *ngIf="metodoPago() === 'TARJETA'">
+        <div class="card-info-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <p>Procesar cobro con POS</p>
+          <p class="card-amount">Bs. {{ totalConDescuento().toFixed(2) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="caja-footer">
+    <button class="caja-cancel-btn" (click)="cerrarModal()" [disabled]="isProcessing()">
+      Cancelar
+    </button>
+    <button
+      class="caja-confirm-btn"
+      [disabled]="isProcessing() || (metodoPago() === 'EFECTIVO' && !esMontoSuficiente())"
+      (click)="confirmarPago()"
+    >
+      <span *ngIf="!isProcessing()">✅ Confirmar Pago & Facturar</span>
+      <span *ngIf="isProcessing()" class="processing-spinner">
+        <span class="spinner-mini"></span> Procesando...
+      </span>
+    </button>
+  </div>
+</div>
