@@ -196,20 +196,7 @@
     color: var(--text-muted);
   }
 
-  .descuento-row {
-    input {
-      width: 90px;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border-glass);
-      color: var(--text-warm);
-      padding: 5px 10px;
-      border-radius: var(--radius-xs);
-      font-size: 0.82rem;
-      text-align: right;
-      outline: none;
-      &:focus { border-color: var(--primary); }
-    }
-  }
+
 
   .total-final {
     padding-top: 10px;

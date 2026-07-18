@@ -24,19 +24,25 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CartaPublicaService, CategoriaPublica } from '../../services/carta-publica.service';
 import { SocketPublicoService } from '../../services/socket-publico.service';
+import { CarritoService } from '../../services/carrito.service';
+import { CarritoDrawerComponent } from '../carrito-drawer/carrito-drawer.component';
 
 @Component({
   selector: 'client-menu-digital',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CarritoDrawerComponent],
   templateUrl: './menu-digital.component.html',
   styleUrl: './menu-digital.component.scss',
 })
 export class MenuDigitalComponent implements OnInit, OnDestroy {
   readonly cartaService = inject(CartaPublicaService);
+  readonly carritoService = inject(CarritoService);
   private readonly socketService = inject(SocketPublicoService);
   private readonly route = inject(ActivatedRoute);
   private wsSub!: Subscription;
+
+  // Control de visibilidad del drawer de confirmación
+  drawerOpen = signal(false);
 
   // Número de mesa para pasar al FAB de IA
   mesaNumero = signal('M01');

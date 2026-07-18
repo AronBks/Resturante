@@ -22,7 +22,6 @@ export interface DatosRecibo {
     notas?: string;
   }[];
   subtotal: number;
-  descuento: number;
   total: number;
   metodoPago: string;
   montoRecibido: number;

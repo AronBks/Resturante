@@ -82,19 +82,7 @@
           <span>Subtotal</span>
           <span>Bs. {{ (pedido?.subtotal || 0).toFixed(2) }}</span>
         </div>
-        <div class="total-row descuento-row">
-          <label for="descuento-input">Descuento (Bs.)</label>
-          <input
-            id="descuento-input"
-            type="number"
-            min="0"
-            [max]="pedido?.subtotal || 0"
-            step="0.50"
-            [value]="descuento()"
-            (input)="onDescuentoInput($any($event.target).value)"
-            placeholder="0.00"
-          />
-        </div>
+
         <div class="total-row total-final">
           <span>TOTAL A COBRAR</span>
           <span class="total-value">Bs. {{ totalConDescuento().toFixed(2) }}</span>

@@ -35,7 +35,7 @@ export class CajaService {
    * 7. Emite WebSocket events
    */
   async registrarPago(cajeroId: string, dto: RegistrarPagoDto) {
-    const { pedidoId, metodoPago, montoRecibido, descuento = 0, nit, razonSocial } = dto;
+    const { pedidoId, metodoPago, montoRecibido, nit, razonSocial } = dto;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // ── 1. Buscar y validar pedido ──
@@ -81,8 +81,7 @@ export class CajaService {
 
       // ── 3. Calcular montos ──
       const subtotal = Number(pedido.total);
-      const descuentoFinal = Math.min(Math.max(descuento, 0), subtotal);
-      const totalFinal = subtotal - descuentoFinal;
+      const totalFinal = subtotal;
       const cambio =
         metodoPago === 'EFECTIVO'
           ? Math.max(0, montoRecibido - totalFinal)
@@ -166,7 +165,7 @@ export class CajaService {
           notas: d.notas,
         })),
         subtotal,
-        descuento: descuentoFinal,
+        descuento: 0,
         total: totalFinal,
         metodoPago,
         montoRecibido:
@@ -258,7 +257,6 @@ export class CajaService {
 
     const formatted = transacciones.map((t, idx) => {
       const subtotal = Number(t.pedido.subtotal);
-      const descuento = Number(t.pedido.descuento);
       const total = Number(t.monto);
       const cambio = Number(t.cambio);
       const fechaStr = t.createdAt.toISOString().slice(0, 10).replace(/-/g, '');
@@ -279,7 +277,7 @@ export class CajaService {
           notas: d.notas,
         })),
         subtotal,
-        descuento,
+        descuento: 0,
         total,
         metodoPago: t.metodoPago,
         montoRecibido: t.metodoPago === 'EFECTIVO' ? total + cambio : total,

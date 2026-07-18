@@ -151,7 +151,6 @@
             <th>Mesa</th>
             <th>Mesero</th>
             <th>Método Pago</th>
-            <th class="text-right">Descuento</th>
             <th class="text-right">Total Neto</th>
             <th class="text-center">Acciones</th>
           </tr>
@@ -168,9 +167,6 @@
               <span class="badge" [ngClass]="getMetodoBadgeClass(t.metodoPago)">
                 {{ getMetodoLabel(t.metodoPago) }}
               </span>
-            </td>
-            <td class="text-right text-muted">
-              Bs. {{ t.descuento.toFixed(2) }}
             </td>
             <td class="text-right td-bold text-success">
               Bs. {{ t.total.toFixed(2) }}

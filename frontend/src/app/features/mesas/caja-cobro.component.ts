@@ -39,7 +39,6 @@ export class CajaCobroComponent {
   @Input() set pedido(val: PedidoParaCobro | null) {
     this.pedidoSignal.set(val);
     if (val) {
-      this.descuento.set(0);
       this.montoRecibido.set(val.subtotal); // Pre-cargar el subtotal como monto recibido sugerido
     }
   }
@@ -53,7 +52,6 @@ export class CajaCobroComponent {
   // ── Signals de Estado ──
   metodoPago = signal<'EFECTIVO' | 'TARJETA' | 'QR'>('EFECTIVO');
   montoRecibido = signal<number>(0);
-  descuento = signal<number>(0);
   isProcessing = signal(false);
   errorMsg = signal('');
 
@@ -64,9 +62,7 @@ export class CajaCobroComponent {
 
   // ── Computed Signals ──
   totalConDescuento = computed(() => {
-    const sub = this.pedidoSignal()?.subtotal ?? 0;
-    const desc = Math.min(Math.max(this.descuento(), 0), sub);
-    return Math.max(0, sub - desc);
+    return this.pedidoSignal()?.subtotal ?? 0;
   });
 
   cambioCalculado = computed(() => {
@@ -90,9 +86,7 @@ export class CajaCobroComponent {
     this.montoRecibido.set(parseFloat(value) || 0);
   }
 
-  onDescuentoInput(value: string) {
-    this.descuento.set(parseFloat(value) || 0);
-  }
+
 
   toggleFactura(event: any) {
     this.facturaRequerida.set(event.target.checked);
@@ -136,7 +130,6 @@ export class CajaCobroComponent {
       montoRecibido: this.metodoPago() === 'EFECTIVO'
         ? this.montoRecibido()
         : this.totalConDescuento(),
-      descuento: this.descuento(),
       nit: this.facturaRequerida() ? this.nit().trim() : null,
       razonSocial: this.facturaRequerida() ? this.razonSocial().trim() : null,
     };
@@ -165,7 +158,6 @@ export class CajaCobroComponent {
   private resetState() {
     this.metodoPago.set('EFECTIVO');
     this.montoRecibido.set(0);
-    this.descuento.set(0);
     this.facturaRequerida.set(false);
     this.nit.set('');
     this.razonSocial.set('');

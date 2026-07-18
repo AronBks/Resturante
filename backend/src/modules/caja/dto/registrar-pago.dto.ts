@@ -27,11 +27,6 @@ export class RegistrarPagoDto {
   @Min(0)
   montoRecibido: number;
 
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  descuento?: number;
-
   @IsString()
   @IsOptional()
   nit?: string;

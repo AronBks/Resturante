@@ -124,6 +124,37 @@
                 } @else {
                   <p class="plato-card__desc">Especialidad tradicional de la casa.</p>
                 }
+
+                <!-- Contenedor Interactivo (Añadir / Stepper) -->
+                <div class="plato-card__interactive">
+                  @if (carritoService.obtenerCantidad(plato.id) === 0) {
+                    <button
+                      class="add-to-cart-btn"
+                      (click)="carritoService.agregarPlato(plato); $event.stopPropagation()"
+                      [id]="'btn-add-' + plato.id"
+                    >
+                      Añadir +
+                    </button>
+                  } @else {
+                    <div class="card-stepper" (click)="$event.stopPropagation()">
+                      <button
+                        class="card-stepper-btn minus"
+                        (click)="carritoService.removerPlato(plato.id)"
+                        [id]="'btn-minus-' + plato.id"
+                      >
+                        −
+                      </button>
+                      <span class="card-stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
+                      <button
+                        class="card-stepper-btn plus"
+                        (click)="carritoService.agregarPlato(plato)"
+                        [id]="'btn-plus-' + plato.id"
+                      >
+                        +
+                      </button>
+                    </div>
+                  }
+                </div>
               </div>
             </article>
           }
@@ -145,14 +176,47 @@
   <p class="menu-footer__brand">Peña Restaurant Tukuypaj © 2026</p>
 </footer>
 
-<!-- Botón Flotante (FAB) de Asistente IA -->
+<!-- Barra Flotante de Resumen del Carrito (Solo si hay items en el carrito) -->
+@if (carritoService.cantidadTotalItems() > 0) {
+  <div class="cart-floating-bar animate-in">
+    <div class="cart-floating-bar__content">
+      <div class="cart-floating-bar__info">
+        <span class="cart-floating-bar__icon">🛒</span>
+        <div class="cart-floating-bar__text">
+          <span class="cart-floating-bar__count">
+            {{ carritoService.cantidadTotalItems() }} {{ carritoService.cantidadTotalItems() === 1 ? 'plato' : 'platos' }}
+          </span>
+          <span class="cart-floating-bar__divider">—</span>
+          <span class="cart-floating-bar__total">Bs. {{ carritoService.totalAcumulado() | number:'1.2-2' }}</span>
+        </div>
+      </div>
+      <button class="cart-floating-bar__btn" (click)="drawerOpen.set(true)" id="btn-revisar-pedido">
+        <span>Revisar y Pedir</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Botón Flotante (FAB) de Asistente IA (Se desplaza hacia arriba si hay carrito flotante) -->
 <a
   [routerLink]="['/pedido-ia']"
   [queryParams]="{ mesa: mesaNumero() }"
   class="ia-fab"
+  [class.shifted]="carritoService.cantidadTotalItems() > 0"
   id="fab-asistente-ia"
 >
   <span class="ia-fab__icon">🤖</span>
   <span class="ia-fab__text">Pedir con IA</span>
 </a>
+
+<!-- Drawer de Confirmación de Pedido (Bottom Sheet) -->
+<client-carrito-drawer
+  [isOpen]="drawerOpen()"
+  [mesaNumero]="mesaNumero()"
+  (close)="drawerOpen.set(false)"
+></client-carrito-drawer>
 

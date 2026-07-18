@@ -90,7 +90,6 @@ export interface IPedido {
   meseroId: string;
   estado: EstadoPedido;
   subtotal: number;
-  descuento: number;
   total: number;
   notas?: string;
   createdAt: Date;
