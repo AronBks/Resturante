@@ -102,11 +102,45 @@ export class CartaService {
     },
   ) {
     await this.findOnePlato(id);
-    return this.prisma.plato.update({
+    const updated = await this.prisma.plato.update({
       where: { id },
       data,
       include: { categoria: { select: { nombre: true } } },
     });
+
+    // 📡 Notificar actualización en tiempo real
+    this.cartaGateway.server.emit('menu:actualizado', { platoId: id, imagenUrl: updated.imagenUrl });
+    this.pedidosGateway.server.emit('menu:actualizado', { platoId: id, imagenUrl: updated.imagenUrl });
+
+    return updated;
+  }
+
+  async updateImagenPlato(id: string, imagenUrl: string) {
+    await this.findOnePlato(id);
+    const updated = await this.prisma.plato.update({
+      where: { id },
+      data: { imagenUrl },
+      include: { categoria: { select: { nombre: true } } },
+    });
+
+    // 📡 Broadcast al namespace público (/publica) — Client-App (Menú Digital)
+    if (this.cartaGateway.server) {
+      this.cartaGateway.server.emit('menu:actualizado', {
+        platoId: id,
+        imagenUrl: updated.imagenUrl,
+      });
+      this.cartaGateway.broadcastDisponibilidad(id, updated.disponible);
+    }
+
+    // 📡 Broadcast al namespace autenticado — Admin-App (meseros, admin)
+    if (this.pedidosGateway.server) {
+      this.pedidosGateway.server.emit('menu:actualizado', {
+        platoId: id,
+        imagenUrl: updated.imagenUrl,
+      });
+    }
+
+    return updated;
   }
 
   async toggleDisponible(id: string) {

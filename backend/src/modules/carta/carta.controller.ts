@@ -74,6 +74,15 @@ export class CartaController {
     return this.cartaService.createPlato(data);
   }
 
+  @Patch('platos/:id/imagen')
+  @Roles('ADMIN')
+  updateImagenPlato(
+    @Param('id') id: string,
+    @Body() body: { imagenUrl: string },
+  ) {
+    return this.cartaService.updateImagenPlato(id, body.imagenUrl);
+  }
+
   @Patch('platos/:id')
   @Roles('ADMIN')
   updatePlato(

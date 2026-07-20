@@ -169,6 +169,7 @@ async function main() {
       nombre: 'Pique Macho Tukuypaj',
       descripcion: 'Trozos de lomo de res y salchicha salteados con papas fritas, locoto, tomate, cebolla y huevo. El orgullo de Cochabamba.',
       precioVenta: 55,
+      imagenUrl: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584010/Pique-macho-Cochabambino-500x500_t5gbnw.webp',
       categoriaId: catTradicionales.id,
       variantes: [
         { nombre: 'Personal', precio: 40 },
@@ -180,12 +181,14 @@ async function main() {
       nombre: 'Silpancho Cochabambino',
       descripcion: 'Filete de res empanizado sobre cama de arroz y papas, coronado con huevo frito, ensalada de tomate y locoto.',
       precioVenta: 42,
+      imagenUrl: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=800&q=80',
       categoriaId: catTradicionales.id,
     },
     {
       nombre: 'Chicharrón de Cerdo',
       descripcion: 'Carne de cerdo cocida en su propia grasa hasta dorar, servida con mote, llajua y chuño.',
       precioVenta: 48,
+      imagenUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=800&q=80',
       categoriaId: catTradicionales.id,
       variantes: [
         { nombre: 'Personal', precio: 35 },
@@ -197,6 +200,7 @@ async function main() {
       nombre: 'Trancapecho',
       descripcion: 'Sándwich gigante con filete empanizado, huevo frito, arroz, ensalada, papas fritas y salsa picante.',
       precioVenta: 35,
+      imagenUrl: 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=80',
       categoriaId: catTradicionales.id,
     },
     // Parrillas & Carnes
@@ -204,6 +208,7 @@ async function main() {
       nombre: 'Parrillada Tukuypaj (2 personas)',
       descripcion: 'Lomo, costilla, chorizo criollo y pollo a la parrilla con papas doradas, ensalada mixta y llajua.',
       precioVenta: 130,
+      imagenUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80',
       categoriaId: catParrillas.id,
       variantes: [
         { nombre: 'Simple', precio: 70 },
@@ -215,6 +220,7 @@ async function main() {
       nombre: 'Lomo a la Plancha',
       descripcion: 'Corte de lomo fino a la plancha con arroz, papas fritas y ensalada criolla.',
       precioVenta: 45,
+      imagenUrl: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584019/128-image_web_q0hfc9.jpg',
       categoriaId: catParrillas.id,
     },
     // Sopas & Caldos
@@ -222,12 +228,14 @@ async function main() {
       nombre: 'Chanka de Pollo',
       descripcion: 'Sopa espesa de pollo cochabambino con papas, chuño y ají amarillo. Reconfortante y sustanciosa.',
       precioVenta: 38,
+      imagenUrl: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80',
       categoriaId: catSopas.id,
     },
     {
       nombre: 'Sopa de Maní',
       descripcion: 'Clásica sopa cochabambina con caldo de res, pasta de maní, papas y fideo.',
       precioVenta: 30,
+      imagenUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80',
       categoriaId: catSopas.id,
     },
     // Entradas & Picoteo
@@ -235,12 +243,14 @@ async function main() {
       nombre: 'Anticuchos de Corazón',
       descripcion: 'Brochetas de corazón de res marinadas con ají panca, servidas con papas y salsa de maní.',
       precioVenta: 28,
+      imagenUrl: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=80',
       categoriaId: catEntradas.id,
     },
     {
       nombre: 'Ranga Ranga',
       descripcion: 'Guiso picante de librillo de res con papas, cebolla, locoto y hierbas aromáticas.',
       precioVenta: 32,
+      imagenUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
       categoriaId: catEntradas.id,
     },
     // Bebidas
@@ -248,12 +258,14 @@ async function main() {
       nombre: 'Chicha Cochabambina',
       descripcion: 'Bebida ancestral de maíz fermentado, refrescante y tradicional.',
       precioVenta: 12,
+      imagenUrl: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584024/wpid-wp-1416759558226_xwfdh8.jpg',
       categoriaId: catBebidas.id,
     },
     {
       nombre: 'Limonada con Hierba Buena',
       descripcion: 'Jugo de limón natural con hierba buena fresca y un toque de azúcar.',
       precioVenta: 10,
+      imagenUrl: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584179/images_jwo1pg.jpg',
       categoriaId: catBebidas.id,
       variantes: [
         { nombre: 'Vaso', precio: 10 },
@@ -265,6 +277,7 @@ async function main() {
       nombre: 'Refresco en Botella',
       descripcion: 'Coca-Cola, Sprite o Fanta — botella personal 500ml.',
       precioVenta: 8,
+      imagenUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80',
       categoriaId: catBebidas.id,
     },
     // Postres
@@ -272,12 +285,14 @@ async function main() {
       nombre: 'Helado de Canela',
       descripcion: 'Helado artesanal de canela sobre bizcocho de vainilla con salsa de caramelo.',
       precioVenta: 18,
+      imagenUrl: 'https://images.unsplash.com/photo-1560008511-11c63416e52d?auto=format&fit=crop&w=800&q=80',
       categoriaId: catPostres.id,
     },
     {
       nombre: 'Buñuelos con Miel',
       descripcion: 'Buñuelos crujientes de yuca bañados en miel de caña artesanal.',
       precioVenta: 15,
+      imagenUrl: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=800&q=80',
       categoriaId: catPostres.id,
     },
   ];
