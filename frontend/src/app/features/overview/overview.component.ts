@@ -6,10 +6,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { SocketService } from '../../core/services/socket.service';
 import { Subscription } from 'rxjs';
 
+import { LucideAngularModule } from 'lucide-angular';
+
 @Component({
   selector: 'app-overview',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.scss']
 })

@@ -13,14 +13,14 @@
       [class.active]="activeTab() === 'caja'" 
       (click)="cambiarPestana('caja')"
     >
-      💼 Caja Activa (Turno)
+      <lucide-icon name="wallet" class="icon-sm"></lucide-icon> Caja Activa (Turno)
     </button>
     <button 
       class="tab-btn" 
       [class.active]="activeTab() === 'historial'" 
       (click)="cambiarPestana('historial')"
     >
-      📜 Historial de Ventas (Hoy)
+      <lucide-icon name="landmark" class="icon-sm"></lucide-icon> Historial de Ventas (Hoy)
     </button>
   </div>
 
@@ -41,10 +41,10 @@
 
     <!-- Sin Caja Activa -->
     <div *ngIf="!loadingCaja() && !activeCaja()" class="no-data-panel glass-panel">
-      <div class="icon">🔒</div>
+      <div class="icon"><lucide-icon name="lock" class="icon-lg icon-muted"></lucide-icon></div>
       <h3>No hay caja abierta actualmente</h3>
       <p>El sistema abrirá una nueva caja automáticamente en el próximo cobro de mesa.</p>
-      <button class="btn-primary" (click)="cargarDatosCaja()">🔄 Recargar Estado</button>
+      <button class="btn-primary" (click)="cargarDatosCaja()"><lucide-icon name="clock" class="icon-sm"></lucide-icon> Recargar Estado</button>
     </div>
 
     <!-- Detalles de la Caja Abierta -->
@@ -113,10 +113,10 @@
             class="btn-primary closing-box-btn"
             (click)="abrirCerrarCajaModal()"
           >
-            🔒 Realizar Arqueo y Cerrar Caja
+            <lucide-icon name="lock" class="icon-sm"></lucide-icon> Realizar Arqueo y Cerrar Caja
           </button>
           <div *ngIf="!isAdmin()" class="cajero-warning">
-            ⚠️ Solo los administradores pueden realizar el arqueo final.
+            <lucide-icon name="alert-circle" class="icon-sm icon-warning"></lucide-icon> Solo los administradores pueden realizar el arqueo final.
           </div>
         </div>
       </div>
@@ -136,7 +136,7 @@
 
     <!-- Sin Transacciones -->
     <div *ngIf="!loadingHistorial() && transacciones().length === 0" class="no-data-panel glass-panel">
-      <div class="icon">💸</div>
+      <div class="icon"><lucide-icon name="banknote" class="icon-lg icon-gold"></lucide-icon></div>
       <h3>Sin transacciones registradas hoy</h3>
       <p>Las facturas y comprobantes aparecerán aquí tan pronto como sean liquidadas.</p>
     </div>
@@ -177,7 +177,7 @@
                 title="Visualizar Comprobante"
                 (click)="verRecibo(t)"
               >
-                👁️ Ver Recibo
+                <lucide-icon name="eye" class="icon-sm"></lucide-icon> Ver Recibo
               </button>
             </td>
           </tr>
@@ -198,8 +198,8 @@
   <!-- Paso 1: Formulario de arqueo -->
   <div *ngIf="!cierreExitosoResult()">
     <div class="modal-header">
-      <h2>🔒 Arqueo Final y Cierre de Caja</h2>
-      <button class="close-x-btn" (click)="cerrarCajaModal()">×</button>
+      <h2><lucide-icon name="lock" class="icon-md"></lucide-icon> Arqueo Final y Cierre de Caja</h2>
+      <button class="close-x-btn" (click)="cerrarCajaModal()"><lucide-icon name="x" class="icon-md"></lucide-icon></button>
     </div>
 
     <div class="modal-body">
@@ -239,9 +239,9 @@
         'cuadrado': diferenciaArqueo() === 0
       }">
         <span class="alert-title">Auditoría de Arqueo:</span>
-        <h3 *ngIf="diferenciaArqueo() === 0">✓ Caja Cuadrada (Bs. 0.00 de diferencia)</h3>
-        <h3 *ngIf="diferenciaArqueo() > 0">💵 Sobrante en Caja: +Bs. {{ diferenciaArqueo().toFixed(2) }}</h3>
-        <h3 *ngIf="diferenciaArqueo() < 0">⚠️ Faltante en Caja: -Bs. {{ diferenciaAbsoluta().toFixed(2) }}</h3>
+        <h3 *ngIf="diferenciaArqueo() === 0"><lucide-icon name="check-circle-2" class="icon-sm icon-success"></lucide-icon> Caja Cuadrada (Bs. 0.00 de diferencia)</h3>
+        <h3 *ngIf="diferenciaArqueo() > 0"><lucide-icon name="banknote" class="icon-sm icon-gold"></lucide-icon> Sobrante en Caja: +Bs. {{ diferenciaArqueo().toFixed(2) }}</h3>
+        <h3 *ngIf="diferenciaArqueo() < 0"><lucide-icon name="alert-circle" class="icon-sm icon-danger"></lucide-icon> Faltante en Caja: -Bs. {{ diferenciaAbsoluta().toFixed(2) }}</h3>
         <p class="alert-desc">El arqueo registrará de manera inmutable esta diferencia en la base de datos para auditorías administrativas.</p>
       </div>
 
@@ -253,7 +253,7 @@
     <div class="modal-footer">
       <button class="btn-secondary" (click)="cerrarCajaModal()" [disabled]="isCerrando()">Cancelar</button>
       <button class="btn-primary danger" (click)="confirmarCerrarCaja()" [disabled]="isCerrando() || montoCierreFisico() === null">
-        {{ isCerrando() ? 'Procesando Cierre...' : '🔒 Confirmar y Cerrar Caja' }}
+        {{ isCerrando() ? 'Procesando Cierre...' : 'Confirmar y Cerrar Caja' }}
       </button>
     </div>
   </div>
@@ -261,12 +261,12 @@
   <!-- Paso 2: Éxito de Cierre (Resumen de Auditoría) -->
   <div *ngIf="cierreExitosoResult()">
     <div class="modal-header">
-      <h2>🎉 Caja Cerrada Exitosamente</h2>
-      <button class="close-x-btn" (click)="cerrarCajaModal()">×</button>
+      <h2><lucide-icon name="check-circle-2" class="icon-lg icon-success"></lucide-icon> Caja Cerrada Exitosamente</h2>
+      <button class="close-x-btn" (click)="cerrarCajaModal()"><lucide-icon name="x" class="icon-md"></lucide-icon></button>
     </div>
 
     <div class="modal-body success-summary">
-      <div class="success-icon">✓</div>
+      <div class="success-icon"><lucide-icon name="check" class="icon-lg icon-success"></lucide-icon></div>
       <p class="success-desc">El turno de caja ha sido bloqueado de forma inmutable. Se ha emitido el reporte de auditoría a la gerencia.</p>
 
       <div class="audit-details-table">

@@ -217,7 +217,7 @@
     @for (toast of toasts(); track toast.id) {
       <div class="ia-toast glass-panel animate-slide-in-right" [id]="'toast-' + toast.id">
         <div class="toast-header">
-          <span class="toast-icon">🤖</span>
+          <span class="toast-icon"><lucide-icon name="bot" class="icon-md icon-gold"></lucide-icon></span>
           <div class="toast-title">
             <h4>¡Pedido por IA Recibido!</h4>
             <span class="toast-mesa">Mesa {{ toast.mesaNumero }}</span>
@@ -243,7 +243,7 @@
   <div class="drawer-panel" [class.open]="isDrawerOpen()">
     <div class="drawer-header">
       <div class="drawer-title-group">
-        <span class="drawer-icon">👨‍🍳</span>
+        <span class="drawer-icon"><lucide-icon name="utensils-crossed" class="icon-md icon-gold"></lucide-icon></span>
         <h3>Comandas en Cocina</h3>
       </div>
       <button class="drawer-close" (click)="toggleDrawer()">&times;</button>

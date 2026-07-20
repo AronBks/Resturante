@@ -7,10 +7,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { ComprobanteComponent, DatosRecibo } from '../mesas/comprobante.component';
 import { Subscription } from 'rxjs';
 
+import { LucideAngularModule } from 'lucide-angular';
+
 @Component({
   selector: 'app-control-caja',
   standalone: true,
-  imports: [CommonModule, FormsModule, ComprobanteComponent],
+  imports: [CommonModule, FormsModule, ComprobanteComponent, LucideAngularModule],
   templateUrl: './control-caja.component.html',
   styleUrls: ['./control-caja.component.scss']
 })
