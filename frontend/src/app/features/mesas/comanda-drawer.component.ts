@@ -34,6 +34,7 @@ interface ItemComanda {
   platoId: string;
   varianteId?: string;
   varianteNombre?: string;
+  nombreBase?: string;
   nombre: string;
   precio: number;
   cantidad: number;
@@ -103,48 +104,39 @@ export class ComandaDrawerComponent implements OnChanges {
     return list;
   });
 
-  // Filtered dishes for quick search (flattened with variants and Cloudinary photos)
+  // Filtered dishes for quick search with variant consolidation
   filteredPlatos = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const catId = this.selectedCategoryId();
     
-    const matchedDishes = this.platosSignal().filter(plato => {
-      const matchesQuery = !query || plato.nombre.toLowerCase().includes(query) || (plato.descripcion && plato.descripcion.toLowerCase().includes(query));
-      const matchesCat = catId === null || plato.categoriaId === catId;
-      return matchesQuery && matchesCat;
-    });
-
-    const list: any[] = [];
-    matchedDishes.forEach(plato => {
-      if (plato.variantes && plato.variantes.length > 0) {
-        plato.variantes.forEach(v => {
-          list.push({
-            id: plato.id,
-            varianteId: v.id,
-            nombre: `${plato.nombre} (${v.nombre})`,
-            precioVenta: v.precio,
-            disponible: v.disponible && plato.disponible,
-            categoriaId: plato.categoriaId,
-            descripcion: plato.descripcion,
-            imagenUrl: plato.imagenUrl
-          });
-        });
-      } else {
-        list.push({
-          id: plato.id,
-          varianteId: null,
-          nombre: plato.nombre,
-          precioVenta: plato.precioVenta,
-          disponible: plato.disponible,
-          categoriaId: plato.categoriaId,
-          descripcion: plato.descripcion,
-          imagenUrl: plato.imagenUrl
-        });
-      }
-    });
-
-    return list;
+    return this.platosSignal()
+      .filter(plato => {
+        const matchesQuery = !query || 
+          plato.nombre.toLowerCase().includes(query) || 
+          (plato.descripcion && plato.descripcion.toLowerCase().includes(query));
+        const matchesCat = catId === null || plato.categoriaId === catId;
+        return matchesQuery && matchesCat;
+      })
+      .map(plato => {
+        const tieneVariantes = Array.isArray(plato.variantes) && plato.variantes.length > 0;
+        let precioDesde = plato.precioVenta;
+        if (tieneVariantes) {
+          const precios = plato.variantes!.map(v => v.precio);
+          precioDesde = Math.min(...precios);
+        }
+        return {
+          ...plato,
+          tieneVariantes,
+          precioDesde
+        };
+      });
   });
+
+  viewMode = signal<'FORM' | 'CONFIRMATION' | 'OCCUPIED_DETAIL'>('FORM');
+  activeSubTab = signal<'DETALLE' | 'HISTORIAL'>('DETALLE');
+  lastSubmittedSummary = signal<any>(null);
+  activeSentItems = signal<any[]>([]);
+  historialPedidos = signal<any[]>([]);
 
   constructor() {
     this.cargarWaiters();
@@ -169,8 +161,10 @@ export class ComandaDrawerComponent implements OnChanges {
       if (this.mesa.estado === 'LIBRE') {
         this.comandaItems.set([]);
         this.generalNotes.set('');
+        this.viewMode.set('FORM');
       } else {
         this.cargarPedidoActivo();
+        this.viewMode.set('OCCUPIED_DETAIL');
       }
 
       if (this.autoOpenCobro && this.mesa.estado === 'POR_COBRAR') {
@@ -214,16 +208,25 @@ export class ComandaDrawerComponent implements OnChanges {
           const items: ItemComanda[] = (pedido.detalles || []).map((d: any) => ({
             platoId: d.platoId,
             varianteId: d.varianteId || undefined,
-            varianteNombre: d.varianteNombreSnapshot || undefined,
-            nombre: d.varianteNombreSnapshot ? `${d.plato?.nombre} (${d.varianteNombreSnapshot})` : (d.plato?.nombre || 'Plato'),
+            varianteNombre: d.varianteNombreSnapshot || (d.variante ? d.variante.nombre : undefined),
+            nombreBase: d.plato?.nombre || 'Plato',
+            nombre: d.plato?.nombre || 'Plato',
             precio: Number(d.precioUnitario || d.plato?.precioVenta),
             cantidad: d.cantidad,
             notas: d.notas || ''
           }));
           this.comandaItems.set(items);
-        } else {
-          this.comandaItems.set([]);
-          this.generalNotes.set('');
+
+          const sentItems = (pedido.detalles || []).map((d: any) => ({
+            id: d.id,
+            nombre: d.varianteNombreSnapshot ? `${d.plato?.nombre} (${d.varianteNombreSnapshot})` : (d.plato?.nombre || 'Plato'),
+            precio: Number(d.precioUnitario || d.plato?.precioVenta),
+            cantidad: d.cantidad,
+            notas: d.notas || '',
+            estado: d.estado || 'EN_PREPARACION'
+          }));
+          this.activeSentItems.set(sentItems);
+
         }
       },
       error: (err) => {
@@ -231,6 +234,25 @@ export class ComandaDrawerComponent implements OnChanges {
         this.errorMessage.set('No se pudo cargar la comanda activa.');
       }
     });
+  }
+
+  cargarHistorialMesa() {
+    if (!this.mesa) return;
+    this.http.get<any>(`${this.baseUrl}/pedidos?mesaId=${this.mesa.id}&limit=10`).subscribe({
+      next: (res) => {
+        this.historialPedidos.set(res.data || []);
+      },
+      error: () => {
+        this.historialPedidos.set([]);
+      }
+    });
+  }
+
+  setSubTab(tab: 'DETALLE' | 'HISTORIAL') {
+    this.activeSubTab.set(tab);
+    if (tab === 'HISTORIAL') {
+      this.cargarHistorialMesa();
+    }
   }
 
   getCategoryName(catId: number): string {
@@ -245,18 +267,44 @@ export class ComandaDrawerComponent implements OnChanges {
     }
   }
 
-  agregarPlato(plato: any) {
+  agregarPlatoConVariante(plato: any, variante: any, event?: Event) {
+    if (event) event.stopPropagation();
+    if (!plato.disponible || !variante.disponible) return;
+
     this.comandaItems.update(items => {
-      const idx = items.findIndex(i => i.platoId === plato.id && i.varianteId === (plato.varianteId || undefined));
+      const idx = items.findIndex(i => i.platoId === plato.id && i.varianteId === variante.id);
       if (idx > -1) {
-        const n = [...items];
-        n[idx].cantidad += 1;
-        return n;
+        const updated = [...items];
+        updated[idx] = { ...updated[idx], cantidad: updated[idx].cantidad + 1 };
+        return updated;
       }
       return [...items, {
         platoId: plato.id,
-        varianteId: plato.varianteId || undefined,
-        varianteNombre: plato.varianteId ? plato.nombre.split('(')[1]?.replace(')', '') : undefined,
+        varianteId: variante.id,
+        varianteNombre: variante.nombre,
+        nombreBase: plato.nombre,
+        nombre: plato.nombre,
+        precio: Number(variante.precio),
+        cantidad: 1,
+        notas: ''
+      }];
+    });
+  }
+
+  agregarPlatoSinVariante(plato: any, event?: Event) {
+    if (event) event.stopPropagation();
+    if (!plato.disponible) return;
+
+    this.comandaItems.update(items => {
+      const idx = items.findIndex(i => i.platoId === plato.id && !i.varianteId);
+      if (idx > -1) {
+        const updated = [...items];
+        updated[idx] = { ...updated[idx], cantidad: updated[idx].cantidad + 1 };
+        return updated;
+      }
+      return [...items, {
+        platoId: plato.id,
+        nombreBase: plato.nombre,
         nombre: plato.nombre,
         precio: Number(plato.precioVenta),
         cantidad: 1,
@@ -307,17 +355,55 @@ export class ComandaDrawerComponent implements OnChanges {
       }))
     };
 
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     this.http.post(`${this.baseUrl}/pedidos`, payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
+        this.lastSubmittedSummary.set({
+          mesaNumero: this.mesa?.numero,
+          hora: timeStr,
+          items: [...this.comandaItems()],
+          total: this.getComandaTotal()
+        });
         this.saved.emit();
-        this.close.emit();
+        this.viewMode.set('CONFIRMATION');
       },
       error: (err) => {
         this.isSubmitting.set(false);
         this.errorMessage.set(err.error?.message || 'Error al guardar la comanda.');
       }
     });
+  }
+
+  volverAlSalon() {
+    this.saved.emit();
+    this.close.emit();
+    this.viewMode.set('FORM');
+  }
+
+  verDetalleMesa() {
+    this.cargarPedidoActivo();
+    this.viewMode.set('OCCUPIED_DETAIL');
+  }
+
+  irAFormularioNuevoItem() {
+    this.comandaItems.set([]);
+    this.viewMode.set('FORM');
+  }
+
+  formatEstadoItem(estado?: string): string {
+    switch (estado?.toUpperCase()) {
+      case 'ENTREGADO':
+      case 'SERVIDO':
+        return '✓ SERVIDO';
+      case 'LISTO':
+        return '✓ LISTO';
+      case 'EN_PREPARACION':
+      default:
+        return '⟳ EN PREPARACIÓN';
+    }
   }
 
   solicitarCuenta() {
@@ -344,6 +430,36 @@ export class ComandaDrawerComponent implements OnChanges {
 
   // ── Flujo de Cobro & Facturación ──
 
+  imprimirPrecuenta() {
+    if (!this.mesa) return;
+    const sent = this.activeSentItems();
+    const items = (sent.length > 0 ? sent : this.comandaItems()).map(i => ({
+      nombre: i.nombre,
+      cantidad: i.cantidad,
+      precioUnitario: i.precio,
+      subtotal: i.precio * i.cantidad,
+      notas: i.notas || ''
+    }));
+
+    const datos: DatosRecibo = {
+      transaccionId: `PRE-${Date.now()}`,
+      nroRecibo: `PRE-${this.mesa.numero}-${Date.now().toString().slice(-4)}`,
+      fecha: new Date().toISOString(),
+      mesa: { numero: this.mesa.numero },
+      mesero: { nombre: this.activeMeseroNombre() || 'Mesero' },
+      cajero: { nombre: 'Pre-Cuenta' },
+      items,
+      subtotal: this.getComandaTotal(),
+      total: this.getComandaTotal(),
+      metodoPago: 'EFECTIVO',
+      montoRecibido: this.getComandaTotal(),
+      cambio: 0
+    };
+
+    this.datosRecibo.set(datos);
+    this.showComprobante.set(true);
+  }
+
   abrirCajaModal() {
     const pedidoId = this.activePedidoId();
     if (!pedidoId || !this.mesa) {
@@ -351,16 +467,19 @@ export class ComandaDrawerComponent implements OnChanges {
       return;
     }
 
+    const sent = this.activeSentItems();
+    const items = (sent.length > 0 ? sent : this.comandaItems()).map(i => ({
+      nombre: i.nombre,
+      precio: i.precio,
+      cantidad: i.cantidad,
+      notas: i.notas || ''
+    }));
+
     this.pedidoParaCobro.set({
       pedidoId,
       mesaNumero: this.mesa.numero,
       meseroNombre: this.activeMeseroNombre(),
-      items: this.comandaItems().map(i => ({
-        nombre: i.nombre,
-        precio: i.precio,
-        cantidad: i.cantidad,
-        notas: i.notas
-      })),
+      items,
       subtotal: this.getComandaTotal(),
     });
 
