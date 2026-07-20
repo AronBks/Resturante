@@ -394,3 +394,28 @@ body {
 .animate-in {
   animation: fadeInUp 0.4s var(--transition-smooth) both;
 }
+
+/* ==========================================================================
+   GLOBAL LUCIDE ICON UTILITIES & MICRO-INTERACTIONS
+   ========================================================================== */
+
+/* Coloración por tema */
+.icon-gold { color: #E5C158; }
+.icon-bronze { color: #A88B58; }
+.icon-success { color: #22C55E; }
+.icon-danger { color: #EF4444; }
+.icon-muted { color: #8A8580; }
+
+/* Tamaños estándar */
+.icon-sm { width: 16px; height: 16px; stroke-width: 2; display: inline-block; vertical-align: middle; }
+.icon-md { width: 20px; height: 20px; stroke-width: 2; display: inline-block; vertical-align: middle; }
+.icon-lg { width: 24px; height: 24px; stroke-width: 2; display: inline-block; vertical-align: middle; }
+
+/* Micro-interacción de envío */
+.btn-send:hover .icon-send,
+button:hover lucide-icon[name="send"],
+.btn-send:hover lucide-icon {
+  transform: translateX(3px);
+  transition: transform 0.2s ease;
+}
+
