@@ -6,6 +6,7 @@ import {
   inject,
   signal,
   computed,
+  ViewEncapsulation,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +28,7 @@ import { LucideAngularModule } from 'lucide-angular';
   imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './caja-cobro.component.html',
   styleUrls: ['./caja-cobro.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class CajaCobroComponent {
   private http = inject(HttpClient);

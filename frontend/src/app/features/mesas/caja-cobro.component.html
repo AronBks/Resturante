@@ -7,13 +7,17 @@
   <!-- Header -->
   <div class="caja-header">
     <div class="caja-title-group">
-      <span class="caja-icon"><lucide-icon name="credit-card" class="icon-md icon-gold"></lucide-icon></span>
+      <div class="caja-icon-box">
+        <lucide-icon name="wallet" class="icon-md icon-gold"></lucide-icon>
+      </div>
       <div>
         <h2>Cobro & Facturación</h2>
-        <span class="caja-mesa-tag">Mesa {{ pedido?.mesaNumero }}</span>
+        <span class="caja-mesa-tag">MESA {{ pedido?.mesaNumero }} — ZONA VIP</span>
       </div>
     </div>
-    <button class="caja-close" (click)="cerrarModal()" [disabled]="isProcessing()"><lucide-icon name="x" class="icon-md"></lucide-icon></button>
+    <button class="caja-close" (click)="cerrarModal()" [disabled]="isProcessing()" title="Cerrar modal">
+      <lucide-icon name="x" class="icon-md"></lucide-icon>
+    </button>
   </div>
 
   <!-- Error Alert -->
@@ -27,27 +31,29 @@
 
     <!-- ─── Left: Order Summary ─── -->
     <div class="caja-resumen">
-      <h3>Resumen del Pedido</h3>
+      <h3 class="section-label">RESUMEN DEL PEDIDO</h3>
+      
       <div class="resumen-items scrollbar-custom">
         <div class="resumen-item" *ngFor="let item of pedido?.items || []">
           <div class="ri-left">
             <span class="ri-qty">{{ item.cantidad }}×</span>
             <div class="ri-info">
               <span class="ri-name">{{ item.nombre }}</span>
-              <span class="ri-note" *ngIf="item.notas">{{ item.notas }}</span>
+              <span class="ri-note" *ngIf="item.notas">({{ item.notas }})</span>
             </div>
           </div>
           <span class="ri-price">Bs. {{ (item.precio * item.cantidad).toFixed(2) }}</span>
         </div>
       </div>
 
-
-
-      <!-- Facturación opcional (NIT / Razón Social) -->
+      <!-- Facturación opcional (NIT / Razón Social) con Switch iOS -->
       <div class="caja-facturacion-toggle-panel">
         <label class="factura-toggle-lbl">
-          <input type="checkbox" [checked]="facturaRequerida()" (change)="toggleFactura($event)" />
-          <span>¿Requiere Factura / NIT?</span>
+          <span class="switch-toggle">
+            <input type="checkbox" [checked]="facturaRequerida()" (change)="toggleFactura($event)" />
+            <span class="slider round"></span>
+          </span>
+          <span class="toggle-text">¿Requiere Factura / NIT?</span>
         </label>
         
         <div class="factura-inputs-anim" *ngIf="facturaRequerida()">
@@ -76,7 +82,7 @@
         </div>
       </div>
 
-      <!-- Subtotals -->
+      <!-- Totales -->
       <div class="resumen-totals">
         <div class="total-row">
           <span>Subtotal</span>
@@ -84,7 +90,7 @@
         </div>
 
         <div class="total-row total-final">
-          <span>TOTAL A COBRAR</span>
+          <span class="total-final-lbl">TOTAL A COBRAR</span>
           <span class="total-value">Bs. {{ totalConDescuento().toFixed(2) }}</span>
         </div>
       </div>
@@ -92,7 +98,7 @@
 
     <!-- ─── Right: Payment Method ─── -->
     <div class="caja-pago">
-      <h3>Método de Pago</h3>
+      <h3 class="section-label">MÉTODO DE PAGO</h3>
 
       <!-- Payment Method Selector -->
       <div class="metodo-selector">
@@ -117,7 +123,7 @@
           [class.active]="metodoPago() === 'QR'"
           (click)="seleccionarMetodo('QR')"
         >
-          <lucide-icon name="credit-card" class="icon-lg"></lucide-icon>
+          <lucide-icon name="qr-code" class="icon-lg"></lucide-icon>
           <span>QR</span>
         </button>
       </div>
@@ -125,31 +131,34 @@
       <!-- Conditional: Cash Amount Input -->
       <div class="cash-section" *ngIf="metodoPago() === 'EFECTIVO'">
         <div class="cash-input-group">
-          <label for="monto-recibido">Monto Recibido (Bs.)</label>
-          <input
-            id="monto-recibido"
-            type="number"
-            min="0"
-            step="5"
-            [value]="montoRecibido()"
-            (input)="onMontoInput($any($event.target).value)"
-            placeholder="0.00"
-            class="cash-input"
-            autofocus
-          />
+          <label for="monto-recibido">MONTO RECIBIDO (Bs.)</label>
+          <div class="amount-display-box">
+            <input
+              id="monto-recibido"
+              type="number"
+              min="0"
+              step="1"
+              [value]="montoRecibido()"
+              (input)="onMontoInput($any($event.target).value)"
+              placeholder="0"
+              class="cash-input-large"
+              autofocus
+            />
+          </div>
         </div>
 
         <!-- Quick amount buttons -->
         <div class="quick-amounts">
-          <button *ngFor="let amt of [50, 100, 200, 500]" class="quick-btn" (click)="montoRecibido.set(amt)">
+          <button *ngFor="let amt of [50, 100, 200]" class="quick-btn" (click)="montoRecibido.set(amt)">
             Bs. {{ amt }}
           </button>
-          <button class="quick-btn exact" (click)="montoRecibido.set(totalConDescuento())">
+          <button class="quick-btn exact" [class.active]="montoRecibido() === totalConDescuento()" (click)="montoRecibido.set(totalConDescuento())">
             Exacto
           </button>
         </div>
 
-        <div class="cambio-display" [class.insuficiente]="!esMontoSuficiente()">
+        <!-- Cambio Display Box -->
+        <div class="cambio-display-card" [class.insuficiente]="!esMontoSuficiente()">
           <span class="cambio-label">{{ esMontoSuficiente() ? 'Cambio a devolver:' : 'Monto insuficiente' }}</span>
           <span class="cambio-value" *ngIf="esMontoSuficiente()">Bs. {{ cambioCalculado().toFixed(2) }}</span>
         </div>
@@ -194,11 +203,12 @@
       [disabled]="isProcessing() || (metodoPago() === 'EFECTIVO' && !esMontoSuficiente())"
       (click)="confirmarPago()"
     >
-      <span *ngIf="!isProcessing()"><lucide-icon name="check-circle-2" class="icon-md"></lucide-icon> Confirmar Pago & Facturar</span>
+      <span *ngIf="!isProcessing()" class="btn-content-flex">
+        <lucide-icon name="send" class="icon-md"></lucide-icon> Finalizar Pago y Emitir Recibo
+      </span>
       <span *ngIf="isProcessing()" class="processing-spinner">
         <span class="spinner-mini"></span> Procesando...
       </span>
     </button>
   </div>
 </div>
-
