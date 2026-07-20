@@ -1,141 +1,175 @@
-<div class="mesas-container">
-  <div class="header-section glass-panel animate-in">
-    <div>
-      <h1>Salón & Mesas</h1>
-      <p>Distribución interactiva del salón principal. Selecciona una mesa para gestionar comandas y cuentas.</p>
-    </div>
-    <div class="legend">
-      <div class="legend-item"><span class="dot libre"></span> Libre</div>
-      <div class="legend-item"><span class="dot ocupada"></span> Ocupada</div>
-      <div class="legend-item"><span class="dot por-cobrar"></span> Por Cobrar</div>
-    </div>
-  </div>
+<div class="mesas-page-container">
+  <!-- Top Bar & KPIs Header -->
+  <header class="salon-header">
+    <div class="header-main-row">
+      <div class="title-block">
+        <h1 class="page-title">Salón &amp; Mesas</h1>
+        <p class="page-subtitle">
+          Distribución interactiva del salón principal. Selecciona una mesa para gestionar comandas y cuentas.
+        </p>
+      </div>
 
-  <!-- Plano del Salón -->
-  <div class="salon-layout glass-panel animate-in" style="animation-delay:0.05s">
+      <!-- Real-time KPIs Top Badges -->
+      <div class="kpi-badges-row">
+        <div class="kpi-card kpi-libre">
+          <span class="kpi-dot"></span>
+          <span class="kpi-text">Libres</span>
+          <span class="kpi-number">{{ libresCount() }}</span>
+        </div>
+        <div class="kpi-card kpi-ocupada">
+          <span class="kpi-dot"></span>
+          <span class="kpi-text">Ocupadas</span>
+          <span class="kpi-number">{{ ocupadasCount() }}</span>
+        </div>
+        <div class="kpi-card kpi-por-cobrar">
+          <span class="kpi-dot"></span>
+          <span class="kpi-text">Por Cobrar</span>
+          <span class="kpi-number">{{ porCobrarCount() }}</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Zones Section Layout -->
+  <main class="salon-content">
     
-    <!-- Zona Central -->
-    <div class="zone-section">
-      <div class="zone-label-bar"><span class="zone-tag central">Zona Central</span></div>
-      <div class="tables-row">
+    <!-- ZONA CENTRAL -->
+    <section class="zone-block">
+      <div class="zone-tag-header">
+        <span class="zone-pill">ZONA CENTRAL</span>
+      </div>
+      <div class="tables-grid">
         @for (mesa of mesasCentral(); track mesa.id) {
-          <div 
-            class="table-card" 
-            [ngClass]="getMesaClass(mesa)" 
-            (click)="onMesaClick(mesa)"
-          >
-            <div class="card-header">
-              <span class="table-number">{{ mesa.numero }}</span>
-              <span class="table-cap">{{ mesa.capacidad }} pers.</span>
-            </div>
-            <div class="card-body">
-              <ng-container *ngTemplateOutlet="cardContent; context: { $implicit: mesa }"></ng-container>
-            </div>
-          </div>
+          <ng-container *ngTemplateOutlet="tableCardTemplate; context: { $implicit: mesa }"></ng-container>
         }
       </div>
-    </div>
+    </section>
 
-    <!-- Zona Ventanales -->
-    <div class="zone-section">
-      <div class="zone-label-bar"><span class="zone-tag ventanales">Zona Ventanales</span></div>
-      <div class="tables-row">
+    <!-- ZONA VENTANALES -->
+    <section class="zone-block">
+      <div class="zone-tag-header">
+        <span class="zone-pill">ZONA VENTANALES</span>
+      </div>
+      <div class="tables-grid">
         @for (mesa of mesasVentanales(); track mesa.id) {
-          <div 
-            class="table-card" 
-            [ngClass]="getMesaClass(mesa)" 
-            (click)="onMesaClick(mesa)"
-          >
-            <div class="card-header">
-              <span class="table-number">{{ mesa.numero }}</span>
-              <span class="table-cap">{{ mesa.capacidad }} pers.</span>
-            </div>
-            <div class="card-body">
-              <ng-container *ngTemplateOutlet="cardContent; context: { $implicit: mesa }"></ng-container>
-            </div>
-          </div>
+          <ng-container *ngTemplateOutlet="tableCardTemplate; context: { $implicit: mesa }"></ng-container>
         }
       </div>
-    </div>
+    </section>
 
-    <!-- Barra -->
-    <div class="zone-section">
-      <div class="zone-label-bar"><span class="zone-tag barra">🍺 Barra</span></div>
-      <div class="tables-row barra-row">
+    <!-- BARRA -->
+    <section class="zone-block">
+      <div class="zone-tag-header">
+        <span class="zone-pill">BARRA</span>
+      </div>
+      <div class="tables-grid barra-grid">
         @for (mesa of mesasBarra(); track mesa.id) {
-          <div 
-            class="table-card barra-card" 
-            [ngClass]="getMesaClass(mesa)" 
-            (click)="onMesaClick(mesa)"
-          >
-            <div class="card-header">
-              <span class="table-number">{{ mesa.numero }}</span>
-              <span class="table-cap">{{ mesa.capacidad }} pers.</span>
-            </div>
-            <div class="card-body">
-              <ng-container *ngTemplateOutlet="cardContent; context: { $implicit: mesa }"></ng-container>
-            </div>
-          </div>
+          <ng-container *ngTemplateOutlet="tableCardTemplate; context: { $implicit: mesa, isBarra: true }"></ng-container>
         }
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- Reusable Card Content Template -->
-  <ng-template #cardContent let-mesa>
-    <div class="card-inner-wrapper">
-      <ng-container [ngSwitch]="mesa.estado">
-        
-        <!-- Estado OCUPADA -->
-        <div *ngSwitchCase="'OCUPADA'" class="occupied-details animate-fade-in">
-          <div class="detail-row waiter" [class.ia-service]="mesa.pedidos?.[0]?.mesero?.nombre === 'Asistente IA Tukuypaj'">
-            @if (mesa.pedidos?.[0]?.mesero?.nombre === 'Asistente IA Tukuypaj') {
-              <span class="ia-icon-mini">🤖</span>
-              <span class="val ia-val">Asistente IA</span>
-            } @else {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span class="val">{{ mesa.pedidos?.[0]?.mesero?.nombre || 'Mesero' }}</span>
-            }
-          </div>
-          <div class="detail-row timer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span class="val">{{ elapsedTimes()[mesa.id] || '00:00:00' }}</span>
-          </div>
-          <div class="amount-badge">
-            Bs. {{ (mesa.pedidos?.[0]?.total || 0) | number:'1.2-2' }}
-          </div>
+  </main>
+
+  <!-- Reusable Table Card Template -->
+  <ng-template #tableCardTemplate let-mesa let-isBarra="isBarra">
+    <article 
+      class="mesa-card" 
+      [ngClass]="getMesaClass(mesa)"
+      (click)="onMesaClick(mesa)"
+    >
+      <!-- Card Top: Table Number & Capacity -->
+      <div class="card-header-row">
+        <div class="table-id-group">
+          @if (isBarra) {
+            <span class="barra-icon"><lucide-icon name="beer" class="icon-sm icon-gold"></lucide-icon></span>
+          }
+          <h3 class="table-id">{{ mesa.numero }}</h3>
         </div>
 
-        <!-- Estado POR COBRAR -->
-        <div *ngSwitchCase="'POR_COBRAR'" class="billing-details animate-fade-in">
-          <div class="billing-pulse-icon">
-            <span class="pulse-dot"></span>
-            <span class="lbl">POR COBRAR</span>
-          </div>
-          <div class="detail-row timer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span class="val">{{ elapsedTimes()[mesa.id] || '00:00:00' }}</span>
-          </div>
-          <div class="amount-badge primary">
-            Total: Bs. {{ (mesa.pedidos?.[0]?.total || 0) | number:'1.2-2' }}
-          </div>
+        <div class="capacity-info">
+          @if (mesa.estado === 'OCUPADA') {
+            <span class="cutlery-icon"><lucide-icon name="utensils-crossed" class="icon-sm icon-gold"></lucide-icon></span>
+          }
+          <span class="cap-text"><lucide-icon name="users" class="icon-sm icon-muted"></lucide-icon> {{ mesa.capacidad }} pers.</span>
         </div>
+      </div>
 
-        <!-- Estado LIBRE -->
-        <div *ngSwitchDefault class="free-details animate-fade-in">
-          <span class="status-pill libre">Disponible</span>
-        </div>
+      <!-- Card Body: Dynamic Content by State -->
+      <div class="card-body-content">
+        @switch (mesa.estado) {
 
-      </ng-container>
-    </div>
+          <!-- OCUPADA STATE -->
+          @case ('OCUPADA') {
+            <div class="state-details occupied-details">
+              <div class="metric-line">
+                <span class="lbl"><lucide-icon name="clock" class="icon-sm icon-muted"></lucide-icon> Tiempo:</span>
+                <span class="val">{{ elapsedTimes()[mesa.id] || '10 min' }}</span>
+              </div>
+              <div class="metric-line">
+                <span class="lbl"><lucide-icon name="coins" class="icon-sm icon-gold"></lucide-icon> Consumo:</span>
+                <span class="val gold">Bs. {{ (mesa.pedidos?.[0]?.total || 0) | number:'1.2-2' }}</span>
+              </div>
+            </div>
+            <div class="card-footer-row">
+              <span class="status-badge badge-ocupada">OCUPADA</span>
+              <button type="button" class="card-action-btn eye-btn" title="Ver Comanda">
+                <lucide-icon name="eye" class="icon-sm"></lucide-icon>
+              </button>
+            </div>
+          }
+
+          <!-- POR COBRAR STATE -->
+          @case ('POR_COBRAR') {
+            <div class="state-details billing-details">
+              <div class="metric-line">
+                <span class="lbl"><lucide-icon name="clock" class="icon-sm icon-muted"></lucide-icon> Tiempo:</span>
+                <span class="val">{{ elapsedTimes()[mesa.id] || '25 min' }}</span>
+              </div>
+              <div class="metric-line">
+                <span class="lbl"><lucide-icon name="banknote" class="icon-sm icon-gold"></lucide-icon> Total:</span>
+                <span class="val gold">Bs. {{ (mesa.pedidos?.[0]?.total || 0) | number:'1.2-2' }}</span>
+              </div>
+            </div>
+            <div class="card-footer-row">
+              <span class="status-badge badge-por-cobrar">POR COBRAR</span>
+              <button type="button" class="card-action-btn cash-btn" (click)="onCobroClick(mesa, $event)" title="Cobrar Cuenta">
+                <lucide-icon name="banknote" class="icon-sm"></lucide-icon>
+              </button>
+            </div>
+          }
+
+          <!-- LIBRE / DISPONIBLE STATE -->
+          @default {
+            <div class="state-details free-details">
+              <!-- Empty space filler -->
+            </div>
+            <div class="card-footer-row">
+              <span class="status-badge badge-disponible">DISPONIBLE</span>
+              <button type="button" class="card-action-btn plus-btn" title="Abrir Comanda">
+                <lucide-icon name="plus" class="icon-sm"></lucide-icon>
+              </button>
+            </div>
+          }
+
+        }
+      </div>
+    </article>
   </ng-template>
+
+  <!-- Floating Action Button (FAB) (+) -->
+  <button class="fab-gold-btn" (click)="onMesaClick(mesasCentral()[0])" title="Nueva Comanda Rápida">
+    <lucide-icon name="plus" class="icon-lg"></lucide-icon>
+  </button>
 
   <!-- Sidebar de Comandas (Drawer Component) -->
   <app-comanda-drawer
     [mesa]="selectedMesa"
     [platos]="platos()"
     [isOpen]="isDrawerOpen"
+    [autoOpenCobro]="autoOpenCobro"
     (close)="closeDrawer()"
     (saved)="cargarMesas()"
   ></app-comanda-drawer>
 </div>
+

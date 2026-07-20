@@ -1,24 +1,25 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { SocketService } from '../../core/services/socket.service';
 import { Subscription } from 'rxjs';
 import { ComandaDrawerComponent } from './comanda-drawer.component';
 
-interface Mesa {
+export interface Mesa {
   id: number;
   numero: string;
   capacidad: number;
-  estado: string;
+  estado: 'LIBRE' | 'OCUPADA' | 'POR_COBRAR' | string;
   posicion?: any;
   pedidos?: any[];
 }
 
-interface Plato {
+export interface Plato {
   id: string;
   nombre: string;
   precioVenta: number;
   descripcion?: string;
+  imagenUrl?: string;
   disponible: boolean;
   categoriaId: number;
   variantes?: {
@@ -29,10 +30,12 @@ interface Plato {
   }[];
 }
 
+import { LucideAngularModule } from 'lucide-angular';
+
 @Component({
   selector: 'app-mesas',
   standalone: true,
-  imports: [CommonModule, ComandaDrawerComponent],
+  imports: [CommonModule, ComandaDrawerComponent, LucideAngularModule],
   templateUrl: './mesas.component.html',
   styleUrls: ['./mesas.component.scss'],
 })
@@ -44,14 +47,20 @@ export class MesasComponent implements OnInit, OnDestroy {
   mesas = signal<Mesa[]>([]);
   platos = signal<Plato[]>([]);
 
-  // Computed zone signals for daily layout
+  // Computed zone signals
   mesasCentral = signal<Mesa[]>([]);
   mesasVentanales = signal<Mesa[]>([]);
   mesasBarra = signal<Mesa[]>([]);
 
-  // Drawer states
+  // Real-time KPIs
+  libresCount = computed(() => this.mesas().filter((m) => m.estado === 'LIBRE').length);
+  ocupadasCount = computed(() => this.mesas().filter((m) => m.estado === 'OCUPADA').length);
+  porCobrarCount = computed(() => this.mesas().filter((m) => m.estado === 'POR_COBRAR').length);
+
+  // Drawer & Cobro modal states
   isDrawerOpen = false;
   selectedMesa: Mesa | null = null;
+  autoOpenCobro = false;
 
   // Real-time UI enhancements
   flashingMesas = signal<Record<number, boolean>>({});
@@ -119,25 +128,18 @@ export class MesasComponent implements OnInit, OnDestroy {
     const subMesa = this.socketService
       .onEvent<{ mesaId: number; estado: string }>('mesa:estado-actualizado')
       .subscribe((data) => {
-        // Trigger flashing effect for 1.5 seconds
         this.flashingMesas.update((fm) => ({ ...fm, [data.mesaId]: true }));
         setTimeout(() => {
           this.flashingMesas.update((fm) => ({ ...fm, [data.mesaId]: false }));
         }, 1500);
-
-        // Fetch updated tables to refresh active order information (total, waiter, etc.)
         this.cargarMesas();
       });
 
     const subMenu = this.socketService.onEvent<void>('menu:actualizado').subscribe(() => this.cargarPlatos());
-    
-    // We should also listen to order creations to update table list totals
     const subPedido = this.socketService.onEvent<any>('pedido:creado').subscribe(() => this.cargarMesas());
     const subPedidoAct = this.socketService.onEvent<any>('pedido:estado-actualizado').subscribe(() => this.cargarMesas());
     
-    // Listen to AI order creation to trigger visual updates on the table map
     const subPedidoIa = this.socketService.onEvent<any>('pedido:ia-creado').subscribe((data) => {
-      // Trigger flashing effect on the mesa
       const mesaId = data.pedido?.mesaId;
       if (mesaId) {
         this.flashingMesas.update((fm) => ({ ...fm, [mesaId]: true }));
@@ -162,24 +164,33 @@ export class MesasComponent implements OnInit, OnDestroy {
           const diff = Math.max(0, now - start);
           const hrs = Math.floor(diff / 3600000);
           const mins = Math.floor((diff % 3600000) / 60000);
-          const secs = Math.floor((diff % 60000) / 1000);
           
-          const pad = (n: number) => String(n).padStart(2, '0');
-          times[mesa.id] = `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+          if (hrs > 0) {
+            times[mesa.id] = `${hrs}h ${mins}min`;
+          } else {
+            times[mesa.id] = `${mins} min`;
+          }
         }
       });
       this.elapsedTimes.set(times);
     }, 1000);
   }
 
-  onMesaClick(mesa: Mesa) {
+  onMesaClick(mesa: Mesa, autoCobro = false) {
     this.selectedMesa = mesa;
+    this.autoOpenCobro = autoCobro;
     this.isDrawerOpen = true;
+  }
+
+  onCobroClick(mesa: Mesa, event: Event) {
+    event.stopPropagation();
+    this.onMesaClick(mesa, true);
   }
 
   closeDrawer() {
     this.isDrawerOpen = false;
     this.selectedMesa = null;
+    this.autoOpenCobro = false;
   }
 
   getMesaClass(mesa: Mesa): string {
@@ -187,17 +198,5 @@ export class MesasComponent implements OnInit, OnDestroy {
     const isFlashing = this.flashingMesas()[mesa.id] ? ' ws-flash-active' : '';
     return `${base}${isFlashing}`;
   }
-
-  getMesaEstadoLabel(estado: string): string {
-    switch (estado) {
-      case 'LIBRE':
-        return 'Libre';
-      case 'OCUPADA':
-        return 'Ocupada';
-      case 'POR_COBRAR':
-        return 'Por Cobrar';
-      default:
-        return estado;
-    }
-  }
 }
+

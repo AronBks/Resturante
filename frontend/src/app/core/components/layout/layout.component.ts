@@ -1,20 +1,21 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
 import { RolUsuario } from '@sggi/shared';
 
 interface SidebarItem {
   label: string;
   route: string;
-  iconPath: string;
+  iconName: string;
   roles: RolUsuario[];
 }
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
 })
@@ -28,32 +29,31 @@ export class LayoutComponent {
       {
         label: 'Panel de Hoy',
         route: '/dashboard/overview',
-        iconPath: 'home',
+        iconName: 'layout-dashboard',
         roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CHEF, RolUsuario.CAJERO],
       },
       {
         label: 'Salón & Mesas',
         route: '/dashboard/mesas',
-        iconPath: 'grid',
+        iconName: 'grid',
         roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CAJERO],
       },
       {
         label: 'Control de Caja',
         route: '/dashboard/control-caja',
-        iconPath: 'dollar-sign',
+        iconName: 'landmark',
         roles: [RolUsuario.ADMIN, RolUsuario.CAJERO],
       },
       {
         label: 'Nuestra Carta',
         route: '/dashboard/carta',
-        iconPath: 'book-open',
+        iconName: 'utensils-crossed',
         roles: [RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO],
       },
-
       {
         label: 'Equipo de Trabajo',
         route: '/dashboard/usuarios',
-        iconPath: 'users',
+        iconName: 'users',
         roles: [RolUsuario.ADMIN],
       },
     ];
@@ -79,16 +79,11 @@ export class LayoutComponent {
 
   getRoleBadgeClass(rol: RolUsuario): string {
     switch (rol) {
-      case RolUsuario.ADMIN:
-        return 'badge-admin';
-      case RolUsuario.CHEF:
-        return 'badge-chef';
-      case RolUsuario.MESERO:
-        return 'badge-mesero';
-      case RolUsuario.CAJERO:
-        return 'badge-cajero';
-      default:
-        return '';
+      case RolUsuario.ADMIN: return 'badge-admin';
+      case RolUsuario.CHEF: return 'badge-chef';
+      case RolUsuario.MESERO: return 'badge-mesero';
+      case RolUsuario.CAJERO: return 'badge-cajero';
+      default: return '';
     }
   }
 }
