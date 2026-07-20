@@ -19,10 +19,12 @@ export interface PedidoParaCobro {
   subtotal: number;
 }
 
+import { LucideAngularModule } from 'lucide-angular';
+
 @Component({
   selector: 'app-caja-cobro',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './caja-cobro.component.html',
   styleUrls: ['./caja-cobro.component.scss'],
 })

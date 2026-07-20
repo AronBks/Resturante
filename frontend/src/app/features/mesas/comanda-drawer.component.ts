@@ -19,6 +19,7 @@ interface Plato {
   nombre: string;
   precioVenta: number;
   descripcion?: string;
+  imagenUrl?: string;
   disponible: boolean;
   categoriaId: number;
   variantes?: {
@@ -39,10 +40,12 @@ interface ItemComanda {
   notas: string;
 }
 
+import { LucideAngularModule } from 'lucide-angular';
+
 @Component({
   selector: 'app-comanda-drawer',
   standalone: true,
-  imports: [CommonModule, FormsModule, CajaCobroComponent, ComprobanteComponent],
+  imports: [CommonModule, FormsModule, CajaCobroComponent, ComprobanteComponent, LucideAngularModule],
   templateUrl: './comanda-drawer.component.html',
   styleUrls: ['./comanda-drawer.component.scss']
 })
@@ -54,6 +57,7 @@ export class ComandaDrawerComponent implements OnChanges {
   @Input() mesa: Mesa | null = null;
   @Input() platos: Plato[] = [];
   @Input() isOpen = false;
+  @Input() autoOpenCobro = false;
 
   @Output() close = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
@@ -99,7 +103,7 @@ export class ComandaDrawerComponent implements OnChanges {
     return list;
   });
 
-  // Filtered dishes for quick search (flattened with variants)
+  // Filtered dishes for quick search (flattened with variants and Cloudinary photos)
   filteredPlatos = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const catId = this.selectedCategoryId();
@@ -121,7 +125,8 @@ export class ComandaDrawerComponent implements OnChanges {
             precioVenta: v.precio,
             disponible: v.disponible && plato.disponible,
             categoriaId: plato.categoriaId,
-            descripcion: plato.descripcion
+            descripcion: plato.descripcion,
+            imagenUrl: plato.imagenUrl
           });
         });
       } else {
@@ -132,7 +137,8 @@ export class ComandaDrawerComponent implements OnChanges {
           precioVenta: plato.precioVenta,
           disponible: plato.disponible,
           categoriaId: plato.categoriaId,
-          descripcion: plato.descripcion
+          descripcion: plato.descripcion,
+          imagenUrl: plato.imagenUrl
         });
       }
     });
@@ -166,7 +172,16 @@ export class ComandaDrawerComponent implements OnChanges {
       } else {
         this.cargarPedidoActivo();
       }
+
+      if (this.autoOpenCobro && this.mesa.estado === 'POR_COBRAR') {
+        setTimeout(() => this.abrirCajaModal(), 100);
+      }
     }
+  }
+
+  limpiarTodo() {
+    this.comandaItems.set([]);
+    this.generalNotes.set('');
   }
 
   cargarWaiters() {

@@ -30,10 +30,12 @@ export interface DatosRecibo {
   razonSocial?: string | null;
 }
 
+import { LucideAngularModule } from 'lucide-angular';
+
 @Component({
   selector: 'app-comprobante',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   templateUrl: './comprobante.component.html',
   styleUrls: ['./comprobante.component.scss'],
   encapsulation: ViewEncapsulation.None,

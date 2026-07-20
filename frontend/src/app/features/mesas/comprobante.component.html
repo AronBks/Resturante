@@ -5,8 +5,12 @@
 
   <!-- Toolbar de acciones -->
   <div class="comprobante-toolbar no-print">
-    <button class="print-btn" (click)="imprimirRecibo()">🖨️ Imprimir Recibo</button>
-    <button class="close-btn" (click)="cerrar()">Cerrar</button>
+    <button class="print-btn" (click)="imprimirRecibo()">
+      <lucide-icon name="printer" class="icon-sm"></lucide-icon> Imprimir Recibo
+    </button>
+    <button class="close-btn" (click)="cerrar()">
+      <lucide-icon name="x" class="icon-sm"></lucide-icon> Cerrar
+    </button>
   </div>
 
   <!-- ═══════════════════════════════════════════
@@ -132,7 +136,7 @@
     <!-- Pie de ticket -->
     <div class="ticket-footer">
       <p>¡Gracias por su visita!</p>
-      <p>Vuelva pronto a Tukuypaj 🎶</p>
+      <p>Vuelva pronto a Tukuypaj</p>
       <p class="ticket-legal">Este documento no tiene validez fiscal</p>
     </div>
   </div>

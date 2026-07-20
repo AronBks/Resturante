@@ -7,18 +7,18 @@
   <!-- Header -->
   <div class="caja-header">
     <div class="caja-title-group">
-      <span class="caja-icon">💳</span>
+      <span class="caja-icon"><lucide-icon name="credit-card" class="icon-md icon-gold"></lucide-icon></span>
       <div>
         <h2>Cobro & Facturación</h2>
         <span class="caja-mesa-tag">Mesa {{ pedido?.mesaNumero }}</span>
       </div>
     </div>
-    <button class="caja-close" (click)="cerrarModal()" [disabled]="isProcessing()">×</button>
+    <button class="caja-close" (click)="cerrarModal()" [disabled]="isProcessing()"><lucide-icon name="x" class="icon-md"></lucide-icon></button>
   </div>
 
   <!-- Error Alert -->
   <div class="caja-error" *ngIf="errorMsg()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <lucide-icon name="alert-circle" class="icon-sm icon-danger"></lucide-icon>
     {{ errorMsg() }}
   </div>
 
@@ -101,7 +101,7 @@
           [class.active]="metodoPago() === 'EFECTIVO'"
           (click)="seleccionarMetodo('EFECTIVO')"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
+          <lucide-icon name="banknote" class="icon-lg"></lucide-icon>
           <span>Efectivo</span>
         </button>
         <button
@@ -109,7 +109,7 @@
           [class.active]="metodoPago() === 'TARJETA'"
           (click)="seleccionarMetodo('TARJETA')"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <lucide-icon name="credit-card" class="icon-lg"></lucide-icon>
           <span>Tarjeta</span>
         </button>
         <button
@@ -117,7 +117,7 @@
           [class.active]="metodoPago() === 'QR'"
           (click)="seleccionarMetodo('QR')"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="4" height="4"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="14" y1="21" x2="21" y2="21"/></svg>
+          <lucide-icon name="credit-card" class="icon-lg"></lucide-icon>
           <span>QR</span>
         </button>
       </div>
@@ -176,7 +176,7 @@
       <!-- Conditional: Card Payment View -->
       <div class="card-section" *ngIf="metodoPago() === 'TARJETA'">
         <div class="card-info-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <lucide-icon name="credit-card" class="icon-lg"></lucide-icon>
           <p>Procesar cobro con POS</p>
           <p class="card-amount">Bs. {{ totalConDescuento().toFixed(2) }}</p>
         </div>
@@ -194,10 +194,11 @@
       [disabled]="isProcessing() || (metodoPago() === 'EFECTIVO' && !esMontoSuficiente())"
       (click)="confirmarPago()"
     >
-      <span *ngIf="!isProcessing()">✅ Confirmar Pago & Facturar</span>
+      <span *ngIf="!isProcessing()"><lucide-icon name="check-circle-2" class="icon-md"></lucide-icon> Confirmar Pago & Facturar</span>
       <span *ngIf="isProcessing()" class="processing-spinner">
         <span class="spinner-mini"></span> Procesando...
       </span>
     </button>
   </div>
 </div>
+
