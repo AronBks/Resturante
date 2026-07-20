@@ -54,7 +54,12 @@ export class CajaService {
         throw new NotFoundException(`Pedido con ID ${pedidoId} no encontrado`);
       }
 
-      const estadosCobrable: EstadoPedido[] = [EstadoPedido.LISTO, EstadoPedido.ENTREGADO];
+      const estadosCobrable: EstadoPedido[] = [
+        EstadoPedido.ABIERTO,
+        EstadoPedido.EN_COCINA,
+        EstadoPedido.LISTO,
+        EstadoPedido.ENTREGADO,
+      ];
       if (!estadosCobrable.includes(pedido.estado)) {
         throw new BadRequestException(
           `El pedido no está en estado cobrable (estado actual: ${pedido.estado})`,
