@@ -32,6 +32,11 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
   loadingHistorial = signal(false);
   errorMsg = signal('');
 
+  // ── Signals de Filtrado (Historial Tab) ──
+  filtroMetodo = signal<string>('TODOS');
+  filtroEstado = signal<string>('COMPLETADO');
+  searchQuery = signal<string>('');
+
   // Arqueo & Cierre Modal State
   cerrarCajaModalOpen = signal(false);
   montoCierreFisico = signal<number | null>(null);
@@ -67,6 +72,44 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
 
   diferenciaAbsoluta = computed(() => Math.abs(this.diferenciaArqueo()));
 
+  // ── Computed Filtered Transactions ──
+  transaccionesFiltradas = computed(() => {
+    let list = this.transacciones();
+    const metodo = this.filtroMetodo();
+    const estado = this.filtroEstado();
+    const q = this.searchQuery().toLowerCase().trim();
+
+    if (metodo !== 'TODOS') {
+      list = list.filter(t => t.metodoPago === metodo);
+    }
+
+    if (estado === 'COMPLETADO') {
+      list = list.filter(t => t.estado !== 'ANULADO');
+    } else if (estado === 'ANULADO') {
+      list = list.filter(t => t.estado === 'ANULADO');
+    }
+
+    if (q) {
+      list = list.filter(t => 
+        (t.nroRecibo && t.nroRecibo.toLowerCase().includes(q)) ||
+        (t.mesero?.nombre && t.mesero.nombre.toLowerCase().includes(q)) ||
+        (t.mesa?.numero && t.mesa.numero.toString().includes(q)) ||
+        (t.total && t.total.toString().includes(q))
+      );
+    }
+
+    return list;
+  });
+
+  volumenTotalFiltrado = computed(() => {
+    return this.transaccionesFiltradas().reduce((sum, t) => sum + (t.total || 0), 0);
+  });
+
+  totalTransaccionesCount = computed(() => {
+    return this.transaccionesFiltradas().length;
+  });
+
+
 
   ngOnInit() {
     this.cargarDatosCaja();
@@ -79,8 +122,10 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
   }
 
   // ── Carga de Datos (APIs) ──
-  cargarDatosCaja() {
-    this.loadingCaja.set(true);
+  cargarDatosCaja(silent = false) {
+    if (!silent && !this.activeCaja()) {
+      this.loadingCaja.set(true);
+    }
     this.errorMsg.set('');
     this.http.get<any>(`${this.baseUrl}/caja/resumen-activa`).subscribe({
       next: (res) => {
@@ -89,14 +134,16 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error al cargar caja activa:', err);
-        this.errorMsg.set('No se pudo obtener el resumen de caja activa.');
+        if (!silent) this.errorMsg.set('No se pudo obtener el resumen de caja activa.');
         this.loadingCaja.set(false);
       }
     });
   }
 
-  cargarHistorial() {
-    this.loadingHistorial.set(true);
+  cargarHistorial(silent = false) {
+    if (!silent && this.transacciones().length === 0) {
+      this.loadingHistorial.set(true);
+    }
     this.http.get<any>(`${this.baseUrl}/caja/transacciones-hoy`).subscribe({
       next: (res) => {
         this.transacciones.set(res.data || []);
@@ -119,8 +166,8 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
         // Agregar al feed de transacciones del día
         this.transacciones.update((list) => [transaccion, ...list]);
         
-        // Recargar los acumuladores de caja de forma segura
-        this.cargarDatosCaja();
+        // Recargar los acumuladores de caja de forma silenciosa
+        this.cargarDatosCaja(true);
       }
     });
 
@@ -141,8 +188,8 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
           });
         }
         
-        // Recargar para sincronizar
-        this.cargarDatosCaja();
+        // Recargar para sincronizar de forma silenciosa
+        this.cargarDatosCaja(true);
       }
     });
 
@@ -154,9 +201,9 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
   cambiarPestana(tab: 'caja' | 'historial') {
     this.activeTab.set(tab);
     if (tab === 'caja') {
-      this.cargarDatosCaja();
+      this.cargarDatosCaja(true);
     } else {
-      this.cargarHistorial();
+      this.cargarHistorial(true);
     }
   }
 
@@ -213,27 +260,54 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Helper filter handlers
+  onFiltroMetodoChange(val: string) {
+    this.filtroMetodo.set(val);
+  }
+
+  onFiltroEstadoChange(val: string) {
+    this.filtroEstado.set(val);
+  }
+
+  onSearchInput(val: string) {
+    this.searchQuery.set(val);
+  }
+
   // Helper formatting classes
   getMetodoBadgeClass(metodo: string): string {
     switch (metodo) {
-      case 'EFECTIVO': return 'badge-success';
-      case 'QR': return 'badge-vip';
-      case 'TARJETA': return 'badge-info';
-      default: return '';
+      case 'EFECTIVO': return 'badge-efectivo';
+      case 'QR': return 'badge-qr';
+      case 'TARJETA': return 'badge-tarjeta';
+      default: return 'badge-default';
     }
   }
 
   getMetodoLabel(metodo: string): string {
     switch (metodo) {
-      case 'EFECTIVO': return 'Efectivo';
+      case 'EFECTIVO': return 'EFECTIVO';
       case 'QR': return 'QR';
-      case 'TARJETA': return 'Tarjeta';
+      case 'TARJETA': return 'TARJETA';
       default: return metodo;
     }
   }
 
+  formatearMesa(num: any): string {
+    if (!num) return '-';
+    const str = String(num).trim();
+    if (str.toUpperCase().startsWith('M')) return str;
+    const val = parseInt(str, 10);
+    if (!isNaN(val)) {
+      return val < 10 ? `M0${val}` : `M${val}`;
+    }
+    return str;
+  }
+
   formatearFechaHora(fechaStr: string): string {
+    if (!fechaStr) return '';
     const d = new Date(fechaStr);
-    return d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
   }
 }
+
+

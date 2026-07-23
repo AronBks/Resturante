@@ -40,7 +40,11 @@ import {
   Beer,
   Cake,
   Beef,
-  Soup
+  Soup,
+  LayoutGrid,
+  Flame,
+  ChevronRight,
+  Utensils
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -78,7 +82,11 @@ export const appIcons = {
   Beer,
   Cake,
   Beef,
-  Soup
+  Soup,
+  LayoutGrid,
+  Flame,
+  ChevronRight,
+  Utensils
 };
 
 export const appConfig: ApplicationConfig = {

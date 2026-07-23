@@ -1,143 +1,148 @@
-<!-- Overlay de previsualización -->
+<!-- Overlay de previsualización con efecto backdrop -->
 <div class="comprobante-overlay" *ngIf="isOpen" (click)="cerrar()"></div>
 
 <div class="comprobante-wrapper" [class.open]="isOpen">
 
-  <!-- Toolbar de acciones -->
+  <!-- Toolbar de acciones (no se imprime) -->
   <div class="comprobante-toolbar no-print">
-    <button class="print-btn" (click)="imprimirRecibo()">
-      <lucide-icon name="printer" class="icon-sm"></lucide-icon> Imprimir Recibo
+    <button class="btn-action-print" (click)="imprimirRecibo()">
+      <lucide-icon name="printer" class="icon-sm"></lucide-icon>
+      <span>Imprimir Recibo</span>
     </button>
-    <button class="close-btn" (click)="cerrar()">
-      <lucide-icon name="x" class="icon-sm"></lucide-icon> Cerrar
+    <button class="btn-action-close" (click)="cerrar()">
+      <lucide-icon name="x" class="icon-sm"></lucide-icon>
+      <span>Cerrar</span>
     </button>
   </div>
 
   <!-- ═══════════════════════════════════════════
-       TICKET TÉRMICO 80mm — Zona Imprimible
+       TICKET TÉRMICO Y DIGITAL PREMIUM (80mm)
        ═══════════════════════════════════════════ -->
   <div class="recibo-ticket" id="recibo-ticket" *ngIf="datos">
 
     <!-- Cabecera -->
     <div class="ticket-header">
-      <h1>PEÑA RESTAURANT</h1>
-      <h2>TUKUYPAJ</h2>
-      <div class="ticket-separator-double">════════════════════════════</div>
-      <p>NIT: 12345678016 (Ficticio)</p>
-      <p>Av. d'Orbigny esq. Jordán</p>
-      <p>Cochabamba, Bolivia</p>
-      <p>Tel: (4) 452-XXXX</p>
+      <span class="header-subtitle">PEÑA RESTAURANT</span>
+      <h1 class="header-title">TUKUYPAJ</h1>
+      <div class="header-details">
+        <p>NIT: 12345678016 (Ficticio)</p>
+        <p>Av. d'Orbigny esq. Jordán</p>
+        <p>Cochabamba, Bolivia</p>
+        <p>Tel: (4) 452-XXXX</p>
+      </div>
     </div>
 
-    <div class="ticket-separator">────────────────────────────</div>
+    <div class="ticket-dotted-line"></div>
 
     <!-- Datos del Recibo -->
     <div class="ticket-info">
       <div class="info-row">
-        <span>Recibo Nro:</span>
-        <span class="info-val">{{ datos.nroRecibo }}</span>
+        <span class="info-lbl">Recibo Nro:</span>
+        <span class="info-val font-bold">{{ datos.nroRecibo }}</span>
       </div>
       <div class="info-row">
-        <span>Fecha:</span>
+        <span class="info-lbl">Fecha:</span>
         <span class="info-val">{{ fechaFormateada }}</span>
       </div>
       <div class="info-row">
-        <span>Hora:</span>
+        <span class="info-lbl">Hora:</span>
         <span class="info-val">{{ horaFormateada }}</span>
       </div>
       <div class="info-row">
-        <span>Mesa:</span>
-        <span class="info-val">{{ datos.mesa.numero }}</span>
+        <span class="info-lbl">Mesa:</span>
+        <span class="info-val font-bold">{{ datos.mesa.numero }}</span>
       </div>
       <div class="info-row">
-        <span>Mesero:</span>
+        <span class="info-lbl">Mesero:</span>
         <span class="info-val">{{ datos.mesero.nombre }}</span>
       </div>
       <div class="info-row">
-        <span>Cajero:</span>
+        <span class="info-lbl">Cajero:</span>
         <span class="info-val">{{ datos.cajero.nombre }}</span>
       </div>
-      <!-- Datos de Factura/Cliente -->
       <div class="info-row">
-        <span>Cliente:</span>
+        <span class="info-lbl">Cliente:</span>
         <span class="info-val">{{ datos.razonSocial || 'Sin Nombre (S.N.)' }}</span>
       </div>
       <div class="info-row" *ngIf="datos.nit">
-        <span>NIT/CI:</span>
+        <span class="info-lbl">NIT/CI:</span>
         <span class="info-val">{{ datos.nit }}</span>
       </div>
     </div>
 
-    <div class="ticket-separator">────────────────────────────</div>
+    <div class="ticket-dotted-line"></div>
 
     <!-- Detalle de Consumo -->
     <div class="ticket-detail-header">
-      <span class="col-qty">Cant</span>
-      <span class="col-desc">Detalle</span>
-      <span class="col-sub">Subtotal</span>
+      <span class="col-qty">CANT</span>
+      <span class="col-desc">DETALLE</span>
+      <span class="col-sub">SUBTOTAL</span>
     </div>
 
-    <div class="ticket-separator-light">· · · · · · · · · · · · · · ·</div>
+    <div class="ticket-dotted-line"></div>
 
     <div class="ticket-items">
-      <div class="ticket-item" *ngFor="let item of datos.items">
-        <span class="col-qty">{{ item.cantidad }}</span>
-        <span class="col-desc">{{ item.nombre }}</span>
-        <span class="col-sub">{{ item.subtotal.toFixed(2) }}</span>
-      </div>
-      <div class="ticket-item-note" *ngFor="let item of datos.items">
-        <span *ngIf="item.notas" class="item-note-text">  ↳ {{ item.notas }}</span>
-      </div>
+      <ng-container *ngFor="let item of datos.items">
+        <div class="ticket-item">
+          <span class="col-qty">{{ item.cantidad }}</span>
+          <span class="col-desc">{{ item.nombre }}</span>
+          <span class="col-sub">{{ (item.subtotal || 0) | number:'1.2-2' }}</span>
+        </div>
+        <div class="ticket-item-note" *ngIf="item.notas">
+          <span class="item-note-text">↳ {{ item.notas }}</span>
+        </div>
+      </ng-container>
     </div>
 
-    <div class="ticket-separator">────────────────────────────</div>
+    <div class="ticket-dotted-line"></div>
 
     <!-- Totales -->
     <div class="ticket-totals">
       <div class="total-row">
-        <span>Subtotal:</span>
-        <span>Bs. {{ datos.subtotal.toFixed(2) }}</span>
+        <span class="total-lbl">Subtotal:</span>
+        <span class="total-val">Bs. {{ (datos.subtotal || 0) | number:'1.2-2' }}</span>
       </div>
 
-      <div class="ticket-separator-double">════════════════════════════</div>
-      <div class="total-row total-final">
-        <span>TOTAL:</span>
-        <span>Bs. {{ datos.total.toFixed(2) }}</span>
+      <div class="total-row total-highlight">
+        <span class="total-lbl-main">TOTAL:</span>
+        <span class="total-val-gold">Bs. {{ (datos.total || 0) | number:'1.2-2' }}</span>
       </div>
-      <div class="ticket-separator-double">════════════════════════════</div>
     </div>
+
+    <div class="ticket-dotted-line"></div>
 
     <!-- Método de pago -->
     <div class="ticket-payment">
-      <div class="total-row">
-        <span>Método:</span>
-        <span>{{ metodoPagoLabel }}</span>
+      <div class="payment-row">
+        <span class="payment-lbl">Método:</span>
+        <span class="payment-val font-bold">{{ metodoPagoLabel }}</span>
       </div>
-      <div class="total-row" *ngIf="datos.metodoPago === 'EFECTIVO'">
-        <span>Recibido:</span>
-        <span>Bs. {{ datos.montoRecibido.toFixed(2) }}</span>
+      <div class="payment-row" *ngIf="datos.metodoPago === 'EFECTIVO' || datos.montoRecibido > 0">
+        <span class="payment-lbl">Recibido:</span>
+        <span class="payment-val">Bs. {{ (datos.montoRecibido || 0) | number:'1.2-2' }}</span>
       </div>
-      <div class="total-row" *ngIf="datos.cambio > 0">
-        <span>Cambio:</span>
-        <span>Bs. {{ datos.cambio.toFixed(2) }}</span>
+      <div class="payment-row" *ngIf="datos.cambio > 0">
+        <span class="payment-lbl">Cambio:</span>
+        <span class="payment-val">Bs. {{ (datos.cambio || 0) | number:'1.2-2' }}</span>
       </div>
     </div>
 
-    <div class="ticket-separator">────────────────────────────</div>
+    <div class="ticket-dotted-line"></div>
 
-    <!-- QR de Control -->
-    <div class="ticket-qr">
-      <img [src]="qrControlUrl" alt="QR Control" width="100" height="100" />
-      <p class="qr-hash">Control: {{ hashControl }}</p>
+    <!-- QR de Control Fiscal -->
+    <div class="ticket-qr-section">
+      <div class="qr-box">
+        <img [src]="qrControlUrl" alt="QR Control Fiscal" />
+      </div>
+      <p class="qr-hash">Control: <span>{{ hashControl }}</span></p>
     </div>
 
-    <div class="ticket-separator-light">· · · · · · · · · · · · · · ·</div>
-
-    <!-- Pie de ticket -->
+    <!-- Mensaje de Fidelización y Pie -->
     <div class="ticket-footer">
-      <p>¡Gracias por su visita!</p>
-      <p>Vuelva pronto a Tukuypaj</p>
-      <p class="ticket-legal">Este documento no tiene validez fiscal</p>
+      <p class="greeting-main">¡Gracias por su visita!</p>
+      <p class="greeting-sub">Vuelva pronto a Tukuypaj</p>
+      <p class="ticket-legal">ESTE DOCUMENTO NO TIENE VALIDEZ FISCAL</p>
     </div>
+
   </div>
 </div>

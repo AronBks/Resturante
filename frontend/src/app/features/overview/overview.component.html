@@ -2,16 +2,16 @@
   <!-- Welcome Banner -->
   <div class="welcome-banner glass-panel animate-in">
     <div class="welcome-text">
-      <h1>{{ getSaludo() }}</h1>
-      <p>Panel operativo de <strong>Peña Tukuypaj</strong> — Estado del día en tiempo real.</p>
+      <h1 class="font-playfair">{{ getSaludo() }}</h1>
+      <p class="subtitle">Panel operativo de <strong class="brand-gold">Peña Tukuypaj</strong> — Estado del día en tiempo real.</p>
     </div>
     <div class="turno-badge">
       <span class="turno-dot animate-pulse active-pulse"></span>
-      Turno Activo
+      TURNO ACTIVO
     </div>
   </div>
 
-  <!-- KPI Cards -->
+  <!-- KPI Cards Grid -->
   <div class="kpi-grid">
     
     <!-- KPI 1: Total Recaudado -->
@@ -19,48 +19,48 @@
          [class.pulse-update]="flashRecaudado()"
          style="animation-delay: 0.05s">
       <div class="kpi-icon gold">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
+        <lucide-icon name="wallet" class="icon-md"></lucide-icon>
       </div>
       <div class="kpi-data">
-        <h3>Bs. {{ totalRecaudado() | number:'1.2-2' }}</h3>
+        <h3 class="font-playfair">Bs. {{ totalRecaudado() | number:'1.2-2' }}</h3>
         <p>Total Recaudado del Día</p>
       </div>
     </div>
 
-    <!-- KPI 2: Ocupación del Salón (Clicable -> Navega a Mesas) -->
+    <!-- KPI 2: Ocupación del Salón -->
     <div class="kpi-card glass-panel glass-panel-hover interactive-card animate-in" 
          [class.pulse-update]="flashOcupacion()"
          (click)="navegarAMesas()"
          style="animation-delay: 0.1s">
-      <div class="kpi-icon bronze">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="3" x2="9" y2="21" /><line x1="15" y1="3" x2="15" y2="21" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /></svg>
+      <div class="kpi-icon gold">
+        <lucide-icon name="layout-grid" class="icon-md"></lucide-icon>
       </div>
       <div class="kpi-data">
-        <h3>{{ ocupacionActual() }}</h3>
+        <h3 class="font-playfair">{{ ocupacionActual() }}</h3>
         <p>Ocupación del Salón</p>
         <div class="occupancy-bar">
           <div class="occupancy-fill" [style.width.%]="ocupacionPorcentaje()"></div>
         </div>
       </div>
       <div class="card-action-indicator">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <lucide-icon name="chevron-right" class="icon-xs"></lucide-icon>
       </div>
     </div>
 
-    <!-- KPI 3: Comandas Activas (Clicable -> Abre Drawer) -->
+    <!-- KPI 3: Comandas Activas -->
     <div class="kpi-card glass-panel glass-panel-hover interactive-card animate-in" 
          [class.pulse-update]="flashComandas()"
          (click)="toggleDrawer()"
          style="animation-delay: 0.15s">
-      <div class="kpi-icon warm">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z" /></svg>
+      <div class="kpi-icon gold">
+        <lucide-icon name="flame" class="icon-md"></lucide-icon>
       </div>
       <div class="kpi-data">
-        <h3>{{ comandasActivas() }} Comandas</h3>
+        <h3 class="font-playfair">{{ comandasActivas() }} <span class="unit">Comandas</span></h3>
         <p>Pedidos en Espera / Cocina</p>
       </div>
       <div class="card-action-indicator">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <lucide-icon name="chevron-right" class="icon-xs"></lucide-icon>
       </div>
     </div>
 
@@ -68,12 +68,12 @@
     <div class="kpi-card glass-panel glass-panel-hover animate-in" 
          [class.pulse-update]="flashPlato()"
          style="animation-delay: 0.2s">
-      <div class="kpi-icon olive">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+      <div class="kpi-icon green">
+        <lucide-icon name="utensils-crossed" class="icon-md"></lucide-icon>
       </div>
       <div class="kpi-data">
-        <h3 class="top-dish-name">{{ platoEstrella() }}</h3>
-        <p>Plato Estrella (Últimas 24h)</p>
+        <h3 class="font-playfair top-dish-name">{{ platoEstrella() }}</h3>
+        <p>(1 uds) Plato Estrella (Últimas 24h)</p>
       </div>
     </div>
   </div>
@@ -89,15 +89,15 @@
           <div class="stat-header">
             <div class="title-with-pulse">
               <span class="live-dot animate-pulse"></span>
-              <h2>Últimos Movimientos en el Salón</h2>
+              <h2>ÚLTIMOS MOVIMIENTOS EN EL SALÓN</h2>
             </div>
           </div>
 
           <div class="live-feed-list scrollbar-custom">
             <div *ngFor="let item of movimientos()" class="feed-item animate-in">
               <div class="feed-badge-wrapper">
-                <span class="feed-badge" [ngClass]="item.tipo.toLowerCase()">
-                  {{ item.tipo === 'ABIERTO' ? 'Abierta' : item.tipo === 'POR_COBRAR' ? 'Cobrar' : 'Libre' }}
+                <span class="feed-badge" [ngClass]="item.tipo?.toLowerCase()">
+                  {{ item.tipo === 'ABIERTO' ? 'ABIERTA' : item.tipo === 'POR_COBRAR' ? 'POR COBRAR' : 'LIBRE' }}
                 </span>
               </div>
               
@@ -110,19 +110,9 @@
               </div>
             </div>
 
-            <!-- Shimmer Placeholder when movements are empty -->
-            <div *ngIf="movimientos().length === 0" class="shimmer-placeholder">
-              <div class="shimmer-waves">
-                <div class="shimmer-bar header"></div>
-                <div class="shimmer-bar body"></div>
-                <div class="shimmer-bar footer"></div>
-              </div>
-              <div class="placeholder-content">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <p>Esperando el primer zapateo... El salón está en calma.</p>
-              </div>
+            <!-- Empty feed placeholder box -->
+            <div class="empty-feed-placeholder">
+              <p>No hay más movimientos recientes</p>
             </div>
           </div>
         </div>
@@ -130,14 +120,14 @@
         <!-- Columna Derecha: Donut Chart de Ocupación por Zonas (40%) -->
         <div class="feed-right-col">
           <div class="stat-header">
-            <h2>Ocupación por Zonas</h2>
+            <h2>OCUPACIÓN POR ZONAS</h2>
           </div>
           <div class="donut-chart-section">
             <div class="donut-chart-wrapper">
               <div class="donut-chart" [style.background]="donutStyle()"></div>
               <div class="donut-hole">
-                <span class="donut-num">{{ ocupacionPorcentaje() }}%</span>
-                <span class="donut-lbl">Ocupado</span>
+                <span class="donut-num font-playfair">{{ ocupacionPorcentaje() }}%</span>
+                <span class="donut-lbl">OCUPADO</span>
               </div>
             </div>
             <div class="donut-legend">
@@ -169,44 +159,48 @@
       </div>
     </div>
 
-    <!-- System Status & Turn Details -->
+    <!-- System Status & Turn Details Split Card -->
     <div class="stat-card glass-panel status-card animate-in" style="animation-delay: 0.3s">
+      <!-- Top Half: Estado del sistema -->
       <div class="stat-header">
-        <h2>Estado Operativo del Sistema</h2>
+        <h2>ESTADO OPERATIVO DEL SISTEMA</h2>
       </div>
       <div class="system-status">
         <div class="status-row">
           <span>Conexión de Terminales</span>
           <div class="status-badge online">
             <span class="pulse-mini active-pulse"></span>
-            Operacional
+            OPERACIONAL
           </div>
         </div>
         <div class="status-row">
           <span>Servicio WebSockets</span>
           <div class="status-badge online">
             <span class="pulse-mini active-pulse"></span>
-            Activo
+            ACTIVO
           </div>
         </div>
         <div class="status-row">
           <span>Motor PostgreSQL</span>
           <div class="status-badge online">
             <span class="pulse-mini active-pulse"></span>
-            Sincronizado
+            SINCRONIZADO
           </div>
         </div>
-        
-        <div class="turn-details-section">
-          <h3>Detalles de la Sesión</h3>
-          <div class="session-detail-item">
-            <span class="lbl">Operador:</span>
-            <span class="val">{{ user()?.nombre }}</span>
-          </div>
-          <div class="session-detail-item">
-            <span class="lbl">Rol Asignado:</span>
-            <span class="val role-tag">{{ user()?.rol }}</span>
-          </div>
+      </div>
+
+      <!-- Bottom Half: Detalles de la sesión -->
+      <div class="turn-details-section">
+        <div class="stat-header">
+          <h2>DETALLES DE LA SESIÓN</h2>
+        </div>
+        <div class="session-detail-item">
+          <span class="lbl">Operador:</span>
+          <span class="val">{{ user()?.nombre || 'Don Roberto Mamani' }}</span>
+        </div>
+        <div class="session-detail-item">
+          <span class="lbl">Rol Asignado:</span>
+          <span class="val role-tag">{{ user()?.rol || 'ADMIN' }}</span>
         </div>
       </div>
     </div>

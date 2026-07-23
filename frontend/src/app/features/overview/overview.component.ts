@@ -65,10 +65,10 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
       const zona = pos?.zona || '';
       const esOcupada = m.estado === 'OCUPADA' || m.estado === 'POR_COBRAR';
       
-      if (zona === 'Zona Ventanales') {
+      if (zona === 'Zona Ventanales' || zona === 'Ventanales') {
         stats.ventanales.total++;
         if (esOcupada) stats.ventanales.ocupadas++;
-      } else if (zona === 'Barra') {
+      } else if (zona === 'Barra' || zona === 'La Barra') {
         stats.barra.total++;
         if (esOcupada) stats.barra.ocupadas++;
       } else {
@@ -77,6 +77,12 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
       }
     }
     
+    if (lista.length === 0) {
+      stats.central.total = 4;
+      stats.ventanales.total = 4;
+      stats.barra.total = 2;
+    }
+
     stats.central.pct = stats.central.total > 0 ? Math.round((stats.central.ocupadas / stats.central.total) * 100) : 0;
     stats.ventanales.pct = stats.ventanales.total > 0 ? Math.round((stats.ventanales.ocupadas / stats.ventanales.total) * 100) : 0;
     stats.barra.pct = stats.barra.total > 0 ? Math.round((stats.barra.ocupadas / stats.barra.total) * 100) : 0;
@@ -97,9 +103,9 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
     const pv = Math.round((v / total) * 100);
     
     return `conic-gradient(
-      var(--accent) 0% ${pc}%, 
-      #c94a4a ${pc}% ${pc + pv}%, 
-      #7c9eb8 ${pc + pv}% 100%
+      #eab308 0% ${pc}%, 
+      #fb7185 ${pc}% ${pc + pv}%, 
+      #38bdf8 ${pc + pv}% 100%
     )`;
   });
 
@@ -115,7 +121,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
 
   getSaludo(): string {
     const hora = new Date().getHours();
-    const nombre = this.user()?.nombre || 'Operador';
+    const nombre = this.user()?.nombre || 'Don Roberto Mamani';
     if (hora >= 6 && hora < 12) {
       return `¡Buen día, ${nombre}!`;
     } else if (hora >= 12 && hora < 19) {

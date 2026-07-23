@@ -1,33 +1,32 @@
 /* ═══════════════════════════════════════════
-   COMPROBANTE — Estilos de Pantalla + Print
-   Ticket térmico 80mm para comandera
+   COMPROBANTE — Estilos Digitales Premium + Print 80mm
+   Diseño de Experiencia Final de Cliente para Tukuypaj
    ═══════════════════════════════════════════ */
 
 .comprobante-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 8, 5, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(10, 8, 6, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 1200;
-  animation: fadeInComp 0.25s ease;
+  animation: fadeInOverlay 0.25s ease-out;
 }
 
 .comprobante-wrapper {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 1210;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 20px;
+  padding: 30px 16px 40px;
   overflow-y: auto;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: radial-gradient(circle at center, rgba(48, 38, 26, 0.35) 0%, rgba(10, 8, 6, 0.96) 75%);
 
   &.open {
     opacity: 1;
@@ -35,184 +34,228 @@
   }
 }
 
-/* ── Toolbar (no se imprime) ── */
+/* ── Toolbar Superior ── */
 .comprobante-toolbar {
   display: flex;
+  align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   flex-shrink: 0;
+  animation: slideDownToolbar 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
-  .print-btn {
-    padding: 12px 28px;
-    background: var(--gradient-brand);
-    color: #1a1410;
+  .btn-action-print {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #e3bd4d 0%, #caa132 100%);
+    color: #17130b;
     border: none;
-    border-radius: var(--radius-sm);
-    font-size: 0.95rem;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    box-shadow: 0 4px 18px rgba(227, 189, 77, 0.28);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2.2;
+    }
 
     &:hover {
-      box-shadow: 0 0 25px var(--primary-glow);
-      transform: translateY(-1px);
+      background: linear-gradient(135deg, #ebd068 0%, #d4aa38 100%);
+      transform: translateY(-1.5px);
+      box-shadow: 0 6px 24px rgba(227, 189, 77, 0.4);
+    }
+
+    &:active {
+      transform: translateY(0);
     }
   }
 
-  .close-btn {
-    padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-glass);
-    color: var(--text-muted);
-    border-radius: var(--radius-sm);
+  .btn-action-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cfc7bc;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+    }
 
     &:hover {
       background: rgba(255, 255, 255, 0.08);
-      color: var(--text-warm);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
     }
   }
 }
 
 /* ═══════════════════════════════════════════
-   TICKET TÉRMICO — Previsualización en pantalla
-   Simula papel blanco de comandera sobre fondo oscuro
+   TICKET TÉRMICO / TARJETA DIGITAL PREMIUM
    ═══════════════════════════════════════════ */
 
 .recibo-ticket {
-  width: 300px;
-  background: #ffffff;
-  color: #1a1a1a;
-  padding: 20px 16px;
-  font-family: 'Courier New', 'Lucida Console', monospace;
-  font-size: 11px;
-  line-height: 1.5;
-  border-radius: 4px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  width: 350px;
+  max-width: 90vw;
+  background: #ebe4d8;
+  color: #2b2723;
+  padding: 28px 24px 22px;
+  border-radius: 6px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  animation: scaleUpTicket 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Header */
 .ticket-header {
   text-align: center;
-  margin-bottom: 4px;
 
-  h1 {
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    font-weight: 900;
-    color: #000;
-    margin: 0;
-    letter-spacing: 1px;
-  }
-
-  h2 {
-    font-family: 'Courier New', monospace;
-    font-size: 18px;
-    font-weight: 900;
-    color: #000;
-    margin: 0 0 4px;
-    letter-spacing: 2px;
-  }
-
-  p {
-    margin: 1px 0;
+  .header-subtitle {
+    display: block;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
-    color: #333;
+    font-weight: 600;
+    letter-spacing: 2.2px;
+    color: #5c554e;
+    text-transform: uppercase;
   }
-}
 
-.ticket-separator {
-  text-align: center;
-  color: #999;
-  font-size: 9px;
-  letter-spacing: -0.5px;
-  margin: 6px 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
+  .header-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #1a1714;
+    text-transform: uppercase;
+    margin: 2px 0 8px;
+  }
 
-.ticket-separator-double {
-  text-align: center;
-  color: #666;
-  font-size: 9px;
-  letter-spacing: -0.5px;
-  margin: 4px 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.ticket-separator-light {
-  text-align: center;
-  color: #ccc;
-  font-size: 9px;
-  margin: 4px 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.ticket-info {
-  .info-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
-    color: #444;
-    padding: 1px 0;
-
-    .info-val {
-      font-weight: 700;
-      color: #111;
+  .header-details {
+    p {
+      margin: 1px 0;
+      font-size: 10.5px;
+      line-height: 1.45;
+      color: #524c46;
     }
   }
 }
 
-/* Detalle de consumo */
+/* Linea punteada de separacion */
+.ticket-dotted-line {
+  border-bottom: 1.5px dotted #cbbcb0;
+  margin: 14px 0;
+  width: 100%;
+}
+
+/* Info del Recibo */
+.ticket-info {
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    padding: 2.5px 0;
+
+    .info-lbl {
+      color: #5c544d;
+    }
+
+    .info-val {
+      color: #1a1714;
+      text-align: right;
+
+      &.font-bold {
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+/* Tabla de items */
 .ticket-detail-header {
   display: flex;
+  align-items: center;
   font-size: 10px;
-  font-weight: 900;
-  color: #000;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #6e665e;
   text-transform: uppercase;
-  padding: 2px 0;
-}
+  padding: 1px 0;
 
-.col-qty {
-  width: 36px;
-  flex-shrink: 0;
-  text-align: center;
-}
+  .col-qty {
+    width: 28px;
+    flex-shrink: 0;
+  }
 
-.col-desc {
-  flex: 1;
-  padding: 0 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  .col-desc {
+    flex: 1;
+    padding-left: 4px;
+  }
 
-.col-sub {
-  width: 65px;
-  flex-shrink: 0;
-  text-align: right;
+  .col-sub {
+    width: 70px;
+    text-align: right;
+    flex-shrink: 0;
+  }
 }
 
 .ticket-items {
   .ticket-item {
     display: flex;
-    font-size: 10.5px;
-    color: #222;
-    padding: 2px 0;
+    align-items: baseline;
+    font-size: 11.5px;
+    color: #24201c;
+    padding: 3px 0;
+    font-weight: 500;
+
+    .col-qty {
+      width: 28px;
+      font-weight: 700;
+      color: #1a1714;
+      flex-shrink: 0;
+    }
+
+    .col-desc {
+      flex: 1;
+      padding-right: 8px;
+      line-height: 1.35;
+      color: #2b2723;
+    }
+
+    .col-sub {
+      width: 70px;
+      text-align: right;
+      flex-shrink: 0;
+      font-weight: 500;
+      color: #2b2723;
+    }
   }
 
   .ticket-item-note {
     .item-note-text {
-      font-size: 9px;
-      color: #777;
+      font-size: 9.5px;
+      color: #756c63;
       font-style: italic;
-      padding-left: 40px;
+      padding-left: 24px;
       display: block;
+      margin-top: -1px;
+      margin-bottom: 2px;
     }
   }
 }
@@ -222,72 +265,133 @@
   .total-row {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
-    color: #333;
-    padding: 1px 0;
-  }
+    align-items: baseline;
+    font-size: 12px;
+    color: #423c36;
+    padding: 2px 0;
 
-  .total-final {
-    font-size: 14px;
-    font-weight: 900;
-    color: #000;
-    padding: 4px 0;
+    .total-lbl {
+      color: #524c46;
+    }
+
+    .total-val {
+      font-weight: 600;
+      color: #24201c;
+    }
+
+    &.total-highlight {
+      margin-top: 6px;
+      padding-top: 2px;
+
+      .total-lbl-main {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #1a1714;
+        letter-spacing: 0.5px;
+      }
+
+      .total-val-gold {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 15.5px;
+        font-weight: 800;
+        color: #a17c24;
+      }
+    }
   }
 }
 
+/* Datos de Pago */
 .ticket-payment {
-  .total-row {
+  .payment-row {
     display: flex;
     justify-content: space-between;
-    font-size: 10.5px;
-    color: #444;
-    padding: 1px 0;
+    align-items: center;
+    font-size: 11.5px;
+    color: #524c46;
+    padding: 2.5px 0;
+
+    .payment-lbl {
+      color: #5c544d;
+    }
+
+    .payment-val {
+      color: #1a1714;
+      text-align: right;
+
+      &.font-bold {
+        font-weight: 700;
+      }
+    }
   }
 }
 
-/* QR de control */
-.ticket-qr {
+/* QR Code Section */
+.ticket-qr-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 0;
+  gap: 8px;
+  padding: 4px 0 2px;
 
-  img {
-    border: 1px solid #ddd;
+  .qr-box {
+    background: #ffffff;
+    padding: 7px;
+    border: 1px solid #ded5ca;
+    border-radius: 4px;
+    display: inline-flex;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    img {
+      width: 100px;
+      height: 100px;
+      display: block;
+      image-rendering: pixelated;
+    }
   }
 
   .qr-hash {
-    font-size: 8px;
-    color: #999;
-    letter-spacing: 0.5px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10.5px;
+    color: #686058;
+    letter-spacing: 0.4px;
+
+    span {
+      font-weight: 700;
+      color: #24201c;
+    }
   }
 }
 
-/* Pie de ticket */
+/* Footer / Fidelización */
 .ticket-footer {
   text-align: center;
-  padding: 4px 0 0;
+  padding-top: 4px;
 
-  p {
-    margin: 2px 0;
-    font-size: 10px;
-    color: #555;
+  .greeting-main {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #1a1714;
+    margin: 10px 0 2px;
+  }
+
+  .greeting-sub {
+    font-size: 11px;
+    color: #5c544d;
+    margin: 0 0 10px;
   }
 
   .ticket-legal {
-    margin-top: 6px;
     font-size: 8px;
-    color: #aaa;
+    color: #948b81;
+    letter-spacing: 0.6px;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    margin: 8px 0 0;
   }
 }
 
 /* ═══════════════════════════════════════════
-   @MEDIA PRINT — Salida limpia para ticket 80mm
-   Solo imprime el recibo, oculta absolutamente
-   todo lo demás del sistema
+   @MEDIA PRINT — Impresión Térmica 80mm
    ═══════════════════════════════════════════ */
 
 @media print {
@@ -296,16 +400,15 @@
     margin: 0;
   }
 
-  /* Ocultar absolutamente todo */
   html, body {
     margin: 0 !important;
     padding: 0 !important;
     width: 80mm !important;
-    background: #fff !important;
+    background: #ffffff !important;
     overflow: visible !important;
   }
 
-  /* Ocultar la app completa */
+  /* Ocultar elementos de UI */
   app-root > *,
   .app-layout,
   .sidebar,
@@ -316,18 +419,14 @@
   .drawer-backdrop,
   .caja-overlay,
   .caja-modal,
-  .comprobante-overlay {
+  .comprobante-overlay,
+  .no-print,
+  .comprobante-toolbar {
     display: none !important;
     visibility: hidden !important;
   }
 
-  /* Ocultar elementos que NO deben imprimirse */
-  .no-print,
-  .comprobante-toolbar {
-    display: none !important;
-  }
-
-  /* Mostrar SOLO el wrapper y el ticket */
+  /* Wrapper para impresión */
   .comprobante-wrapper {
     position: static !important;
     display: block !important;
@@ -339,58 +438,92 @@
     background: transparent !important;
   }
 
+  /* Ticket térmico monocromático perfecto */
   .recibo-ticket {
     width: 80mm !important;
     max-width: 80mm !important;
-    background: #fff !important;
-    color: #000 !important;
-    padding: 3mm 2mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 4mm 3mm !important;
     margin: 0 !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    page-break-after: auto;
-    font-size: 10px !important;
+    font-size: 9.5px !important;
   }
 
   .ticket-header {
-    h1 { font-size: 12px !important; }
-    h2 { font-size: 15px !important; }
-    p { font-size: 9px !important; }
+    .header-subtitle { font-size: 8.5px !important; color: #000 !important; }
+    .header-title { font-size: 16px !important; color: #000 !important; margin: 1px 0 4px !important; }
+    .header-details p { font-size: 8.5px !important; color: #000 !important; }
+  }
+
+  .ticket-dotted-line {
+    border-bottom: 1px dashed #000 !important;
+    margin: 8px 0 !important;
   }
 
   .ticket-info .info-row {
     font-size: 9px !important;
+    .info-lbl, .info-val { color: #000 !important; }
   }
 
   .ticket-detail-header {
-    font-size: 9px !important;
+    font-size: 8.5px !important;
+    color: #000 !important;
   }
 
   .ticket-items .ticket-item {
-    font-size: 9.5px !important;
-  }
-
-  .ticket-totals .total-final {
-    font-size: 12px !important;
-  }
-
-  .ticket-qr img {
-    width: 80px !important;
-    height: 80px !important;
-  }
-
-  .ticket-footer p {
     font-size: 9px !important;
+    color: #000 !important;
+    .col-qty, .col-desc, .col-sub { color: #000 !important; }
   }
 
-  .ticket-footer .ticket-legal {
-    font-size: 7px !important;
+  .ticket-totals .total-row {
+    font-size: 9px !important;
+    .total-lbl, .total-val { color: #000 !important; }
+
+    &.total-highlight {
+      .total-lbl-main { font-size: 11px !important; color: #000 !important; }
+      .total-val-gold { font-size: 12px !important; color: #000 !important; }
+    }
+  }
+
+  .ticket-payment .payment-row {
+    font-size: 9px !important;
+    .payment-lbl, .payment-val { color: #000 !important; }
+  }
+
+  .ticket-qr-section {
+    .qr-box {
+      border: 1px solid #000 !important;
+      padding: 4px !important;
+      box-shadow: none !important;
+      img { width: 80px !important; height: 80px !important; }
+    }
+    .qr-hash { font-size: 8.5px !important; color: #000 !important; }
+  }
+
+  .ticket-footer {
+    .greeting-main { font-size: 10px !important; color: #000 !important; margin-top: 6px !important; }
+    .greeting-sub { font-size: 9px !important; color: #000 !important; }
+    .ticket-legal { font-size: 7px !important; color: #000 !important; }
   }
 }
 
-/* ── Animations ── */
-@keyframes fadeInComp {
+/* ── Animaciones ── */
+@keyframes fadeInOverlay {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+@keyframes slideDownToolbar {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUpTicket {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
