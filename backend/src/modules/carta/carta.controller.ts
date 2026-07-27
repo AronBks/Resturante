@@ -69,6 +69,8 @@ export class CartaController {
       precioVenta: number;
       categoriaId: number;
       imagenUrl?: string;
+      disponible?: boolean;
+      variantes?: { nombre: string; precio: number; disponible?: boolean }[];
     },
   ) {
     return this.cartaService.createPlato(data);

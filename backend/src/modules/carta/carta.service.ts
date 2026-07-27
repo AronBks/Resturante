@@ -77,17 +77,35 @@ export class CartaService {
     precioVenta: number;
     categoriaId: number;
     imagenUrl?: string;
+    disponible?: boolean;
+    variantes?: { nombre: string; precio: number; disponible?: boolean }[];
   }) {
-    return this.prisma.plato.create({
+    const created = await this.prisma.plato.create({
       data: {
         nombre: data.nombre,
         descripcion: data.descripcion,
         precioVenta: data.precioVenta,
-        categoriaId: data.categoriaId,
+        categoriaId: Number(data.categoriaId),
         imagenUrl: data.imagenUrl,
+        disponible: data.disponible !== undefined ? data.disponible : true,
+        variantes: data.variantes && data.variantes.length > 0 ? {
+          create: data.variantes.map(v => ({
+            nombre: v.nombre,
+            precio: Number(v.precio),
+            disponible: v.disponible !== undefined ? v.disponible : true,
+          }))
+        } : undefined,
       },
-      include: { categoria: { select: { nombre: true } } },
+      include: {
+        categoria: { select: { nombre: true } },
+        variantes: true,
+      },
     });
+
+    this.cartaGateway.server?.emit('menu:actualizado', { platoId: created.id });
+    this.pedidosGateway.server?.emit('menu:actualizado', { platoId: created.id });
+
+    return created;
   }
 
   async updatePlato(
@@ -145,19 +163,29 @@ export class CartaService {
 
   async toggleDisponible(id: string) {
     const plato = await this.findOnePlato(id);
+    const newEstado = !plato.disponible;
+
     const updated = await this.prisma.plato.update({
       where: { id },
-      data: { disponible: !plato.disponible },
+      data: { disponible: newEstado },
     });
 
-    // 📡 Broadcast al namespace público (/publica) — Client-App
-    this.cartaGateway.broadcastDisponibilidad(id, updated.disponible);
-
-    // 📡 Broadcast al namespace autenticado — Admin-App (meseros, admin)
-    this.pedidosGateway.server.emit('menu:actualizado', {
-      platoId: id,
-      disponible: updated.disponible,
+    // Sincronizar todas las variantes con el estado maestro del plato
+    await this.prisma.variantePlato.updateMany({
+      where: { platoId: id },
+      data: { disponible: newEstado },
     });
+
+    // 📡 Broadcast al namespace público y autenticado
+    if (this.cartaGateway) {
+      this.cartaGateway.broadcastDisponibilidad(id, updated.disponible);
+    }
+    if (this.pedidosGateway?.server) {
+      this.pedidosGateway.server.emit('menu:actualizado', {
+        platoId: id,
+        disponible: updated.disponible,
+      });
+    }
 
     return updated;
   }
@@ -176,15 +204,31 @@ export class CartaService {
       data: { disponible: !variante.disponible },
     });
 
-    // 📡 Broadcast al namespace público (/publica) — Client-App
-    this.cartaGateway.broadcastDisponibilidad(updated.platoId, true);
-
-    // 📡 Broadcast al namespace autenticado — Admin-App (meseros, admin)
-    this.pedidosGateway.server.emit('menu:actualizado', {
-      platoId: updated.platoId,
-      varianteId: id,
-      disponible: updated.disponible,
+    // Verificar si queda al menos una variante disponible para el plato
+    const variantesPlato = await this.prisma.variantePlato.findMany({
+      where: { platoId: updated.platoId },
+      select: { disponible: true },
     });
+
+    const anyDisponible = variantesPlato.some((v) => v.disponible);
+
+    // Actualizar disponibilidad del plato padre
+    await this.prisma.plato.update({
+      where: { id: updated.platoId },
+      data: { disponible: anyDisponible },
+    });
+
+    // 📡 Broadcast al namespace público y autenticado
+    if (this.cartaGateway) {
+      this.cartaGateway.broadcastDisponibilidad(updated.platoId, anyDisponible);
+    }
+    if (this.pedidosGateway?.server) {
+      this.pedidosGateway.server.emit('menu:actualizado', {
+        platoId: updated.platoId,
+        varianteId: id,
+        disponible: updated.disponible,
+      });
+    }
 
     return updated;
   }
