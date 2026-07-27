@@ -44,7 +44,10 @@ import {
   LayoutGrid,
   Flame,
   ChevronRight,
-  Utensils
+  Utensils,
+  MoreVertical,
+  FolderPlus,
+  Tag
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -86,7 +89,10 @@ export const appIcons = {
   LayoutGrid,
   Flame,
   ChevronRight,
-  Utensils
+  Utensils,
+  MoreVertical,
+  FolderPlus,
+  Tag
 };
 
 export const appConfig: ApplicationConfig = {
