@@ -47,7 +47,12 @@ import {
   Utensils,
   MoreVertical,
   FolderPlus,
-  Tag
+  Tag,
+  UserCheck,
+  UserPlus,
+  Mail,
+  Download,
+  Shield
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -92,7 +97,12 @@ export const appIcons = {
   Utensils,
   MoreVertical,
   FolderPlus,
-  Tag
+  Tag,
+  UserCheck,
+  UserPlus,
+  Mail,
+  Download,
+  Shield
 };
 
 export const appConfig: ApplicationConfig = {
