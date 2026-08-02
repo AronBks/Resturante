@@ -52,11 +52,15 @@ export class PedidosController {
     // Verificar que la mesa existe
     const mesa = await this.iaPedidosService.resolverMesa(dto.mesaNumero);
 
-    // Interpretar con IA
-    const resultado = await this.iaPedidosService.interpretarPedido(dto.texto);
+    // Interpretar con IA (Don Beto)
+    const resultado = await this.iaPedidosService.interpretarPedido(
+      dto.texto,
+      dto.historial || [],
+      dto.comandaPrevia || [],
+    );
 
     this.logger.log(
-      `🤖 Motor: ${resultado.motor} | Items: ${resultado.items.length} | Total: Bs. ${resultado.totalEstimado}`,
+      `🤖 Don Beto (${resultado.motor}) | Estado: ${resultado.estadoConversacion} | Items: ${resultado.comandaActualizada.length} | Total: Bs. ${resultado.totalEstimado}`,
     );
 
     return {

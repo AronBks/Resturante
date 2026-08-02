@@ -1,0 +1,228 @@
+<div class="chat-layout-wrapper">
+  <!-- Top Navigation Bar -->
+  <header class="chat-header">
+    <div class="header-left">
+      <a routerLink="/carta" class="btn-back">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <div class="avatar-container">
+        <div class="avatar-circle">
+          <span class="avatar-emoji">👨🏽‍🍳</span>
+          <span class="status-dot"></span>
+        </div>
+      </div>
+      <div class="header-info">
+        <h2 class="mesero-name">Don Beto <span class="badge-role">Garzón Tukuypaj</span></h2>
+        <p class="mesero-status">En línea • Atendiendo Mesa {{ mesaNumero() }}</p>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="btn-ticket-mobile-toggle" (click)="toggleMiniTicketMobile()">
+        <span class="t-icon">📜</span>
+        <span class="t-text">Comanda</span>
+        @if (comandaActual().length > 0) {
+          <span class="t-badge">{{ comandaActual().length }}</span>
+        }
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Body: Split View (Chat + Mini-Ticket) -->
+  <main class="chat-body-container">
+    
+    <!-- Left Column: WhatsApp / Telegram Style Chat -->
+    <section class="chat-stream-section">
+      <div class="chat-messages-scroll" #chatContainer>
+        @for (msg of mensajes(); track msg.id) {
+          @if (msg.rol === 'asistente') {
+            <div class="msg-row assistant-row">
+              <div class="msg-avatar">👨🏽‍🍳</div>
+              <div class="msg-bubble assistant-bubble">
+                <div class="msg-author">Don Beto</div>
+                <div class="msg-text" [innerText]="msg.texto"></div>
+                <span class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+              </div>
+            </div>
+          } @else if (msg.rol === 'usuario') {
+            <div class="msg-row user-row">
+              <div class="msg-bubble user-bubble">
+                <div class="msg-text">{{ msg.texto }}</div>
+                <span class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+              </div>
+            </div>
+          } @else if (msg.rol === 'sistema' && msg.id === 'thinking') {
+            <div class="msg-row assistant-row thinking-row">
+              <div class="msg-avatar">👨🏽‍🍳</div>
+              <div class="msg-bubble assistant-bubble thinking-bubble">
+                <div class="typing-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <span class="thinking-text">Don Beto está anotando...</span>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Sugerencias Rápidas / Pills -->
+      <div class="quick-chips-wrapper">
+        <div class="chips-scroll">
+          @for (sug of sugerenciasRapidas; track sug) {
+            <button class="chip-pill" (click)="usarSugerencia(sug)">
+              {{ sug }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="chat-input-bar">
+        <input
+          #inputRef
+          type="text"
+          class="chat-input"
+          placeholder="Escriba a Don Beto (ej: 'Un Pique Macho mediano y 2 limonadas')..."
+          [(ngModel)]="inputTexto"
+          (keyup.enter)="enviarMensaje()"
+          [disabled]="iaService.loading() || pedidoConfirmado()"
+        />
+        <button
+          class="btn-send-gold"
+          (click)="enviarMensaje()"
+          [disabled]="!inputTexto().trim() || iaService.loading() || pedidoConfirmado()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Right Column: Mini-Ticket en Vivo (Desktop view) -->
+    <aside class="mini-ticket-aside" [class.open-mobile]="showMiniTicketMobile()">
+      <div class="ticket-card">
+        <div class="ticket-header">
+          <div class="t-header-title">
+            <span class="t-icon-gold">📜</span>
+            <h3>Comanda en Vivo</h3>
+          </div>
+          <span class="mesa-pill">Mesa {{ mesaNumero() }}</span>
+        </div>
+
+        <div class="ticket-items-scroll">
+          @if (comandaActual().length === 0) {
+            <div class="empty-ticket-state">
+              <span class="empty-icon">🍽️</span>
+              <p class="empty-title">Su comanda está vacía</p>
+              <p class="empty-sub">Hable con Don Beto para ir agregando platos y bebidas a su mesa.</p>
+            </div>
+          } @else {
+            <div class="items-list">
+              @for (item of comandaActual(); track item.platoId + (item.varianteId || '')) {
+                <div class="item-row">
+                  <div class="item-icon">{{ getFoodEmoji(item.nombre) }}</div>
+                  <div class="item-info">
+                    <h4 class="item-name">{{ item.nombre }}</h4>
+                    @if (item.notas) {
+                      <span class="item-note">📝 {{ item.notas }}</span>
+                    }
+                    <div class="item-price-calc">
+                      Bs. {{ item.precioUnitario | number:'1.2-2' }} x {{ item.cantidad }}
+                    </div>
+                  </div>
+
+                  <div class="item-actions">
+                    <div class="qty-control">
+                      <button (click)="modificarCantidad(item, -1)">-</button>
+                      <span>{{ item.cantidad }}</span>
+                      <button (click)="modificarCantidad(item, 1)">+</button>
+                    </div>
+                    <span class="item-subtotal">Bs. {{ item.precioUnitario * item.cantidad | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Ticket Footer & Totals -->
+        @if (comandaActual().length > 0) {
+          <div class="ticket-footer">
+            <div class="subtotal-row">
+              <span>Total Estimado:</span>
+              <span class="total-gold">Bs. {{ totalEstimado() | number:'1.2-2' }}</span>
+            </div>
+
+            @if (pedidoConfirmado()) {
+              <div class="confirmed-badge">
+                <span>✅ Pedido Enviado a Cocina</span>
+              </div>
+            } @else {
+              <button
+                class="btn-confirm-gold"
+                (click)="confirmarComandaFinal()"
+                [disabled]="confirmando()"
+              >
+                @if (confirmando()) {
+                  <span>Marchando pedido...</span>
+                } @else {
+                  <span>Confirmar y Enviar a Cocina</span>
+                }
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </aside>
+  </main>
+
+  <!-- Tarjeta Elegante de Resumen Final (Popup / Modal cuando IA detecta CONFIRMACION_FINAL) -->
+  @if (mostrarTarjetaFinal()) {
+    <div class="modal-overlay-backdrop">
+      <div class="summary-card-modal">
+        <div class="summary-card-header">
+          <span class="tukuypaj-logo">✨ Peña Tukuypaj</span>
+          <h2>Resumen de Comanda — Don Beto</h2>
+          <p>Favor confirme el pedido para marcharlo a cocina en la Mesa {{ mesaNumero() }}.</p>
+        </div>
+
+        <div class="summary-items-list">
+          @for (item of comandaActual(); track item.platoId + (item.varianteId || '')) {
+            <div class="summary-item-line">
+              <span class="s-qty">{{ item.cantidad }}x</span>
+              <div class="s-detail">
+                <span class="s-name">{{ item.nombre }}</span>
+                @if (item.notas) { <small class="s-note">({{ item.notas }})</small> }
+              </div>
+              <span class="s-price">Bs. {{ item.precioUnitario * item.cantidad | number:'1.2-2' }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="summary-card-footer">
+          <div class="summary-total-box">
+            <span>Total a pagar:</span>
+            <span class="total-price">Bs. {{ totalEstimado() | number:'1.2-2' }}</span>
+          </div>
+
+          @if (pedidoConfirmado()) {
+            <div class="confirmed-banner">
+              <span>🎉 ¡Marchado con éxito a Cocina! ¡Buen provecho!</span>
+            </div>
+          } @else {
+            <button
+              class="btn-gold-large"
+              (click)="confirmarComandaFinal()"
+              [disabled]="confirmando()"
+            >
+              @if (confirmando()) {
+                <span>Enviando...</span>
+              } @else {
+                <span>🚀 Confirmar y Enviar a Cocina</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

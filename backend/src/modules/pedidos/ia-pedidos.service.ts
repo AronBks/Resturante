@@ -1,19 +1,8 @@
-// ============================================================
-// IaPedidosService — Motor de Inteligencia Artificial Dual
-//
-// Arquitectura:
-//   1. Motor Primario: Google Gemini 2.0 Flash (API REST)
-//   2. Motor Fallback: Coincidencia fonética + Levenshtein local
-//
-// Interpreta texto en lenguaje natural del cliente y lo mapea
-// a platos reales de la carta de la base de datos PostgreSQL.
-// ============================================================
-
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 
-interface PlatoDisponible {
+export interface PlatoDisponible {
   id: string;
   nombre: string;
   precioVenta: number;
@@ -30,15 +19,17 @@ export interface ItemInterpretado {
   varianteId?: string;
   nombre: string;
   cantidad: number;
-  notas: string;
+  notas?: string;
   precioUnitario: number;
   variantes?: { id: string; nombre: string; precio: number }[];
 }
 
+export type EstadoConversacion = 'SALUDO' | 'TOMANDO_PEDIDO' | 'CONFIRMACION_FINAL';
 
-export interface ResultadoInterpretacion {
-  items: ItemInterpretado[];
-  mensajeIA: string;
+export interface ResultadoConversacionIA {
+  respuestaMesero: string;
+  comandaActualizada: ItemInterpretado[];
+  estadoConversacion: EstadoConversacion;
   totalEstimado: number;
   motor: 'gemini' | 'local';
 }
@@ -58,41 +49,46 @@ export class IaPedidosService {
   }
 
   /**
-   * Punto de entrada principal: interpreta un texto de lenguaje natural
-   * y lo mapea a platos reales de la carta.
+   * Interpreta la interacción del cliente con el Mesero Virtual "Don Beto".
    */
-  async interpretarPedido(texto: string): Promise<ResultadoInterpretacion> {
-    // 1. Obtener la carta disponible actual
+  async interpretarPedido(
+    textoCliente: string,
+    historial: Array<{ rol: 'usuario' | 'asistente'; texto: string }> = [],
+    comandaPrevia: ItemInterpretado[] = [],
+  ): Promise<ResultadoConversacionIA> {
     const platosDisponibles = await this.obtenerCartaDisponible();
 
     if (platosDisponibles.length === 0) {
       throw new BadRequestException('No hay platos disponibles en este momento.');
     }
 
-    // 2. Intentar con Gemini primero, fallback a motor local
     if (this.geminiApiKey) {
       try {
-        const resultado = await this.interpretarConGemini(texto, platosDisponibles);
-        if (resultado.items.length > 0) {
-          return resultado;
-        }
+        const resultado = await this.interpretarConGemini(
+          textoCliente,
+          historial,
+          comandaPrevia,
+          platosDisponibles,
+        );
+        return resultado;
       } catch (error) {
-        this.logger.warn(`Gemini falló, usando motor local: ${error.message}`);
+        this.logger.warn(`Gemini API error, usando motor de contingencia local: ${error.message}`);
       }
     }
 
-    // 3. Motor local de coincidencia inteligente
-    return this.interpretarConMotorLocal(texto, platosDisponibles);
+    return this.interpretarConMotorLocal(textoCliente, comandaPrevia, platosDisponibles);
   }
 
   // ─────────────────────────────────────────────
-  // MOTOR PRIMARIO: Google Gemini 2.0 Flash
+  // MOTOR PRIMARIO: Google Gemini (Don Beto - Mesero Virtual)
   // ─────────────────────────────────────────────
 
   private async interpretarConGemini(
     textoCliente: string,
+    historial: Array<{ rol: 'usuario' | 'asistente'; texto: string }>,
+    comandaPrevia: ItemInterpretado[],
     platos: PlatoDisponible[],
-  ): Promise<ResultadoInterpretacion> {
+  ): Promise<ResultadoConversacionIA> {
     const cartaJSON = platos.map((p) => ({
       id: p.id,
       nombre: p.nombre,
@@ -100,34 +96,78 @@ export class IaPedidosService {
       variantes: p.variantes || [],
     }));
 
-    const systemPrompt = `Eres el asistente de pedidos de "Peña Restaurant Tukuypaj" en Cochabamba, Bolivia.
-Tu ÚNICA función es interpretar el pedido del cliente y mapearlo a platos de nuestra carta REAL y sus variantes de tamaño/porción correspondientes.
+    const systemPrompt = `Eres "Don Beto", el cordial, educado y atento mesero virtual de "Peña Restaurant Tukuypaj" en Cochabamba, Bolivia.
 
-CARTA DISPONIBLE (estos son los ÚNICOS platos y variantes disponibles):
-${JSON.stringify(cartaJSON, null, 2)}
+PERSONALIDAD Y TONO VALLUNO:
+- Tu trato es siempre muy atento, amigable, respetuoso y con la calidez típica de la llajta cochabambina.
+- Usas expresiones amables como: "¡Buen provecho!", "Con mucho gusto", "¿Gusta alguna cosita más?", "Le sugiero nuestra jarrita de limonada bien helada", "¡Servido casero/casera!".
 
-REGLAS ESTRICTAS:
-1. SOLO puedes mapear a platos y variantes que existan en la carta de arriba.
-2. Si un plato tiene variantes en la carta y el cliente especifica un tamaño o porción (ej: "un pique personal", "una jarra de limonada de dos litros", "chicharrón mediano", "parrillada familiar"), DEBES mapear al 'id' de la variante correspondiente en la propiedad 'varianteId'.
-3. Si el cliente NO especifica un tamaño para un plato que tiene variantes, asume por defecto la variante de menor tamaño/precio.
-4. Si el plato NO tiene variantes, la propiedad 'varianteId' debe ser null.
-5. Extrae cantidades numéricas: "dos" = 2, "un" = 1, "tres" = 3, etc. Si no especifica cantidad, asume 1.
-6. Extrae notas de preparación: "sin locoto", "extra picante", "bien cocido", etc.
-7. La moneda es Bolivianos (Bs.).
+COMPORTAMIENTO Y REGLAS DE CONVERSACIÓN:
+1. SALUDO O CONSULTAS DE MENÚ:
+   - Si el cliente solo saluda (ej: "hola", "buenas tardes", "buen día") o pregunta qué recomienda la casa, NO fuerces la comanda de inmediato.
+   - Saluda cordialmente, ofrece las especialidades estrella de la peña (Pique Macho, Chicharrón, Silpancho o Parrillada Tukuypaj) y sugiere bebidas tradicionales.
+   - Marca "estadoConversacion": "SALUDO".
 
-RESPONDE SOLO con un JSON válido con esta estructura exacta:
+2. ELECCIÓN DE TAMAÑOS Y VARIANTES:
+   - Si el cliente solicita un plato con variantes de tamaño (ej: "Quiero un Pique Macho") y NO aclara la porción, pregúntale amablemente qué tamaño prefiere explicándole las porciones:
+     * Personal (para 1 persona)
+     * Mediano (para 2 o 3 personas)
+     * Grande / Familiar (para compartir en familia)
+   - Si especifica tamaño (ej: "un Pique mediano"), asigna el varianteId correspondiente.
+   - Marca "estadoConversacion": "TOMANDO_PEDIDO".
+
+3. SUGERENCIA INTELIGENTE DE BEBIDAS / MARIDAJE:
+   - De manera fluida y natural, al pedir platos fuertes (Pique, Chicharrón, Parrillada), sugiere acompañar la mesa con limonada con hierba buena, chicha cochabambina o una cerveza bien fría.
+
+4. CONFIRMACIÓN FINAL:
+   - Si el cliente indica que completó su elección (ej: "eso es todo", "confirmar pedido", "envíalo a cocina", "ya está"), agradece con calidez y asigna "estadoConversacion": "CONFIRMACION_FINAL".
+
+5. ACUMULACIÓN DE COMANDA:
+   - Mantén en "comandaActualizada" los platos de la comanda previa, actualizándolos o agregando nuevos si el cliente añade más ítems.
+
+FORMATO DE SALIDA (RESPOONDE ÚNICAMENTE CON JSON VÁLIDO CON ESTA ESTRUCTURA EXACTA):
 {
-  "items": [
-    { "platoId": "uuid-del-plato", "varianteId": "uuid-de-la-variante-o-null", "nombre": "nombre exacto", "cantidad": 1, "notas": "sin locoto" }
+  "respuestaMesero": "Mensaje en lenguaje natural de Don Beto con calidez valluna.",
+  "comandaActualizada": [
+    {
+      "platoId": "uuid-del-plato",
+      "varianteId": "uuid-de-la-variante-o-null",
+      "nombre": "Nombre exacto del plato y tamaño",
+      "cantidad": 1,
+      "precioUnitario": 90.00,
+      "notas": "Notas de preparación (ej: sin locoto, bien jugoso)"
+    }
   ],
-  "mensaje": "Un mensaje amigable y breve en español confirmando lo que entendiste, mencionando los platos, sus tamaños y el total en Bs."
+  "estadoConversacion": "SALUDO" | "TOMANDO_PEDIDO" | "CONFIRMACION_FINAL"
 }
 
-Si no puedes identificar NINGÚN plato, responde:
-{ "items": [], "mensaje": "Lo siento, no pude identificar platos de nuestra carta en tu pedido. ¿Podrías intentar de nuevo?" }`;
+CARTA REAL DISPONIBLE EN PEÑA TUKUYPAJ:
+${JSON.stringify(cartaJSON, null, 2)}`;
+
+    const promptContents = [
+      { role: 'user', parts: [{ text: systemPrompt }] },
+    ];
+
+    // Incluir historial de conversación
+    for (const msg of historial) {
+      promptContents.push({
+        role: msg.rol === 'usuario' ? 'user' : 'model',
+        parts: [{ text: msg.texto }],
+      });
+    }
+
+    // Incluir el nuevo mensaje con la comanda previa como contexto
+    const contextoComanda = comandaPrevia.length > 0
+      ? ` [Comanda previa actual en mesa: ${JSON.stringify(comandaPrevia)}]`
+      : '';
+
+    promptContents.push({
+      role: 'user',
+      parts: [{ text: `Mensaje del cliente: "${textoCliente}"${contextoComanda}` }],
+    });
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 9000);
 
     try {
       const response = await fetch(`${this.geminiUrl}?key=${this.geminiApiKey}`, {
@@ -135,17 +175,10 @@ Si no puedes identificar NINGÚN plato, responde:
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: systemPrompt },
-                { text: `Pedido del cliente: "${textoCliente}"` },
-              ],
-            },
-          ],
+          contents: promptContents,
           generationConfig: {
-            temperature: 0.1,
-            topP: 0.8,
+            temperature: 0.3,
+            topP: 0.85,
             maxOutputTokens: 1024,
             responseMimeType: 'application/json',
           },
@@ -156,34 +189,26 @@ Si no puedes identificar NINGÚN plato, responde:
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+        throw new Error(`Gemini Error ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      const textContent =
-        data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-      this.logger.log(`Gemini response: ${textContent.substring(0, 200)}...`);
-
+      const textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const parsed = JSON.parse(textContent);
 
-      // Validar que los IDs devueltos realmente existen en la carta
       const platosMap = new Map(platos.map((p) => [p.id, p]));
       const itemsValidados: ItemInterpretado[] = [];
       let total = 0;
 
-      for (const item of parsed.items || []) {
+      for (const item of parsed.comandaActualizada || []) {
         const plato = platosMap.get(item.platoId);
         if (plato) {
-          let precio = Number(plato.precioVenta);
-          let nombreConVariante = plato.nombre;
-          let varianteIdValida: string | undefined = undefined;
+          let precio = Number(item.precioUnitario || plato.precioVenta);
+          let nombreConVariante = item.nombre || plato.nombre;
+          let varianteIdValida: string | undefined = item.varianteId || undefined;
 
           if (plato.variantes && plato.variantes.length > 0) {
-            let variante = null;
-            if (item.varianteId) {
-              variante = plato.variantes.find((v) => v.id === item.varianteId);
-            }
+            let variante = plato.variantes.find((v) => v.id === item.varianteId);
             if (!variante) {
               const sorted = [...plato.variantes].sort((a, b) => Number(a.precio) - Number(b.precio));
               variante = sorted[0];
@@ -195,24 +220,34 @@ Si no puedes identificar NINGÚN plato, responde:
             }
           }
 
+          const cant = Math.max(1, Math.round(item.cantidad || 1));
           itemsValidados.push({
             platoId: plato.id,
             varianteId: varianteIdValida,
             nombre: nombreConVariante,
-            cantidad: Math.max(1, Math.round(item.cantidad || 1)),
+            cantidad: cant,
             notas: item.notas || '',
             precioUnitario: precio,
             variantes: plato.variantes && plato.variantes.length > 0
               ? plato.variantes.map((v) => ({ id: v.id, nombre: v.nombre, precio: Number(v.precio) }))
               : undefined,
           });
-          total += precio * Math.max(1, Math.round(item.cantidad || 1));
+
+          total += precio * cant;
         }
       }
 
+      const estado: EstadoConversacion =
+        parsed.estadoConversacion === 'CONFIRMACION_FINAL'
+          ? 'CONFIRMACION_FINAL'
+          : itemsValidados.length > 0
+            ? 'TOMANDO_PEDIDO'
+            : (parsed.estadoConversacion || 'SALUDO');
+
       return {
-        items: itemsValidados,
-        mensajeIA: parsed.mensaje || 'He interpretado tu pedido.',
+        respuestaMesero: parsed.respuestaMesero || '¡Con mucho gusto le atiendo, casero! ¿Qué se le antoja degustar hoy?',
+        comandaActualizada: itemsValidados,
+        estadoConversacion: estado,
         totalEstimado: total,
         motor: 'gemini',
       };
@@ -228,47 +263,36 @@ Si no puedes identificar NINGÚN plato, responde:
 
   private interpretarConMotorLocal(
     textoCliente: string,
+    comandaPrevia: ItemInterpretado[],
     platos: PlatoDisponible[],
-  ): ResultadoInterpretacion {
+  ): ResultadoConversacionIA {
     const textoNorm = this.normalizar(textoCliente);
-    const tokens = textoNorm.split(/[\s,;.!?]+/).filter(Boolean);
-
-    const itemsEncontrados: ItemInterpretado[] = [];
-    const platosUsados = new Set<string>();
+    const itemsEncontrados: ItemInterpretado[] = [...comandaPrevia];
+    const platosUsados = new Set<string>(itemsEncontrados.map((i) => i.platoId));
 
     for (const plato of platos) {
       const nombreNorm = this.normalizar(plato.nombre);
       const palabrasPlato = nombreNorm.split(/\s+/);
-
-      // Estrategia 1: Coincidencia directa de nombre o parte significativa
       const match = this.buscarCoincidenciaEnTexto(textoNorm, nombreNorm, palabrasPlato);
 
       if (match && !platosUsados.has(plato.id)) {
         platosUsados.add(plato.id);
-
-        // Extraer cantidad cercana al match
         const cantidad = this.extraerCantidad(textoNorm, match.indice);
-
-        // Extraer notas de preparación
         const notas = this.extraerNotas(textoNorm);
 
         let precioUnitario = Number(plato.precioVenta);
-        let varianteId: string | null = null;
+        let varianteId: string | undefined = undefined;
         let nombreMostrar = plato.nombre;
 
         if (plato.variantes && plato.variantes.length > 0) {
           const variantesOrdenadas = [...plato.variantes].sort((a, b) => a.precio - b.precio);
           let varianteEncontrada = null;
-
           for (const v of variantesOrdenadas) {
-            const vNombreNorm = this.normalizar(v.nombre);
-            if (textoNorm.includes(vNombreNorm)) {
+            if (textoNorm.includes(this.normalizar(v.nombre))) {
               varianteEncontrada = v;
               break;
             }
           }
-
-          // Fallback a la variante más barata (por defecto, la menor/personal)
           const vElegida = varianteEncontrada || variantesOrdenadas[0];
           varianteId = vElegida.id;
           precioUnitario = vElegida.precio;
@@ -277,7 +301,7 @@ Si no puedes identificar NINGÚN plato, responde:
 
         itemsEncontrados.push({
           platoId: plato.id,
-          varianteId: varianteId || undefined,
+          varianteId,
           nombre: nombreMostrar,
           cantidad,
           notas,
@@ -295,19 +319,24 @@ Si no puedes identificar NINGÚN plato, responde:
     );
 
     let mensaje: string;
+    let estado: EstadoConversacion = 'TOMANDO_PEDIDO';
+
     if (itemsEncontrados.length > 0) {
-      const resumen = itemsEncontrados
-        .map((i) => `${i.cantidad}x ${i.nombre}`)
-        .join(', ');
-      mensaje = `He identificado: ${resumen}. Total estimado: Bs. ${total.toFixed(2)}. ¿Deseas confirmar?`;
+      const resumen = itemsEncontrados.map((i) => `${i.cantidad}x ${i.nombre}`).join(', ');
+      mensaje = `¡Con mucho gusto, casero! Le anoto: ${resumen}. El total estimado es Bs. ${total.toFixed(2)}. ¿Gusta alguna cosita más o lo enviamos a cocina?`;
     } else {
-      mensaje =
-        'No pude identificar platos de nuestra carta. Intenta mencionar platos como "Pique Macho", "Silpancho", "Chicharrón" o "Limonada".';
+      estado = 'SALUDO';
+      mensaje = '¡Sea bienvenido a Peña Tukuypaj, casero! Le sugiero probar nuestro sabroso Pique Macho, un Chicharrón bien dorado o un Silpancho. ¿Con qué le podemos servir hoy?';
+    }
+
+    if (textoNorm.includes('eso es todo') || textoNorm.includes('confirmar') || textoNorm.includes('enviar')) {
+      estado = 'CONFIRMACION_FINAL';
     }
 
     return {
-      items: itemsEncontrados,
-      mensajeIA: mensaje,
+      respuestaMesero: mensaje,
+      comandaActualizada: itemsEncontrados,
+      estadoConversacion: estado,
       totalEstimado: total,
       motor: 'local',
     };

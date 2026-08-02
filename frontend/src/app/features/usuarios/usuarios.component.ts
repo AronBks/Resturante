@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { UploadCloudinaryService } from '../../core/services/upload-cloudinary.service';
+import { AuthService } from '../../core/services/auth.service';
 import { LucideAngularModule } from 'lucide-angular';
 
 export enum RolUsuario {
@@ -598,20 +599,22 @@ interface PermisosModulo {
               <!-- Section 1: Avatar & Basic Info -->
               <div class="avatar-info-row">
                 <!-- Avatar Upload Zone -->
-                <div class="avatar-upload-box" (click)="triggerAvatarFileInput()">
-                  @if (isUploadingAvatar()) {
-                    <div class="avatar-spinner">
-                      <div class="micro-spinner"></div>
-                    </div>
-                  } @else if (nuevoMiembro.avatarUrl) {
-                    <img [src]="nuevoMiembro.avatarUrl" alt="Avatar Previo" class="avatar-prev-img" />
-                  } @else {
-                    <div class="avatar-placeholder">
-                      <lucide-icon name="camera" class="cam-icon"></lucide-icon>
-                      <span class="up-lbl">Subir Avatar</span>
-                    </div>
-                  }
-                  <input type="file" id="avatar-input" accept="image/*" style="display: none" (change)="uploadAvatar($event)" />
+                <div class="avatar-upload-wrapper">
+                  <div class="avatar-upload-box" (click)="triggerAvatarFileInput()">
+                    @if (isUploadingAvatar()) {
+                      <div class="avatar-spinner">
+                        <div class="micro-spinner"></div>
+                      </div>
+                    } @else if (nuevoMiembro.avatarUrl) {
+                      <img [src]="nuevoMiembro.avatarUrl" alt="Avatar Previo" class="avatar-prev-img" />
+                    } @else {
+                      <div class="avatar-placeholder">
+                        <lucide-icon name="camera" class="cam-icon"></lucide-icon>
+                        <span class="up-lbl">Subir Avatar</span>
+                      </div>
+                    }
+                    <input type="file" id="avatar-input" accept="image/*" style="display: none" (change)="uploadAvatar($event)" />
+                  </div>
                   <span class="subtext-fmt">FORMATOS: JPG, PNG • MÁX 2MB</span>
                 </div>
 
@@ -1074,30 +1077,35 @@ interface PermisosModulo {
 
     /* Action Card Gold Button */
     .action-card-gold {
-      background: #eab308;
+      background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
       border-radius: 12px;
       padding: 16px 20px;
       display: flex;
       align-items: center;
       gap: 14px;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(234, 179, 8, 0.2);
-      transition: all 0.25s ease;
+      box-shadow: 0 4px 16px rgba(234, 179, 8, 0.25);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
-        background: #facc15;
+        background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(234, 179, 8, 0.35);
+        box-shadow: 0 6px 22px rgba(234, 179, 8, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
       }
 
       .action-icon-circle {
         width: 42px;
         height: 42px;
         border-radius: 10px;
-        background: rgba(20, 15, 11, 0.15);
+        background: rgba(20, 15, 11, 0.18);
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
 
         .action-icon {
           width: 22px;
@@ -1115,12 +1123,14 @@ interface PermisosModulo {
           font-weight: 800;
           color: #140f0b;
           letter-spacing: 0.5px;
+          line-height: 1.2;
         }
 
         .action-sub {
           font-size: 0.68rem;
           font-weight: 600;
-          color: rgba(20, 15, 11, 0.75);
+          color: rgba(20, 15, 11, 0.8);
+          margin-top: 2px;
         }
       }
     }
@@ -1868,31 +1878,34 @@ interface PermisosModulo {
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(5px);
-      z-index: 1000;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
     }
 
     .modal-card-advanced {
       width: 100%;
-      max-width: 620px;
+      max-width: 580px;
+      max-height: calc(100vh - 60px);
       background: #16120e;
       border: 1px solid rgba(212, 168, 83, 0.4);
       border-radius: 14px;
-      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 168, 83, 0.1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(212, 168, 83, 0.15);
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      max-height: 90vh;
+      margin: auto;
     }
 
     .modal-adv-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: #18130e;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -1900,18 +1913,19 @@ interface PermisosModulo {
       .header-title-box {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
 
         .modal-icon-gold {
-          width: 22px;
-          height: 22px;
+          width: 20px;
+          height: 20px;
           color: #d4af37;
         }
 
         h3 {
-          font-size: 1.35rem;
+          font-size: 1.15rem;
           font-weight: 700;
           color: #d4af37;
+          margin: 0;
         }
       }
 
@@ -1919,47 +1933,68 @@ interface PermisosModulo {
         background: transparent;
         border: none;
         color: #8c8277;
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         cursor: pointer;
         transition: color 0.2s;
+        line-height: 1;
 
         &:hover { color: #f3ebe2; }
       }
     }
 
     .modal-adv-body {
-      padding: 24px;
+      flex: 1;
+      min-height: 0;
+      padding: 16px 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 14px;
     }
 
     .avatar-info-row {
       display: flex;
-      gap: 20px;
+      gap: 16px;
       align-items: flex-start;
     }
 
+    .avatar-upload-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 90px;
+      flex-shrink: 0;
+
+      .subtext-fmt {
+        font-size: 0.52rem;
+        font-weight: 700;
+        color: #8c8277;
+        letter-spacing: 0.4px;
+        text-align: center;
+        white-space: nowrap;
+      }
+    }
+
     .avatar-upload-box {
-      width: 125px;
-      height: 125px;
-      border: 2px dashed rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
+      width: 90px;
+      height: 90px;
+      border: 2px dashed rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
       background: #0d0a07;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 10px;
+      padding: 6px;
       cursor: pointer;
       position: relative;
       transition: all 0.25s ease;
 
       &:hover {
         border-color: rgba(212, 168, 83, 0.5);
-        background: rgba(212, 168, 83, 0.03);
+        background: rgba(212, 168, 83, 0.04);
 
         .cam-icon { color: #d4af37; }
         .up-lbl { color: #f3ebe2; }
@@ -1969,16 +2004,16 @@ interface PermisosModulo {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
 
         .cam-icon {
-          width: 24px;
-          height: 24px;
+          width: 20px;
+          height: 20px;
           color: #8c8277;
         }
 
         .up-lbl {
-          font-size: 0.72rem;
+          font-size: 0.65rem;
           font-weight: 600;
           color: #d6cbbf;
         }
@@ -1988,19 +2023,7 @@ interface PermisosModulo {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 10px;
-      }
-
-      .subtext-fmt {
-        position: absolute;
-        bottom: -20px;
-        left: 50%;
-        transform: translateX(-50%);
-        white-space: nowrap;
-        font-size: 0.58rem;
-        font-weight: 700;
-        color: #6b6257;
-        letter-spacing: 0.5px;
+        border-radius: 8px;
       }
     }
 
@@ -2011,8 +2034,8 @@ interface PermisosModulo {
     }
 
     .micro-spinner {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border: 2px solid rgba(212, 168, 83, 0.2);
       border-top-color: #d4af37;
       border-radius: 50%;
@@ -2027,19 +2050,19 @@ interface PermisosModulo {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
     }
 
     .form-group-adv {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
 
       label {
-        font-size: 0.68rem;
+        font-size: 0.62rem;
         font-weight: 700;
         color: #d4af37;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.6px;
         text-transform: uppercase;
       }
 
@@ -2047,9 +2070,9 @@ interface PermisosModulo {
         background: #0d0a07;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 8px;
-        padding: 9px 12px;
+        padding: 7px 10px;
         color: #f3ebe2;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         outline: none;
         transition: border-color 0.2s ease;
 
@@ -2071,19 +2094,19 @@ interface PermisosModulo {
     .row-2col-adv {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
     }
 
     .section-block-adv {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
 
       .block-lbl-gold {
-        font-size: 0.68rem;
+        font-size: 0.62rem;
         font-weight: 700;
         color: #d4af37;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.6px;
         text-transform: uppercase;
       }
     }
@@ -2091,7 +2114,7 @@ interface PermisosModulo {
     .roles-cards-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      gap: 8px;
 
       @media (max-width: 500px) {
         grid-template-columns: repeat(2, 1fr);
@@ -2100,26 +2123,35 @@ interface PermisosModulo {
       .role-card-select {
         background: #0d0a07;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
-        padding: 14px 10px;
+        border-radius: 8px;
+        padding: 9px 8px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 5px;
         cursor: pointer;
         transition: all 0.2s ease;
 
-        .r-icon {
-          width: 20px;
-          height: 20px;
+        lucide-icon, .r-icon {
+          display: inline-flex !important;
+          align-items: center;
+          justify-content: center;
+          width: 18px !important;
+          height: 18px !important;
           color: #8c8277;
           transition: color 0.2s ease;
+
+          svg {
+            width: 18px !important;
+            height: 18px !important;
+            display: block;
+          }
         }
 
         .r-name {
-          font-size: 0.72rem;
-          font-weight: 700;
+          font-size: 0.7rem;
+          font-weight: 800;
           color: #8c8277;
           letter-spacing: 0.5px;
           transition: color 0.2s ease;
@@ -2127,14 +2159,14 @@ interface PermisosModulo {
 
         &:hover {
           border-color: rgba(212, 168, 83, 0.3);
-          .r-icon, .r-name { color: #f3ebe2; }
+          lucide-icon svg, .r-icon, .r-name { color: #f3ebe2; }
         }
 
         &.selected {
           background: rgba(212, 168, 83, 0.12);
           border-color: #d4af37;
 
-          .r-icon, .r-name {
+          lucide-icon svg, .r-icon, .r-name {
             color: #d4af37;
           }
         }
@@ -2144,23 +2176,37 @@ interface PermisosModulo {
     .permisos-header-lbl {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: #d4af37;
-      letter-spacing: 0.8px;
+      gap: 8px;
 
-      .shield-mini {
-        width: 14px;
-        height: 14px;
+      lucide-icon, .shield-mini {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 16px !important;
+        height: 16px !important;
+        flex-shrink: 0;
+
+        svg {
+          width: 16px !important;
+          height: 16px !important;
+          color: #d4af37;
+          display: block;
+        }
+      }
+
+      span {
+        font-size: 0.68rem;
+        font-weight: 800;
         color: #d4af37;
+        letter-spacing: 0.8px;
+        line-height: 1;
       }
     }
 
     .permisos-cards-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
 
       @media (max-width: 550px) {
         grid-template-columns: 1fr;
@@ -2169,27 +2215,31 @@ interface PermisosModulo {
 
     .permiso-card {
       background: #0d0a07;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
 
       .p-text {
         display: flex;
         flex-direction: column;
         gap: 2px;
+        flex: 1;
 
         .p-title {
           font-size: 0.8rem;
           font-weight: 700;
           color: #f3ebe2;
+          line-height: 1.2;
         }
 
         .p-desc {
           font-size: 0.68rem;
           color: #8c8277;
+          line-height: 1.2;
         }
       }
     }
@@ -2198,8 +2248,8 @@ interface PermisosModulo {
     .switch {
       position: relative;
       display: inline-block;
-      width: 36px;
-      height: 20px;
+      width: 34px;
+      height: 18px;
 
       input { opacity: 0; width: 0; height: 0; }
 
@@ -2214,8 +2264,8 @@ interface PermisosModulo {
         &:before {
           position: absolute;
           content: "";
-          height: 14px;
-          width: 14px;
+          height: 12px;
+          width: 12px;
           left: 2px;
           bottom: 2px;
           background-color: #8c8277;
@@ -2233,52 +2283,60 @@ interface PermisosModulo {
         border-color: #eab308;
 
         &:before {
-          transform: translateX(16px);
+          transform: translateX(14px);
           background-color: #eab308;
         }
       }
     }
 
     .modal-adv-footer {
-      padding: 16px 24px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+      padding: 12px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: #18130e;
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      z-index: 10;
 
       .btn-cancel-adv {
         background: transparent;
-        border: none;
+        border: 1px solid rgba(255, 255, 255, 0.1);
         color: #f3ebe2;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 600;
         cursor: pointer;
-        padding: 8px 16px;
-        transition: color 0.2s;
+        padding: 7px 16px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
 
-        &:hover { color: #8c8277; }
+        &:hover {
+          background: rgba(255, 255, 255, 0.05);
+          color: #ffffff;
+          border-color: rgba(255, 255, 255, 0.2);
+        }
       }
 
       .btn-save-gold-adv {
-        background: #eab308;
+        background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
         color: #140f0b;
         border: none;
-        padding: 10px 22px;
-        border-radius: 8px;
-        font-size: 0.85rem;
+        padding: 8px 18px;
+        border-radius: 6px;
+        font-size: 0.8rem;
         font-weight: 700;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 14px rgba(234, 179, 8, 0.25);
+        gap: 6px;
+        box-shadow: 0 3px 12px rgba(234, 179, 8, 0.25);
         transition: all 0.25s ease;
 
         &:hover {
-          background: #facc15;
+          background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
           transform: translateY(-1px);
-          box-shadow: 0 6px 18px rgba(234, 179, 8, 0.35);
+          box-shadow: 0 5px 16px rgba(234, 179, 8, 0.35);
         }
       }
     }
@@ -2287,7 +2345,10 @@ interface PermisosModulo {
 export class UsuariosComponent implements OnInit {
   private http = inject(HttpClient);
   private uploadService = inject(UploadCloudinaryService);
+  private authService = inject(AuthService);
   private readonly baseUrl = 'http://localhost:3000/api';
+
+  currentUser = this.authService.currentUserSignal;
 
   RolUsuario = RolUsuario;
 
@@ -2496,6 +2557,12 @@ export class UsuariosComponent implements OnInit {
   }
 
   abrirModalCrear() {
+    const user = this.currentUser();
+    if (user && user.rol !== RolUsuario.ADMIN) {
+      alert('Acceso restringido: Solo los administradores pueden añadir o gestionar miembros del equipo.');
+      return;
+    }
+
     this.nuevoMiembro = {
       nombre: '',
       email: '',

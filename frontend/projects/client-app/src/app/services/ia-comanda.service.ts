@@ -1,12 +1,11 @@
 // ============================================================
-// IaComandaService — Comunicación con el motor de IA del backend
+// IaComandaService — Mesero Virtual "Don Beto" (Google Gemini)
 //
-// Maneja las dos fases del flujo de pedidos autónomos:
-//   1. Interpretación: envía texto natural → recibe items identificados
-//   2. Confirmación: envía items confirmados → pedido transaccional
+// Maneja la interacción conversacional fluida y en vivo con
+// la IA en la client-app y sincroniza la comanda actual.
 // ============================================================
 
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 export interface ItemInterpretado {
@@ -14,15 +13,23 @@ export interface ItemInterpretado {
   varianteId?: string;
   nombre: string;
   cantidad: number;
-  notas: string;
+  notas?: string;
   precioUnitario: number;
   variantes?: { id: string; nombre: string; precio: number }[];
 }
 
+export type EstadoConversacion = 'SALUDO' | 'TOMANDO_PEDIDO' | 'CONFIRMACION_FINAL';
+
+export interface MensajeHistorial {
+  rol: 'usuario' | 'asistente';
+  texto: string;
+}
+
 export interface ResultadoIA {
   mesa: { numero: string; estado: string };
-  items: ItemInterpretado[];
-  mensajeIA: string;
+  respuestaMesero: string;
+  comandaActualizada: ItemInterpretado[];
+  estadoConversacion: EstadoConversacion;
   totalEstimado: number;
   motor: 'gemini' | 'local';
 }
@@ -36,31 +43,50 @@ export class IaComandaService {
   loading = signal(false);
   error = signal<string | null>(null);
   resultado = signal<ResultadoIA | null>(null);
+  comandaActual = signal<ItemInterpretado[]>([]);
+  estadoConversacion = signal<EstadoConversacion>('SALUDO');
+  
   pedidoConfirmado = signal(false);
   confirmando = signal(false);
 
+  // ── Computed signals ──
+  totalEstimado = computed(() => {
+    return this.comandaActual().reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0);
+  });
+
+  hayItemsEnComanda = computed(() => this.comandaActual().length > 0);
+
   /**
-   * Fase 1: Envía texto en lenguaje natural para interpretación por IA.
+   * Envía texto en lenguaje natural al Mesero Virtual Don Beto.
    */
-  interpretarPedido(texto: string, mesaNumero: string): void {
+  interpretarPedido(
+    texto: string,
+    mesaNumero: string,
+    historial: MensajeHistorial[] = [],
+  ): void {
     this.loading.set(true);
     this.error.set(null);
-    this.resultado.set(null);
+
+    const bodyPayload = {
+      texto,
+      mesaNumero,
+      historial,
+      comandaPrevia: this.comandaActual(),
+    };
 
     this.http
-      .post<{ data: ResultadoIA }>(`${this.apiUrl}/ia`, {
-        texto,
-        mesaNumero,
-      })
+      .post<ResultadoIA>(`${this.apiUrl}/ia`, bodyPayload)
       .subscribe({
         next: (res) => {
-          this.resultado.set(res.data);
+          this.resultado.set(res);
+          this.comandaActual.set(res.comandaActualizada || []);
+          this.estadoConversacion.set(res.estadoConversacion || 'TOMANDO_PEDIDO');
           this.loading.set(false);
         },
         error: (err) => {
           const msg =
             err.error?.message ||
-            'No pude procesar tu pedido. Intenta de nuevo.';
+            '¡Uy casero! Tuve un inconveniente al escucharte. ¿Me repites por favor?';
           this.error.set(msg);
           this.loading.set(false);
         },
@@ -68,19 +94,29 @@ export class IaComandaService {
   }
 
   /**
-   * Fase 2: Confirma el pedido interpretado y lo registra en el backend.
+   * Confirma el pedido y lo envía directo a cocina.
    */
   confirmarPedido(
     mesaNumero: string,
-    items: { platoId: string; varianteId?: string; cantidad: number; notas?: string }[],
+    itemsOverride?: ItemInterpretado[],
   ): void {
+    const itemsAConfirmar = itemsOverride || this.comandaActual();
+    if (itemsAConfirmar.length === 0) return;
+
     this.confirmando.set(true);
     this.error.set(null);
+
+    const payloadItems = itemsAConfirmar.map((i) => ({
+      platoId: i.platoId,
+      varianteId: i.varianteId || undefined,
+      cantidad: i.cantidad,
+      notas: i.notas || undefined,
+    }));
 
     this.http
       .post(`${this.apiUrl}/ia/confirmar`, {
         mesaNumero,
-        items,
+        items: payloadItems,
       })
       .subscribe({
         next: () => {
@@ -90,7 +126,7 @@ export class IaComandaService {
         error: (err) => {
           const msg =
             err.error?.message ||
-            'Error al confirmar tu pedido. Intenta de nuevo.';
+            'Ocurrió un error al enviar el pedido a cocina. Intenta de nuevo por favor.';
           this.error.set(msg);
           this.confirmando.set(false);
         },
@@ -98,12 +134,40 @@ export class IaComandaService {
   }
 
   /**
-   * Resetea el estado para un nuevo pedido.
+   * Modifica la cantidad de un plato en el ticket en vivo.
+   */
+  actualizarCantidad(platoId: string, varianteId: string | undefined, delta: number): void {
+    this.comandaActual.update((items) => {
+      return items
+        .map((item) => {
+          if (item.platoId === platoId && item.varianteId === varianteId) {
+            const nuevaCantidad = item.cantidad + delta;
+            return nuevaCantidad > 0 ? { ...item, cantidad: nuevaCantidad } : null;
+          }
+          return item;
+        })
+        .filter((item): item is ItemInterpretado => item !== null);
+    });
+  }
+
+  /**
+   * Elimina un plato del ticket en vivo.
+   */
+  eliminarItem(platoId: string, varianteId?: string): void {
+    this.comandaActual.update((items) =>
+      items.filter((i) => !(i.platoId === platoId && i.varianteId === varianteId)),
+    );
+  }
+
+  /**
+   * Resetea el estado para reiniciar la interacción.
    */
   reset(): void {
     this.loading.set(false);
     this.error.set(null);
     this.resultado.set(null);
+    this.comandaActual.set([]);
+    this.estadoConversacion.set('SALUDO');
     this.pedidoConfirmado.set(false);
     this.confirmando.set(false);
   }

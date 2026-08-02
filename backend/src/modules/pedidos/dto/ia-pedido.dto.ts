@@ -2,6 +2,14 @@ import { IsString, IsNotEmpty, IsArray, ValidateNested, IsInt, Min, IsOptional }
 import { Type } from 'class-transformer';
 
 // ── Solicitud de interpretación por IA ──
+export class MensajeHistorialDto {
+  @IsString()
+  rol: 'usuario' | 'asistente';
+
+  @IsString()
+  texto: string;
+}
+
 export class InterpretarPedidoIaDto {
   @IsString()
   @IsNotEmpty()
@@ -10,6 +18,14 @@ export class InterpretarPedidoIaDto {
   @IsString()
   @IsNotEmpty()
   mesaNumero: string;
+
+  @IsArray()
+  @IsOptional()
+  historial?: MensajeHistorialDto[];
+
+  @IsArray()
+  @IsOptional()
+  comandaPrevia?: any[];
 }
 
 // ── Item interpretado por la IA (devuelto al cliente) ──
