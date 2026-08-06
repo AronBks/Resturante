@@ -14,6 +14,15 @@ export interface ItemCarrito {
   imagenUrl?: string;
 }
 
+export interface ResumenPedidoConfirmado {
+  codigo: string;
+  mesaNumero: string;
+  horaRecibido: string;
+  horaCocina: string;
+  items: ItemCarrito[];
+  total: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -25,6 +34,7 @@ export class CarritoService {
   items = signal<ItemCarrito[]>([]);
   confirmando = signal(false);
   pedidoConfirmado = signal(false);
+  ultimoPedido = signal<ResumenPedidoConfirmado | null>(null);
   error = signal<string | null>(null);
 
   // ── Inicialización desde localStorage (Persistencia) ──
@@ -162,8 +172,28 @@ export class CarritoService {
     };
 
     return new Observable((subscriber) => {
+      const itemsSnapshot = [...this.items()];
+      const totalSnapshot = this.totalAcumulado();
+      const now = new Date();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const horaRecibido = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const cocinaTime = new Date(now.getTime() + 5 * 60000);
+      const horaCocina = `${pad(cocinaTime.getHours())}:${pad(cocinaTime.getMinutes())}`;
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+
       this.http.post(`${this.apiUrl}/ia/confirmar`, payload).subscribe({
-        next: (response) => {
+        next: (response: any) => {
+          const codigo = response?.pedido?.codigo || `TK-${randomNum}`;
+
+          this.ultimoPedido.set({
+            codigo,
+            mesaNumero,
+            horaRecibido,
+            horaCocina,
+            items: itemsSnapshot,
+            total: totalSnapshot,
+          });
+
           this.confirmando.set(false);
           this.pedidoConfirmado.set(true);
           this.items.set([]);
