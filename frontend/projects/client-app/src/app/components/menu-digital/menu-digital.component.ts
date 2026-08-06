@@ -22,6 +22,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { LucideAngularModule } from 'lucide-angular';
 import { CartaPublicaService, CategoriaPublica, PlatoPublico, VariantePublica } from '../../services/carta-publica.service';
 import { SocketPublicoService } from '../../services/socket-publico.service';
 import { CarritoService } from '../../services/carrito.service';
@@ -30,7 +31,7 @@ import { CarritoDrawerComponent } from '../carrito-drawer/carrito-drawer.compone
 @Component({
   selector: 'client-menu-digital',
   standalone: true,
-  imports: [CommonModule, RouterLink, CarritoDrawerComponent],
+  imports: [CommonModule, RouterLink, CarritoDrawerComponent, LucideAngularModule],
   templateUrl: './menu-digital.component.html',
   styleUrl: './menu-digital.component.scss',
 })
@@ -41,8 +42,10 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private wsSub!: Subscription;
 
-  // Control de visibilidad del drawer de confirmación
+  // Control de visibilidad de drawers y modales
   drawerOpen = signal(false);
+  mobileNavOpen = signal(false);
+  tableModalOpen = signal(false);
 
   // Número de mesa para pasar al FAB de IA
   mesaNumero = signal('M01');
@@ -57,6 +60,22 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
 
   // WebSocket connection status
   isLive = this.socketService.isConnected;
+
+  toggleMobileNav(): void {
+    this.mobileNavOpen.update((v) => !v);
+  }
+
+  abrirCarrito(): void {
+    this.drawerOpen.set(true);
+  }
+
+  abrirMesaModal(): void {
+    this.tableModalOpen.set(true);
+  }
+
+  cerrarMesaModal(): void {
+    this.tableModalOpen.set(false);
+  }
 
   // ── Computed Signals ──
   filteredCategorias = computed<CategoriaPublica[]>(() => {
@@ -157,6 +176,49 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
     }
     const precios = plato.variantes.map((v) => v.precio);
     return Math.min(...precios);
+  }
+
+  /**
+   * Genera nombres de íconos vectoriales Lucide según la categoría
+   */
+  getCategoryIcon(nombre: string): string {
+    const n = nombre.toLowerCase();
+    if (n.includes('tradicional')) return 'utensils-crossed';
+    if (n.includes('parrilla') || n.includes('carne') || n.includes('asado')) return 'flame';
+    if (n.includes('sopa') || n.includes('caldo')) return 'soup';
+    if (n.includes('bebida') || n.includes('trago') || n.includes('refresco') || n.includes('cerveza')) return 'beer';
+    if (n.includes('postre') || n.includes('helado') || n.includes('dulce')) return 'cake';
+    return 'utensils';
+  }
+
+  /**
+   * Fallback visual con fotos culinarias HD de alta calidad
+   */
+  getFoodImageFallback(nombre: string): string {
+    const n = nombre.toLowerCase();
+    if (n.includes('chicharrón') || n.includes('cerdo')) {
+      return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('pique')) {
+      return 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('silpancho') || n.includes('carne')) {
+      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('sopa') || n.includes('caldo') || n.includes('ranga')) {
+      return 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('bebida') || n.includes('jugo') || n.includes('trago')) {
+      return 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80';
+  }
+
+  onImgError(event: Event, nombre: string): void {
+    const target = event.target as HTMLImageElement;
+    if (target) {
+      target.src = this.getFoodImageFallback(nombre);
+    }
   }
 
   /**

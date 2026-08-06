@@ -1,255 +1,405 @@
 <!-- ============================================================
-     MENÚ DIGITAL — Carta Interactiva en Tiempo Real
+     MENÚ DIGITAL — Experiencia Gastronómica Móvil & Desktop Premium
      Peña Restaurant Tukuypaj — Cochabamba, Bolivia
      ============================================================ -->
 
-<!-- ── Header Compacto ── -->
-<header class="menu-header">
-  <div class="menu-header__top">
-    <a routerLink="/" class="menu-header__back" id="btn-back-home">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5"/>
-        <polyline points="12 19 5 12 12 5"/>
-      </svg>
-    </a>
-    <div class="menu-header__brand">
-      <h1>Nuestra Carta</h1>
-      <p>Peña Restaurant Tukuypaj</p>
-    </div>
-    <div class="menu-header__live" [class.active]="isLive()">
-      <span class="live-dot"></span>
-      <span class="live-text">{{ isLive() ? 'En vivo' : 'Offline' }}</span>
-    </div>
-  </div>
+<div class="menu-layout">
 
-  <!-- ── Category Tabs (Sticky) ── -->
-  <nav class="category-tabs" id="category-tabs">
-    <button
-      class="category-tab"
-      [class.active]="selectedCategoryId() === null"
-      (click)="selectCategory(null)"
-      id="tab-all"
-    >
-      🍽️ Todo
-      <span class="tab-count">{{ totalPlatos() }}</span>
-    </button>
-    @for (cat of cartaService.categorias(); track cat.id) {
+  <!-- ── Sidebar de Navegación Lateral (Desktop) ── -->
+  <aside class="menu-sidebar">
+    <div class="menu-sidebar__header">
+      <h1 class="brand-title">TUKUYPAJ</h1>
+      <p class="brand-subtitle">Peña Restaurant</p>
+    </div>
+
+    <nav class="menu-sidebar__nav">
       <button
-        class="category-tab"
-        [class.active]="selectedCategoryId() === cat.id"
-        (click)="selectCategory(cat.id)"
-        [id]="'tab-cat-' + cat.id"
+        class="sidebar-tab"
+        [class.active]="selectedCategoryId() === null"
+        (click)="selectCategory(null)"
+        id="sidebar-tab-all"
       >
-        {{ cat.nombre }}
-        <span class="tab-count">{{ cat.platos.length }}</span>
+        <span class="tab-icon">
+          <lucide-icon name="utensils-crossed" [size]="18"></lucide-icon>
+        </span>
+        <span class="tab-label">Tradicionales</span>
       </button>
-    }
-  </nav>
-</header>
 
-<!-- ── Contenido Principal ── -->
-<div class="menu-content">
+      @for (cat of cartaService.categorias(); track cat.id) {
+        <button
+          class="sidebar-tab"
+          [class.active]="selectedCategoryId() === cat.id"
+          (click)="selectCategory(cat.id)"
+          [id]="'sidebar-tab-' + cat.id"
+        >
+          <span class="tab-icon">
+            <lucide-icon [name]="getCategoryIcon(cat.nombre)" [size]="18"></lucide-icon>
+          </span>
+          <span class="tab-label">{{ cat.nombre }}</span>
+        </button>
+      }
+    </nav>
 
-  <!-- Loading Skeleton -->
-  @if (cartaService.loading()) {
-    <div class="skeleton-grid">
-      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
-        <div class="skeleton-card">
-          <div class="skeleton-img shimmer-loading"></div>
-          <div class="skeleton-body">
-            <div class="skeleton-line skeleton-title shimmer-loading"></div>
-            <div class="skeleton-line skeleton-desc shimmer-loading"></div>
-            <div class="skeleton-line skeleton-price shimmer-loading"></div>
-          </div>
+    <div class="menu-sidebar__footer">
+      <a
+        [routerLink]="['/pedido-ia']"
+        [queryParams]="{ mesa: mesaNumero() }"
+        class="sidebar-ia-btn"
+        id="sidebar-btn-ia"
+      >
+        <lucide-icon name="bot" [size]="18" class="ia-btn-icon"></lucide-icon>
+        <span>PEDIR CON IA</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Área Principal de Contenido ── -->
+  <main class="menu-main">
+
+    <!-- Header Móvil (Estilo Cochabamba Peña con Menú Hamburguesa y Carrito) -->
+    <header class="mobile-header">
+      <div class="mobile-header__top">
+        <!-- Menú Hamburguesa -->
+        <button class="mobile-header__btn" (click)="toggleMobileNav()" id="btn-hamburger">
+          <lucide-icon name="menu" [size]="22"></lucide-icon>
+        </button>
+
+        <!-- Logo Central Cochabamba Peña -->
+        <div class="mobile-header__brand">
+          <h1>COCHABAMBA PEÑA</h1>
+        </div>
+
+        <!-- Botón de Carrito -->
+        <button class="mobile-header__btn cart-btn" (click)="abrirCarrito()" id="btn-cart-header">
+          <lucide-icon name="shopping-bag" [size]="22"></lucide-icon>
+          @if (carritoService.cantidadTotalItems() > 0) {
+            <span class="header-cart-badge">{{ carritoService.cantidadTotalItems() }}</span>
+          }
+        </button>
+      </div>
+
+      <!-- Category Chips Bar (Thumb-Friendly Horizontal Scroll) -->
+      <nav class="mobile-category-tabs" id="mobile-category-tabs">
+        <button
+          class="category-chip"
+          [class.active]="selectedCategoryId() === null"
+          (click)="selectCategory(null)"
+          id="chip-all"
+        >
+          <lucide-icon name="utensils-crossed" [size]="15"></lucide-icon>
+          <span>Todo</span>
+        </button>
+        @for (cat of cartaService.categorias(); track cat.id) {
+          <button
+            class="category-chip"
+            [class.active]="selectedCategoryId() === cat.id"
+            (click)="selectCategory(cat.id)"
+            [id]="'chip-cat-' + cat.id"
+          >
+            <lucide-icon [name]="getCategoryIcon(cat.nombre)" [size]="15"></lucide-icon>
+            <span>{{ cat.nombre }}</span>
+          </button>
+        }
+      </nav>
+    </header>
+
+    <!-- Hero Section Inmersiva "Nuestra Herencia Gastronómica" -->
+    <section class="hero-fine-dining">
+      <div class="hero-fine-dining__overlay"></div>
+      <div class="hero-fine-dining__content">
+        <h2 class="hero-fine-dining__title">Nuestra Herencia Gastronómica</h2>
+        <p class="hero-fine-dining__desc">
+          Una cuidadosa selección de recetas tradicionales cochabambinas, elevadas con ingredientes premium en un ambiente de peña exclusiva.
+        </p>
+      </div>
+    </section>
+
+    <!-- Contenido de Platos -->
+    <div class="menu-content-wrapper">
+
+      <!-- Skeletons -->
+      @if (cartaService.loading()) {
+        <div class="skeleton-grid">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <div class="skeleton-card">
+              <div class="skeleton-img shimmer-loading"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line skeleton-title shimmer-loading"></div>
+                <div class="skeleton-line skeleton-desc shimmer-loading"></div>
+                <div class="skeleton-line skeleton-price shimmer-loading"></div>
+              </div>
+            </div>
+          }
         </div>
       }
-    </div>
-  }
 
-  <!-- Error State -->
-  @if (cartaService.error()) {
-    <div class="error-state">
-      <div class="error-icon">⚠️</div>
-      <p>{{ cartaService.error() }}</p>
-      <button class="retry-btn" (click)="cartaService.cargarCarta()" id="btn-retry">
-        Reintentar
-      </button>
-    </div>
-  }
-
-  <!-- Carta Sections -->
-  @if (!cartaService.loading() && !cartaService.error()) {
-    @for (cat of filteredCategorias(); track cat.id) {
-      <section class="category-section animate-in" [style.animation-delay]="($index * 0.06) + 's'">
-        <div class="category-section__header">
-          <h2>{{ cat.nombre }}</h2>
-          @if (cat.descripcion) {
-            <p>{{ cat.descripcion }}</p>
-          }
+      <!-- Error State -->
+      @if (cartaService.error()) {
+        <div class="error-state">
+          <lucide-icon name="alert-circle" [size]="48" class="error-icon-svg"></lucide-icon>
+          <p>{{ cartaService.error() }}</p>
+          <button class="retry-btn" (click)="cartaService.cargarCarta()" id="btn-retry">
+            Reintentar
+          </button>
         </div>
+      }
 
-        <div class="platos-grid">
-          @for (plato of cat.platos; track plato.id) {
-            <article
-              class="plato-card"
-              [class.removing]="isPlatoRemoving(plato.id)"
-              [id]="'plato-' + plato.id"
-            >
-              <!-- Image / Emoji Fallback -->
-              <div class="plato-card__visual">
-                @if (plato.imagenUrl) {
-                  <img
-                    [src]="plato.imagenUrl"
-                    [alt]="plato.nombre"
-                    class="plato-card__img"
-                    loading="lazy"
-                    (error)="plato.imagenUrl = ''"
-                  >
-                } @else {
-                  <div class="plato-card__emoji-box">
-                    <span class="plato-card__emoji">{{ getFoodEmoji(plato.nombre) }}</span>
+      <!-- Secciones de Categorías y Grilla de Platos -->
+      @if (!cartaService.loading() && !cartaService.error()) {
+        @for (cat of filteredCategorias(); track cat.id) {
+          <section class="editorial-category-section animate-in" [style.animation-delay]="($index * 0.06) + 's'">
+            <div class="editorial-category-header">
+              <h2 class="category-heading">
+                {{ selectedCategoryId() === null && $first ? 'Los Tradicionales de Cochabamba' : cat.nombre }}
+              </h2>
+              <p class="category-subheading">
+                {{ cat.descripcion || 'Lo mejor de la gastronomía valluna, preparado con maestría.' }}
+              </p>
+            </div>
+
+            <div class="editorial-platos-grid">
+              @for (plato of cat.platos; track plato.id) {
+                <article
+                  class="editorial-card"
+                  [class.removing]="isPlatoRemoving(plato.id)"
+                  [id]="'plato-' + plato.id"
+                >
+                  <!-- Visual / Imagen Expansiva de Alta Calidad -->
+                  <div class="editorial-card__visual">
+                    <img
+                      [src]="plato.imagenUrl || getFoodImageFallback(plato.nombre)"
+                      [alt]="plato.nombre"
+                      class="editorial-card__img"
+                      loading="lazy"
+                      (error)="onImgError($event, plato.nombre)"
+                    />
                   </div>
-                }
-              </div>
 
-              <!-- Info -->
-              <div class="plato-card__body">
-                <div class="plato-card__top">
-                  <h3 class="plato-card__name">{{ plato.nombre }}</h3>
-                  <span class="plato-card__price">
-                    @if (plato.variantes && plato.variantes.length > 0) {
-                      Desde Bs. {{ obtenerPrecioMostrar(plato) | number:'1.2-2' }}
-                    } @else {
-                      Bs. {{ plato.precioVenta | number:'1.2-2' }}
-                    }
-                  </span>
-                </div>
+                  <!-- Info de la Tarjeta Editorial -->
+                  <div class="editorial-card__body">
+                    <h3 class="editorial-card__title">{{ plato.nombre }}</h3>
 
-                @if (plato.descripcion) {
-                  <p class="plato-card__desc">{{ plato.descripcion }}</p>
-                } @else {
-                  <p class="plato-card__desc">Especialidad tradicional de la casa.</p>
-                }
+                    <p class="editorial-card__desc">
+                      {{ plato.descripcion || 'Especialidad tradicional de la casa preparada con sazón única y productos locales de la más alta calidad.' }}
+                    </p>
 
-                <!-- Contenedor Interactivo (Añadir / Stepper) -->
-                <div class="plato-card__interactive">
-                  @if (plato.variantes && plato.variantes.length > 0) {
-                    <!-- Caso Plato con Variantes -->
-                    <div class="variant-add-wrapper">
-                      @if (obtenerCantidadTotalPlato(plato) > 0) {
-                        <span class="variant-badge">{{ obtenerCantidadTotalPlato(plato) }}</span>
-                      }
-                      <button
-                        class="add-to-cart-btn variant-btn"
-                        (click)="abrirSelectorVariante(plato); $event.stopPropagation()"
-                        [id]="'btn-add-var-' + plato.id"
-                      >
-                        {{ obtenerCantidadTotalPlato(plato) > 0 ? 'Añadir más' : 'Añadir +' }}
-                      </button>
-                    </div>
-                  } @else {
-                    <!-- Caso Plato Simple (Sin Variantes) -->
-                    @if (carritoService.obtenerCantidad(plato.id) === 0) {
-                      <button
-                        class="add-to-cart-btn"
-                        (click)="carritoService.agregarPlato(plato); $event.stopPropagation()"
-                        [id]="'btn-add-' + plato.id"
-                      >
-                        Añadir +
-                      </button>
-                    } @else {
-                      <div class="card-stepper" (click)="$event.stopPropagation()">
-                        <button
-                          class="card-stepper-btn minus"
-                          (click)="carritoService.removerPlato(plato.id)"
-                          [id]="'btn-minus-' + plato.id"
-                        >
-                          −
-                        </button>
-                        <span class="card-stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
-                        <button
-                          class="card-stepper-btn plus"
-                          (click)="carritoService.agregarPlato(plato)"
-                          [id]="'btn-plus-' + plato.id"
-                        >
-                          +
-                        </button>
+                    <!-- Fila de Precio + Botón de Acción Móvil Expansivo (+) -->
+                    <div class="editorial-card__footer-row">
+                      <span class="editorial-card__price">
+                        @if (plato.variantes && plato.variantes.length > 0) {
+                          Bs. {{ obtenerPrecioMostrar(plato) | number:'1.2-2' }}
+                        } @else {
+                          Bs. {{ plato.precioVenta | number:'1.2-2' }}
+                        }
+                      </span>
+
+                      <!-- Botón (+) o Stepper de Pedido Rápidos -->
+                      <div class="editorial-card__action">
+                        @if (plato.variantes && plato.variantes.length > 0) {
+                          <button
+                            class="mobile-quick-add-btn"
+                            (click)="abrirSelectorVariante(plato); $event.stopPropagation()"
+                            [id]="'btn-add-var-' + plato.id"
+                          >
+                            <lucide-icon name="plus" [size]="22"></lucide-icon>
+                          </button>
+                        } @else {
+                          @if (carritoService.obtenerCantidad(plato.id) === 0) {
+                            <button
+                              class="mobile-quick-add-btn"
+                              (click)="carritoService.agregarPlato(plato); $event.stopPropagation()"
+                              [id]="'btn-add-' + plato.id"
+                            >
+                              <lucide-icon name="plus" [size]="22"></lucide-icon>
+                            </button>
+                          } @else {
+                            <div class="editorial-stepper" (click)="$event.stopPropagation()">
+                              <button
+                                class="stepper-btn minus"
+                                (click)="carritoService.removerPlato(plato.id)"
+                                [id]="'btn-minus-' + plato.id"
+                              >
+                                <lucide-icon name="minus" [size]="16"></lucide-icon>
+                              </button>
+                              <span class="stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
+                              <button
+                                class="stepper-btn plus"
+                                (click)="carritoService.agregarPlato(plato)"
+                                [id]="'btn-plus-' + plato.id"
+                              >
+                                <lucide-icon name="plus" [size]="16"></lucide-icon>
+                              </button>
+                            </div>
+                          }
+                        }
                       </div>
-                    }
-                  }
-                </div>
-              </div>
-            </article>
-          }
-        </div>
-      </section>
-    } @empty {
-      <div class="empty-state">
-        <div class="empty-icon">📋</div>
-        <p>No hay platos disponibles en este momento.</p>
-        <span>Vuelve pronto para ver nuestro menú actualizado.</span>
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        } @empty {
+          <div class="empty-state">
+            <lucide-icon name="utensils-crossed" [size]="48" class="empty-icon-svg"></lucide-icon>
+            <p>No hay platos disponibles en este momento.</p>
+            <span>Vuelve pronto para ver nuestro menú actualizado.</span>
+          </div>
+        }
+      }
+
+    </div>
+
+    <!-- Fine Dining Footer -->
+    <footer class="fine-dining-footer">
+      <div class="footer-brand">TUKUYPAJ</div>
+      <div class="footer-links">
+        <a href="https://facebook.com" target="_blank" id="footer-link-fb">Facebook</a>
+        <a href="https://instagram.com" target="_blank" id="footer-link-ig">Instagram</a>
+        <a href="https://wa.me/59171727374" target="_blank" id="footer-link-wa">WhatsApp</a>
+        <a href="https://maps.google.com" target="_blank" id="footer-link-loc">Ubicación</a>
       </div>
-    }
-  }
+      <p class="footer-copy">© 2026 Tukuypaj Restaurant. Cochabamba, Bolivia.</p>
+    </footer>
+
+  </main>
 </div>
 
-<!-- ── Footer Compacto ── -->
-<footer class="menu-footer">
-  <p>Precios en Bolivianos (Bs.) • Menú sujeto a disponibilidad</p>
-  <p class="menu-footer__brand">Peña Restaurant Tukuypaj © 2026</p>
-</footer>
+<!-- ── BARRA DE NAVEGACIÓN INFERIOR MÓVIL (BOTTOM NAV) ── -->
+<nav class="mobile-bottom-nav">
+  <button
+    class="bottom-nav-item active"
+    (click)="selectCategory(null)"
+    id="nav-item-menu"
+  >
+    <div class="nav-icon-box">
+      <lucide-icon name="utensils-crossed" [size]="20"></lucide-icon>
+    </div>
+    <span class="nav-label">Menú</span>
+  </button>
 
-<!-- Barra Flotante de Resumen del Carrito (Solo si hay items en el carrito) -->
-@if (carritoService.cantidadTotalItems() > 0) {
-  <div class="cart-floating-bar animate-in">
-    <div class="cart-floating-bar__content">
-      <div class="cart-floating-bar__info">
-        <span class="cart-floating-bar__icon">🛒</span>
-        <div class="cart-floating-bar__text">
-          <span class="cart-floating-bar__count">
-            {{ carritoService.cantidadTotalItems() }} {{ carritoService.cantidadTotalItems() === 1 ? 'plato' : 'platos' }}
-          </span>
-          <span class="cart-floating-bar__divider">—</span>
-          <span class="cart-floating-bar__total">Bs. {{ carritoService.totalAcumulado() | number:'1.2-2' }}</span>
-        </div>
+  <a
+    [routerLink]="['/pedido-ia']"
+    [queryParams]="{ mesa: mesaNumero() }"
+    class="bottom-nav-item"
+    id="nav-item-ia"
+  >
+    <div class="nav-icon-box">
+      <lucide-icon name="bot" [size]="20"></lucide-icon>
+    </div>
+    <span class="nav-label">Pedir con IA</span>
+  </a>
+
+  <button
+    class="bottom-nav-item"
+    (click)="abrirCarrito()"
+    id="nav-item-cart"
+  >
+    <div class="nav-icon-box">
+      <lucide-icon name="shopping-bag" [size]="20"></lucide-icon>
+      @if (carritoService.cantidadTotalItems() > 0) {
+        <span class="bottom-nav-badge">{{ carritoService.cantidadTotalItems() }}</span>
+      }
+    </div>
+    <span class="nav-label">Carrito</span>
+  </button>
+
+  <button
+    class="bottom-nav-item"
+    (click)="abrirMesaModal()"
+    id="nav-item-profile"
+  >
+    <div class="nav-icon-box">
+      <lucide-icon name="user" [size]="20"></lucide-icon>
+    </div>
+    <span class="nav-label">Mi Mesa</span>
+  </button>
+</nav>
+
+<!-- ── DRAWER LATERAL MÓVIL (MENU HAMBURGUESA) ── -->
+@if (mobileNavOpen()) {
+  <div class="mobile-drawer-overlay" (click)="toggleMobileNav()"></div>
+  <aside class="mobile-drawer-menu">
+    <div class="drawer-header">
+      <div class="drawer-brand">
+        <h2>COCHABAMBA PEÑA</h2>
+        <p>Peña Restaurant Tukuypaj</p>
       </div>
-      <button class="cart-floating-bar__btn" (click)="drawerOpen.set(true)" id="btn-revisar-pedido">
-        <span>Revisar y Pedir</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="arrow-icon">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
+      <button class="drawer-close" (click)="toggleMobileNav()">
+        <lucide-icon name="x" [size]="22"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="drawer-nav">
+      <a routerLink="/" (click)="toggleMobileNav()" class="drawer-link">
+        <lucide-icon name="home" [size]="18"></lucide-icon>
+        <span>Inicio</span>
+      </a>
+      <button (click)="selectCategory(null); toggleMobileNav()" class="drawer-link">
+        <lucide-icon name="utensils-crossed" [size]="18"></lucide-icon>
+        <span>Nuestra Carta</span>
+      </button>
+      <a [routerLink]="['/pedido-ia']" [queryParams]="{ mesa: mesaNumero() }" (click)="toggleMobileNav()" class="drawer-link gold-highlight">
+        <lucide-icon name="bot" [size]="18"></lucide-icon>
+        <span>Pedir con IA (Don Beto)</span>
+      </a>
+      <button (click)="abrirMesaModal(); toggleMobileNav()" class="drawer-link">
+        <lucide-icon name="user" [size]="18"></lucide-icon>
+        <span>Mi Mesa ({{ mesaNumero() }})</span>
+      </button>
+    </div>
+
+    <div class="drawer-footer">
+      <p class="drawer-live-status">
+        <span class="live-dot green"></span> Carta en vivo sincronizada
+      </p>
+      <p class="drawer-copy">© 2026 Peña Restaurant Tukuypaj</p>
+    </div>
+  </aside>
+}
+
+<!-- ── MODAL DE INFORMACIÓN DE MESA ── -->
+@if (tableModalOpen()) {
+  <div class="variant-modal-overlay open" (click)="cerrarMesaModal()"></div>
+  <div class="variant-modal-container open">
+    <div class="drawer-handle" (click)="cerrarMesaModal()"></div>
+    <div class="variant-modal-header">
+      <h3>Información de tu Mesa</h3>
+      <p class="variant-modal-plato">Peña Restaurant Tukuypaj</p>
+    </div>
+    <div class="variant-modal-body">
+      <div class="table-info-box">
+        <div class="table-number-badge">
+          <span class="lbl">MESA ASIGNADA</span>
+          <span class="num">{{ mesaNumero() }}</span>
+        </div>
+        <p class="table-info-text">
+          Tus pedidos y comandas ingresarán directamente a la cocina asignados a la <strong>Mesa {{ mesaNumero() }}</strong>.
+        </p>
+      </div>
+    </div>
+    <div class="variant-modal-footer">
+      <button class="variant-modal-confirm" (click)="cerrarMesaModal()">
+        Entendido
       </button>
     </div>
   </div>
 }
 
-<!-- Botón Flotante (FAB) de Asistente IA (Se desplaza hacia arriba si hay carrito flotante) -->
-<a
-  [routerLink]="['/pedido-ia']"
-  [queryParams]="{ mesa: mesaNumero() }"
-  class="ia-fab"
-  [class.shifted]="carritoService.cantidadTotalItems() > 0"
-  id="fab-asistente-ia"
->
-  <span class="ia-fab__icon">🤖</span>
-  <span class="ia-fab__text">Pedir con IA</span>
-</a>
-
-<!-- Drawer de Confirmación de Pedido (Bottom Sheet) -->
+<!-- Drawer de Confirmación de Pedido -->
 <client-carrito-drawer
   [isOpen]="drawerOpen()"
   [mesaNumero]="mesaNumero()"
   (close)="drawerOpen.set(false)"
 ></client-carrito-drawer>
 
-<!-- Modal Selector de Variantes (Bottom Sheet estilo iOS) -->
+<!-- Modal Selector de Variantes -->
 @if (selectedPlatoParaVariante(); as plato) {
   <div class="variant-modal-overlay open" (click)="cerrarSelectorVariante()"></div>
   <div class="variant-modal-container open">
     <div class="drawer-handle" (click)="cerrarSelectorVariante()"></div>
     <div class="variant-modal-header">
-      <h3>Selecciona el tamaño</h3>
+      <h3>Selecciona la variante</h3>
       <p class="variant-modal-plato">{{ plato.nombre }}</p>
     </div>
     <div class="variant-modal-body">
