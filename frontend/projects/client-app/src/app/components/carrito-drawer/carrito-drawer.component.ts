@@ -1,12 +1,13 @@
 import { Component, inject, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule } from 'lucide-angular';
 import { CarritoService, ItemCarrito } from '../../services/carrito.service';
 
 @Component({
   selector: 'client-carrito-drawer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './carrito-drawer.component.html',
   styleUrl: './carrito-drawer.component.scss',
 })
@@ -46,6 +47,26 @@ export class CarritoDrawerComponent {
   seguirNavegando(): void {
     this.carritoService.limpiarCarrito();
     this.close.emit();
+  }
+
+  compartirRecibo(): void {
+    const p = this.carritoService.ultimoPedido();
+    const text = `🛒 Resumen de Pedido Tukuypaj #${p?.codigo || 'TK-4592'} (Mesa ${this.mesaNumero()}): Total Bs. ${p?.total || 0}`;
+    if (navigator.share) {
+      navigator.share({ title: 'Pedido Tukuypaj', text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text);
+      alert('Resumen del recibo copiado al portapapeles.');
+    }
+  }
+
+  anadirAlgoMas(): void {
+    this.carritoService.pedidoConfirmado.set(false);
+    this.close.emit();
+  }
+
+  llamarRestaurante(): void {
+    alert(`Un mesero atenderá tu Mesa ${this.mesaNumero()} en breve.`);
   }
 
   trackByPlatoId(index: number, item: ItemCarrito): string {

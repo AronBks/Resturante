@@ -15,93 +15,201 @@
   <!-- Handle decorativo para simular bottom sheet nativo en móviles -->
   <div class="drawer-handle" (click)="cerrarDrawer()"></div>
 
-  <!-- Cabecera -->
-  <header class="drawer-header">
-    <div class="drawer-header__info">
-      <h2>Mi Pedido</h2>
-      <span class="drawer-header__mesa">Mesa {{ mesaNumero() }}</span>
-    </div>
-    <button class="drawer-close-btn" (click)="cerrarDrawer()" aria-label="Cerrar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-  </header>
+  <!-- Caso A: Estado y Confirmación del Pedido (Funcional Premium) -->
+  @if (carritoService.pedidoConfirmado()) {
+    <header class="drawer-header status-header">
+      <button class="drawer-close-box" (click)="cerrarDrawer()" aria-label="Cerrar">
+        <lucide-icon name="x" [size]="20"></lucide-icon>
+      </button>
+      <h2 class="drawer-title status-title">
+        Pedido <span class="order-code">#{{ carritoService.ultimoPedido()?.codigo || 'TK-4592' }}</span>
+      </h2>
+      <div class="drawer-header-spacer"></div>
+    </header>
 
-  <!-- Cuerpo Principal -->
-  <div class="drawer-body">
-    <!-- Caso 1: Éxito al Confirmar Pedido -->
-    @if (carritoService.pedidoConfirmado()) {
-      <div class="success-screen animate-in">
-        <div class="success-icon-box">
-          <span class="success-icon">🍳</span>
-          <div class="success-ring"></div>
+    <div class="drawer-body status-body animate-in">
+
+      <!-- Timeline Vertical del Estado del Pedido -->
+      <section class="order-timeline">
+        <!-- Paso 1: Pedido Recibido -->
+        <div class="timeline-step completed">
+          <div class="step-indicator">
+            <div class="icon-circle">
+              <lucide-icon name="check-circle-2" [size]="18"></lucide-icon>
+            </div>
+            <div class="step-line active"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-header">
+              <h4 class="step-name">Pedido Recibido</h4>
+              <span class="step-time">{{ carritoService.ultimoPedido()?.horaRecibido || '19:30' }}</span>
+            </div>
+            <p class="step-desc">Tu orden ha sido confirmada.</p>
+          </div>
         </div>
-        <h3>¡Pedido enviado a Cocina!</h3>
-        <p class="success-desc">
-          Tu orden para la <strong>Mesa {{ mesaNumero() }}</strong> ya está siendo procesada. Los platos se prepararán y servirán lo antes posible.
-        </p>
-        <div class="success-actions">
-          <button class="success-btn" (click)="seguirNavegando()">
-            Seguir viendo la Carta
-          </button>
+
+        <!-- Paso 2: En Cocina (Activo) -->
+        <div class="timeline-step active">
+          <div class="step-indicator">
+            <div class="icon-circle active-glow">
+              <lucide-icon name="flame" [size]="18"></lucide-icon>
+            </div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <div class="step-header">
+              <h4 class="step-name active-gold">En Cocina</h4>
+              <span class="step-time active-gold">{{ carritoService.ultimoPedido()?.horaCocina || '19:35' }}</span>
+            </div>
+            <p class="step-desc active-gold">Preparando con amor y tradición.</p>
+          </div>
         </div>
-      </div>
-    }
-    <!-- Caso 2: El carrito está vacío -->
-    @else if (carritoService.items().length === 0) {
-      <div class="empty-screen">
-        <span class="empty-emoji">🛒</span>
-        <h3>Tu carrito está vacío</h3>
-        <p>Añade deliciosos platos de nuestra carta para iniciar tu pedido.</p>
-        <button class="empty-btn" (click)="cerrarDrawer()">
-          Ver Menú
+
+        <!-- Paso 3: Listo para Servir -->
+        <div class="timeline-step pending">
+          <div class="step-indicator">
+            <div class="icon-circle">
+              <lucide-icon name="clock" [size]="18"></lucide-icon>
+            </div>
+          </div>
+          <div class="step-content">
+            <div class="step-header">
+              <h4 class="step-name">Listo para Servir</h4>
+              <span class="step-time">--:--</span>
+            </div>
+            <p class="step-desc">Te avisaremos cuando esté en tu mesa.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tarjeta "Información de tu pedido" -->
+      <section class="order-summary-card">
+        <h3 class="summary-card-title">Información de tu pedido</h3>
+
+        <div class="summary-card-items">
+          @if (carritoService.ultimoPedido(); as pedido) {
+            @for (item of pedido.items; track trackByPlatoId($index, item)) {
+              <div class="summary-item-row">
+                <div class="summary-item-left">
+                  <span class="qty-badge">{{ item.cantidad }}x</span>
+                  <div class="summary-item-details">
+                    <span class="item-name">{{ item.nombre }}</span>
+                    @if (item.varianteNombre) {
+                      <span class="item-variant">({{ item.varianteNombre }})</span>
+                    }
+                    @if (item.notas) {
+                      <span class="item-notes">Sin picante</span>
+                    }
+                  </div>
+                </div>
+                <span class="summary-item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.0-2' }}</span>
+              </div>
+            }
+          } @else {
+            <div class="summary-item-row">
+              <div class="summary-item-left">
+                <span class="qty-badge">1x</span>
+                <div class="summary-item-details">
+                  <span class="item-name">Chicharrón de Cerdo</span>
+                  <span class="item-variant">(Personal)</span>
+                  <span class="item-notes">Sin picante</span>
+                </div>
+              </div>
+              <span class="summary-item-price">Bs. 45</span>
+            </div>
+            <div class="summary-item-row">
+              <div class="summary-item-left">
+                <span class="qty-badge">1x</span>
+                <div class="summary-item-details">
+                  <span class="item-name">Chicharrón de Cerdo</span>
+                  <span class="item-variant">(Mediano)</span>
+                </div>
+              </div>
+              <span class="summary-item-price">Bs. 80</span>
+            </div>
+          }
+        </div>
+
+        <div class="summary-card-divider"></div>
+
+        <div class="summary-card-total">
+          <span class="total-lbl">TOTAL</span>
+          <strong class="total-val">Bs. {{ (carritoService.ultimoPedido()?.total || 125) | number:'1.0-2' }}</strong>
+        </div>
+      </section>
+
+      <!-- Fila de 3 Botones de Acción Rápida -->
+      <div class="action-grid-row">
+        <button class="action-grid-btn" (click)="compartirRecibo()">
+          <lucide-icon name="receipt" [size]="22" class="grid-btn-icon"></lucide-icon>
+          <span>Compartir recibo</span>
+        </button>
+
+        <button class="action-grid-btn gold" (click)="anadirAlgoMas()">
+          <lucide-icon name="plus-circle" [size]="22" class="grid-btn-icon"></lucide-icon>
+          <span>Añadir algo más</span>
+        </button>
+
+        <button class="action-grid-btn" (click)="llamarRestaurante()">
+          <lucide-icon name="phone-call" [size]="22" class="grid-btn-icon"></lucide-icon>
+          <span>Llamar al restaurante</span>
         </button>
       </div>
-    }
-    <!-- Caso 3: Lista de Platos en el Carrito -->
-    @else {
-      <div class="items-list">
-        @for (item of carritoService.items(); track trackByPlatoId($index, item)) {
-          <div class="item-row">
-            <!-- Visual -->
-            <div class="item-visual">
-              @if (item.imagenUrl) {
-                <img [src]="item.imagenUrl" [alt]="item.nombre" class="item-img" />
-              } @else {
-                <span class="item-emoji">🍽️</span>
-              }
-            </div>
 
-            <!-- Detalles -->
-            <div class="item-details">
-              <div class="item-info">
-                <span class="item-name">
-                  {{ item.nombre }}
+    </div>
+  }
+
+  <!-- Caso B: Edición y Resumen Pre-Envío del Carrito -->
+  @else {
+    <!-- Cabecera "Tu Pedido" con botón atrás -->
+    <header class="drawer-header">
+      <button class="drawer-back-btn" (click)="cerrarDrawer()" aria-label="Volver">
+        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+      </button>
+      <h2 class="drawer-title">Tu Pedido</h2>
+      <div class="drawer-header-spacer"></div>
+    </header>
+
+    <!-- Cuerpo Principal -->
+    <div class="drawer-body">
+      @if (carritoService.items().length === 0) {
+        <div class="empty-screen">
+          <div class="empty-icon-box">
+            <lucide-icon name="shopping-bag" [size]="48" class="empty-icon-svg"></lucide-icon>
+          </div>
+          <h3>Tu carrito está vacío</h3>
+          <p>Añade deliciosos platos de nuestra carta para iniciar tu pedido.</p>
+          <button class="empty-btn" (click)="cerrarDrawer()">
+            Ver Menú
+          </button>
+        </div>
+      } @else {
+        <div class="items-list">
+          @for (item of carritoService.items(); track trackByPlatoId($index, item)) {
+            <article class="item-card">
+              <!-- Fila Superior: Foto + Info (Nombre, Variante, Precio) + Stepper -->
+              <div class="item-card__main">
+                <!-- Visual Thumbnail -->
+                <div class="item-visual">
+                  @if (item.imagenUrl) {
+                    <img [src]="item.imagenUrl" [alt]="item.nombre" class="item-img" />
+                  } @else {
+                    <div class="item-placeholder-img">
+                      <lucide-icon name="utensils" [size]="24"></lucide-icon>
+                    </div>
+                  }
+                </div>
+
+                <!-- Detalles del Plato y Precio -->
+                <div class="item-info">
+                  <h4 class="item-name">{{ item.nombre }}</h4>
                   @if (item.varianteNombre) {
                     <span class="item-variant-label">({{ item.varianteNombre }})</span>
                   }
-                </span>
-                <span class="item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
-              </div>
-
-              <!-- Fila Inferior: Notas y Stepper -->
-              <div class="item-actions">
-                <div class="item-notes-wrapper">
-                  <svg class="notes-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z" />
-                  </svg>
-                  <input
-                    type="text"
-                    class="item-notes-input"
-                    placeholder="Notas (ej. sin picante, extra llajua...)"
-                    [value]="item.notas"
-                    (change)="actualizarNotas(item.platoId, item.varianteId, $event)"
-                  />
+                  <span class="item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.0-2' }}</span>
                 </div>
 
+                <!-- Stepper Móvil Estilo Pill -->
                 <div class="item-stepper">
                   <button
                     class="stepper-btn minus"
@@ -120,40 +228,56 @@
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        }
-      </div>
-    }
-  </div>
 
-  <!-- Pie del Drawer (Solo si hay ítems y no está confirmado) -->
-  @if (carritoService.items().length > 0 && !carritoService.pedidoConfirmado()) {
-    <footer class="drawer-footer">
-      <!-- Error del Servidor -->
-      @if (carritoService.error()) {
-        <div class="error-banner">
-          <span>⚠️ {{ carritoService.error() }}</span>
+              <!-- Fila Inferior: Notas de Comanda con Ícono de Lápiz Vectorial -->
+              <div class="item-card__notes-row">
+                <lucide-icon name="edit-3" [size]="16" class="notes-icon-svg"></lucide-icon>
+                <input
+                  type="text"
+                  class="item-notes-input"
+                  placeholder="Notas: ej. sin picante, más llajwa..."
+                  [value]="item.notas"
+                  (change)="actualizarNotas(item.platoId, item.varianteId, $event)"
+                />
+              </div>
+            </article>
+          }
         </div>
       }
+    </div>
 
-      <div class="summary-total">
-        <span>Total a Pagar</span>
-        <strong>Bs. {{ carritoService.totalAcumulado() | number:'1.2-2' }}</strong>
-      </div>
-
-      <button
-        class="submit-order-btn"
-        [disabled]="carritoService.confirmando()"
-        (click)="enviarPedido()"
-      >
-        @if (carritoService.confirmando()) {
-          <span class="loader-spinner"></span>
-          <span>Enviando a Cocina...</span>
-        } @else {
-          <span>🚀 Enviar Pedido a Cocina</span>
+    <!-- Pie del Drawer (Resumen de Total + Botón Enviar Pedido a Cocina) -->
+    @if (carritoService.items().length > 0) {
+      <footer class="drawer-footer">
+        @if (carritoService.error()) {
+          <div class="error-banner">
+            <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+            <span>{{ carritoService.error() }}</span>
+          </div>
         }
-      </button>
-    </footer>
+
+        <div class="summary-total-row">
+          <div class="total-label-box">
+            <span class="total-title">Total a Pagar</span>
+            <span class="total-subtitle">Impuestos incluidos</span>
+          </div>
+          <strong class="total-amount">Bs. {{ carritoService.totalAcumulado() | number:'1.0-2' }}</strong>
+        </div>
+
+        <button
+          class="submit-order-btn"
+          [disabled]="carritoService.confirmando()"
+          (click)="enviarPedido()"
+        >
+          @if (carritoService.confirmando()) {
+            <span class="loader-spinner"></span>
+            <span>ENVIANDO A COCINA...</span>
+          } @else {
+            <span>ENVIAR PEDIDO A COCINA</span>
+            <lucide-icon name="rocket" [size]="20" class="btn-rocket-icon"></lucide-icon>
+          }
+        </button>
+      </footer>
+    }
   }
 </div>
