@@ -1,0 +1,1373 @@
+/* ==========================================================================
+   TUKUYPAJ — PEÑA & RESTAURANT
+   CIERRE DE CUENTA — Pago, QR Inmersivo, Recibo Digital & Feedback
+   Estética Fine Dining Móvil  ·  Obsidiana Profunda + Oro Tukuypaj
+   ========================================================================== */
+
+:host {
+  --bg-obsidian: #14110e;
+  --bg-card: #1c1814;
+  --bg-card-elevated: #231f1a;
+  --gold-primary: #e5c158;
+  --gold-accent: #d4af37;
+  --gold-border: rgba(212, 175, 55, 0.2);
+  --gold-glow: rgba(229, 193, 88, 0.35);
+  --text-main: #ffffff;
+  --text-muted: #a3998e;
+  --text-dim: #6e665e;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Outfit', 'Inter', sans-serif;
+
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-obsidian);
+  color: var(--text-main);
+}
+
+/* ── LAYOUT PRINCIPAL ── */
+.cierre-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* ══════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════ */
+.cierre-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+
+  &.transparent-header {
+    border-bottom: none;
+  }
+}
+
+.header-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: var(--gold-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:active {
+    background: rgba(229, 193, 88, 0.12);
+  }
+}
+
+.header-brand h1 {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--gold-primary);
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.header-spacer, .drawer-header-spacer {
+  width: 36px;
+}
+
+/* ══════════════════════════════════════
+   CUERPO SCROLLABLE
+   ══════════════════════════════════════ */
+.cierre-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── Título y Subtítulo ── */
+.cierre-title-section {
+  text-align: center;
+}
+
+.cierre-heading {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px;
+}
+
+.cierre-subheading {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ══════════════════════════════════════
+   TARJETA "RESUMEN DEL PEDIDO"
+   ══════════════════════════════════════ */
+.resumen-pedido-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--gold-border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+.resumen-card__bg-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(229, 193, 88, 0.06) 0%, transparent 60%),
+    url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=30');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.resumen-card__content {
+  position: relative;
+  z-index: 1;
+  padding: 22px;
+}
+
+.resumen-card__title {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--gold-primary);
+  margin: 0 0 18px;
+}
+
+.resumen-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resumen-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resumen-item-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.resumen-item-name {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.resumen-item-qty {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.resumen-item-price {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.resumen-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 14px 0;
+}
+
+.resumen-subtotal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* ══════════════════════════════════════
+   SELECTOR DE PROPINA
+   ══════════════════════════════════════ */
+.propina-section {
+  text-align: center;
+}
+
+.section-label {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.propina-chips {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.propina-chip {
+  min-width: 72px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.active {
+    background: rgba(229, 193, 88, 0.12);
+    border-color: var(--gold-primary);
+    color: var(--gold-primary);
+    box-shadow: 0 0 16px rgba(229, 193, 88, 0.25);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.total-pagar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+}
+
+.total-pagar-label {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--gold-primary);
+  font-weight: 500;
+}
+
+.total-pagar-amount {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  line-height: 1;
+}
+
+/* ══════════════════════════════════════
+   DATOS DE FACTURACIÓN
+   ══════════════════════════════════════ */
+.facturacion-card {
+  background: var(--bg-card);
+  border: 1px solid var(--gold-border);
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.facturacion-title {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.form-input {
+  width: 100%;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  padding: 0 16px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: var(--text-dim);
+  }
+
+  &:focus {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 3px rgba(229, 193, 88, 0.1);
+  }
+}
+
+/* ══════════════════════════════════════
+   MÉTODO DE PAGO
+   ══════════════════════════════════════ */
+.metodo-pago-section {
+  text-align: center;
+}
+
+.metodo-pago-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.metodo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 22px 14px;
+  border-radius: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  .metodo-icon {
+    color: var(--text-muted);
+    transition: color 0.2s;
+  }
+
+  span {
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  &.active {
+    border-color: var(--gold-primary);
+    background: rgba(229, 193, 88, 0.08);
+    color: var(--gold-primary);
+    box-shadow: 0 4px 20px rgba(229, 193, 88, 0.2);
+
+    .metodo-icon {
+      color: var(--gold-primary);
+    }
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ══════════════════════════════════════
+   FOOTER: BOTÓN CONFIRMAR PAGO
+   ══════════════════════════════════════ */
+.cierre-footer {
+  padding: 16px 20px 28px;
+  background: #100e0b;
+  border-top: 1px solid var(--gold-border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.confirm-pago-btn {
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--gold-primary);
+  border: none;
+  color: #12100d;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px var(--gold-glow);
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: #eed47d;
+    box-shadow: 0 8px 30px rgba(229, 193, 88, 0.45);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(220, 53, 69, 0.15);
+  border: 1.5px solid rgba(220, 53, 69, 0.3);
+  color: #ff6b6b;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+}
+
+/* ══════════════════════════════════════
+   PANTALLA 2: ESCANEO QR CON WEBGL ENERGÍA DORADA
+   ══════════════════════════════════════ */
+.qr-scanner-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-obsidian);
+}
+
+.qr-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.qr-title-box {
+  margin-bottom: 32px;
+}
+
+.qr-heading {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  margin: 0 0 8px;
+}
+
+.qr-subheading {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Contenedor de Aura de Energía Dorada */
+.qr-aura-container {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.golden-aura-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(229, 193, 88, 0.35) 0%, rgba(212, 175, 55, 0.12) 50%, transparent 70%);
+  animation: pulseAura 3s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.golden-energy-particles {
+  position: absolute;
+  inset: -40px;
+  background: radial-gradient(circle, rgba(229, 193, 88, 0.2) 10%, transparent 60%);
+  filter: blur(12px);
+  animation: particleRotate 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes pulseAura {
+  0% { transform: scale(0.92); opacity: 0.6; }
+  100% { transform: scale(1.1); opacity: 0.95; }
+}
+
+@keyframes particleRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Marco del Escáner QR */
+.qr-scanner-frame {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  border-radius: 28px;
+  background: rgba(28, 24, 20, 0.85);
+  border: 1.5px solid rgba(229, 193, 88, 0.4);
+  box-shadow: 0 0 32px rgba(229, 193, 88, 0.3), inset 0 0 24px rgba(229, 193, 88, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* Esquinas Doradas */
+.corner {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-color: var(--gold-primary);
+  border-style: solid;
+}
+
+.corner.top-left {
+  top: 14px; left: 14px;
+  border-width: 3px 0 0 3px;
+  border-top-left-radius: 10px;
+}
+
+.corner.top-right {
+  top: 14px; right: 14px;
+  border-width: 3px 3px 0 0;
+  border-top-right-radius: 10px;
+}
+
+.corner.bottom-left {
+  bottom: 14px; left: 14px;
+  border-width: 0 0 3px 3px;
+  border-bottom-left-radius: 10px;
+}
+
+.corner.bottom-right {
+  bottom: 14px; right: 14px;
+  border-width: 0 3px 3px 0;
+  border-bottom-right-radius: 10px;
+}
+
+/* Línea Láser Laser Scanning Line */
+.laser-scanner-line {
+  position: absolute;
+  left: 10px; right: 10px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+  box-shadow: 0 0 16px var(--gold-primary), 0 0 8px var(--gold-primary);
+  animation: scanLine 2.8s ease-in-out infinite alternate;
+  z-index: 3;
+}
+
+@keyframes scanLine {
+  0% { top: 15px; }
+  100% { top: 230px; }
+}
+
+/* Patrón de Código QR Dorado */
+.qr-pattern-grid {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 12px;
+  opacity: 0.85;
+}
+
+.qr-eye {
+  border: 3px solid var(--gold-primary);
+  border-radius: 8px;
+  position: relative;
+  background: rgba(229, 193, 88, 0.08);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    background: var(--gold-primary);
+    border-radius: 3px;
+  }
+}
+
+.qr-center-box {
+  background: rgba(229, 193, 88, 0.25);
+  border-radius: 6px;
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Pie del QR: Botones */
+.qr-footer {
+  padding: 24px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qr-cancel-btn {
+  width: 100%;
+  height: 52px;
+  border-radius: 16px;
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.qr-simulate-btn {
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--gold-primary);
+  border: none;
+  color: #12100d;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px var(--gold-glow);
+  transition: all 0.25s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ══════════════════════════════════════
+   PANTALLA 3: RECIBO DIGITAL PREMIUM
+   ══════════════════════════════════════ */
+.recibo-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-obsidian);
+}
+
+.recibo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  flex-shrink: 0;
+}
+
+.recibo-close-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  color: var(--gold-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.recibo-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--gold-primary);
+  margin: 0;
+}
+
+/* Selector de Variante: Cinematográfica vs Minimalista */
+.variante-selector-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 20px 16px;
+}
+
+.variante-chip {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &.active {
+    background: rgba(229, 193, 88, 0.15);
+    border-color: var(--gold-primary);
+    color: var(--gold-primary);
+  }
+}
+
+/* Cuerpo del Recibo */
+.recibo-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &.minimal-style {
+    .ticket-card {
+      background: #15120f;
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+/* Tarjeta del Ticket */
+.ticket-card {
+  width: 100%;
+  max-width: 420px;
+  background: #191512;
+  border: 1px solid var(--gold-border);
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ticket-top-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.check-gold-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: var(--gold-primary);
+  color: #12100d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 0 24px rgba(229, 193, 88, 0.4);
+
+  .check-gold-icon {
+    color: #12100d;
+  }
+}
+
+.ticket-thanks-heading {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  margin: 0 0 6px;
+}
+
+.ticket-thanks-sub {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.ticket-brand-tag {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--gold-primary);
+}
+
+/* Muescas del Ticket */
+.ticket-notches-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin: 4px -20px;
+}
+
+.notch {
+  width: 18px;
+  height: 24px;
+  background: var(--bg-obsidian);
+
+  &.left {
+    border-radius: 0 12px 12px 0;
+  }
+
+  &.right {
+    border-radius: 12px 0 0 12px;
+    margin-left: auto;
+  }
+}
+
+.dashed-ticket-line {
+  flex: 1;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+/* Secciones del Cuerpo */
+.ticket-middle-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ticket-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.ticket-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ticket-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-name-qty {
+  display: flex;
+  flex-direction: column;
+
+  .name {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  .qty {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+}
+
+.ticket-item-row .price {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.ticket-inner-dashed {
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.ticket-calc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.ticket-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+
+  .total-label {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+    color: var(--gold-primary);
+    font-weight: 600;
+  }
+
+  .total-value {
+    font-family: var(--font-serif);
+    font-size: 1.8rem;
+    color: var(--gold-primary);
+    font-weight: 700;
+  }
+}
+
+/* Despedida de Don Roberto */
+.ticket-quote-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 8px;
+}
+
+.award-gold-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(229, 193, 88, 0.12);
+  border: 1px solid var(--gold-primary);
+  color: var(--gold-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.quote-text {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--gold-primary);
+  margin: 0 0 4px;
+}
+
+.quote-author {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+
+/* Acciones de Descarga y Compartir */
+.ticket-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pdf-download-btn {
+  width: 100%;
+  height: 50px;
+  border-radius: 14px;
+  background: var(--gold-primary);
+  border: none;
+  color: #12100d;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px var(--gold-glow);
+  transition: all 0.2s;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.share-receipt-btn {
+  width: 100%;
+  height: 50px;
+  border-radius: 14px;
+  background: transparent;
+  border: 1px solid var(--gold-border);
+  color: var(--gold-primary);
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:active {
+    background: rgba(229, 193, 88, 0.1);
+  }
+}
+
+.recibo-footer {
+  padding: 16px 20px 28px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.continue-feedback-btn {
+  width: 100%;
+  height: 54px;
+  border-radius: 16px;
+  background: var(--gold-primary);
+  border: none;
+  color: #12100d;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px var(--gold-glow);
+
+  .rotate-180 {
+    transform: rotate(180deg);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ══════════════════════════════════════
+   PANTALLA 4: CALIFICACIÓN / FEEDBACK
+   ══════════════════════════════════════ */
+.feedback-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 48px 24px 36px;
+  background: var(--bg-obsidian);
+  text-align: center;
+  gap: 24px;
+}
+
+.feedback-hero-icon {
+  color: var(--gold-primary);
+  margin-bottom: 4px;
+}
+
+.feedback-title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.feedback-desc {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 340px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Tarjeta de Estrellas ── */
+.rating-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-card);
+  border: 1px solid var(--gold-border);
+  border-radius: 22px;
+  padding: 28px 24px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+.rating-card-title {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 20px;
+}
+
+.stars-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: scale(1.25);
+  }
+
+  &.active .star-svg {
+    filter: drop-shadow(0 0 6px rgba(229, 193, 88, 0.5));
+  }
+}
+
+.star-svg {
+  width: 40px;
+  height: 40px;
+  transition: filter 0.2s;
+}
+
+/* ── Sección del Mesero ── */
+.mesero-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mesero-avatar-box {
+  flex-shrink: 0;
+}
+
+.mesero-avatar-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(229, 193, 88, 0.12);
+  border: 2px solid var(--gold-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-primary);
+}
+
+.mesero-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.mesero-label {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+
+.mesero-nombre {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--gold-primary);
+}
+
+/* ── Evaluación Rápida (3 Botones) ── */
+.eval-rapida-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.eval-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 8px;
+  border-radius: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  .eval-icon {
+    color: var(--text-muted);
+    transition: color 0.2s;
+  }
+
+  .eval-label {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  &.active {
+    border-color: var(--gold-primary);
+    background: rgba(229, 193, 88, 0.1);
+    color: var(--gold-primary);
+    box-shadow: 0 4px 16px rgba(229, 193, 88, 0.2);
+
+    .eval-icon {
+      color: var(--gold-primary);
+    }
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* ── Footer Feedback ── */
+.feedback-footer {
+  width: 100%;
+  max-width: 380px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.enviar-feedback-btn {
+  width: 100%;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--gold-primary);
+  border: none;
+  color: #12100d;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 24px var(--gold-glow);
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: #eed47d;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* ══════════════════════════════════════
+   PANTALLA 5: CONFIRMACIÓN FINAL
+   ══════════════════════════════════════ */
+.completado-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 48px 28px;
+  text-align: center;
+  background: var(--bg-obsidian);
+}
+
+.completado-icon-box {
+  color: var(--gold-primary);
+  margin-bottom: 20px;
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+.completado-title {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 12px;
+}
+
+.completado-desc {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 320px;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.completado-redirect {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════
+   ANIMACIONES
+   ══════════════════════════════════════ */
+.animate-in {
+  animation: fadeSlideUp 0.4s ease-out;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.loader-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #12100d;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
