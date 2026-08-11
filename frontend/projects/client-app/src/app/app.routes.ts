@@ -30,8 +30,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'cierre-cuenta',
+    loadComponent: () =>
+      import('./components/cierre-cuenta/cierre-cuenta.component').then(
+        (m) => m.CierreCuentaComponent,
+      ),
+  },
+  {
     path: '**',
     redirectTo: '',
   },
 ];
-

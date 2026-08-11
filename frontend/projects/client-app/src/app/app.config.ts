@@ -60,7 +60,14 @@ import {
   FileText,
   PhoneCall,
   Receipt,
-  Share2
+  Share2,
+  ThumbsUp,
+  ThumbsDown,
+  Smile,
+  Star,
+  Download,
+  Award,
+  QrCode
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -119,7 +126,14 @@ export const appIcons = {
   FileText,
   PhoneCall,
   Receipt,
-  Share2
+  Share2,
+  ThumbsUp,
+  ThumbsDown,
+  Smile,
+  Star,
+  Download,
+  Award,
+  QrCode
 };
 
 export const appConfig: ApplicationConfig = {
