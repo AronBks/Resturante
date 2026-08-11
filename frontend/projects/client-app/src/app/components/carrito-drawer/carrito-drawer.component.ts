@@ -1,6 +1,7 @@
 import { Component, inject, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { CarritoService, ItemCarrito } from '../../services/carrito.service';
 
@@ -13,6 +14,7 @@ import { CarritoService, ItemCarrito } from '../../services/carrito.service';
 })
 export class CarritoDrawerComponent {
   readonly carritoService = inject(CarritoService);
+  private readonly router = inject(Router);
 
   // Inputs y Outputs reactivos (Angular 19 Signals)
   isOpen = input.required<boolean>();
@@ -51,7 +53,7 @@ export class CarritoDrawerComponent {
 
   compartirRecibo(): void {
     const p = this.carritoService.ultimoPedido();
-    const text = `🛒 Resumen de Pedido Tukuypaj #${p?.codigo || 'TK-4592'} (Mesa ${this.mesaNumero()}): Total Bs. ${p?.total || 0}`;
+    const text = `Resumen de Pedido Tukuypaj #${p?.codigo || 'TK-4592'} (Mesa ${this.mesaNumero()}): Total Bs. ${p?.total || 0}`;
     if (navigator.share) {
       navigator.share({ title: 'Pedido Tukuypaj', text }).catch(() => {});
     } else {
@@ -69,7 +71,15 @@ export class CarritoDrawerComponent {
     alert(`Un mesero atenderá tu Mesa ${this.mesaNumero()} en breve.`);
   }
 
+  pedirCuenta(): void {
+    this.close.emit();
+    this.router.navigate(['/cierre-cuenta'], {
+      queryParams: { mesa: this.mesaNumero() },
+    });
+  }
+
   trackByPlatoId(index: number, item: ItemCarrito): string {
     return `${item.platoId}-${item.varianteId || ''}`;
   }
 }
+

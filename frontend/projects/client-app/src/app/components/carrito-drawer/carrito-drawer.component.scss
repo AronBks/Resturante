@@ -400,6 +400,37 @@
   }
 }
 
+/* ── BOTÓN "PEDIR LA CUENTA" ── */
+.pedir-cuenta-btn {
+  width: 100%;
+  height: 52px;
+  border-radius: 14px;
+  background: transparent;
+  border: 1.5px solid var(--gold-primary);
+  color: var(--gold-primary);
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: rgba(229, 193, 88, 0.08);
+  }
+
+  &:active {
+    transform: scale(0.98);
+    background: rgba(229, 193, 88, 0.15);
+  }
+}
+
 /* ==========================================================================
    TARJETAS DE PLATOS EN "TU PEDIDO" (ESTADO PRE-ENVÍO)
    ========================================================================== */
