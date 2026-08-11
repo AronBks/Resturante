@@ -1,0 +1,536 @@
+<!-- ==========================================================================
+     CIERRE DE CUENTA — Pago, QR Inmersivo, Recibo Digital & Feedback
+     Peña Restaurant Tukuypaj — Cochabamba, Bolivia
+     ========================================================================== -->
+
+<div class="cierre-layout">
+
+  <!-- ═══════════════════════════════════════════
+       PANTALLA 1: CIERRE DE CUENTA Y PAGO
+       ═══════════════════════════════════════════ -->
+  @if (pantallaActual() === 'pago') {
+
+    <!-- Header -->
+    <header class="cierre-header">
+      <button class="header-back" (click)="volver()" id="btn-cierre-back">
+        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+      </button>
+      <div class="header-brand">
+        <h1>Tukuypaj</h1>
+      </div>
+      <div class="header-spacer"></div>
+    </header>
+
+    <!-- Cuerpo con scroll -->
+    <div class="cierre-body">
+
+      <!-- Título Principal -->
+      <section class="cierre-title-section">
+        <h2 class="cierre-heading">Cierre de Cuenta</h2>
+        <p class="cierre-subheading">Revisa tu pedido y completa el pago.</p>
+      </section>
+
+      <!-- Resumen del Pedido -->
+      <section class="resumen-pedido-card" id="resumen-card">
+        <div class="resumen-card__bg-overlay"></div>
+        <div class="resumen-card__content">
+          <h3 class="resumen-card__title">Resumen del Pedido</h3>
+
+          <div class="resumen-items">
+            @if (pedido(); as p) {
+              @for (item of p.items; track $index) {
+                <div class="resumen-item-row">
+                  <div class="resumen-item-left">
+                    <span class="resumen-item-name">{{ item.nombre }}</span>
+                    <span class="resumen-item-qty">x{{ item.cantidad }}</span>
+                  </div>
+                  <span class="resumen-item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
+                </div>
+              }
+            } @else {
+              <div class="resumen-item-row">
+                <div class="resumen-item-left">
+                  <span class="resumen-item-name">Chicharrón de Cerdo</span>
+                  <span class="resumen-item-qty">x1</span>
+                </div>
+                <span class="resumen-item-price">Bs. 85.00</span>
+              </div>
+              <div class="resumen-item-row">
+                <div class="resumen-item-left">
+                  <span class="resumen-item-name">Mocochinchi</span>
+                  <span class="resumen-item-qty">x2</span>
+                </div>
+                <span class="resumen-item-price">Bs. 20.00</span>
+              </div>
+            }
+          </div>
+
+          <div class="resumen-divider"></div>
+
+          <div class="resumen-subtotal-row">
+            <span>Subtotal</span>
+            <span>Bs. {{ subtotal() | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Selector de Propina -->
+      <section class="propina-section">
+        <h4 class="section-label">PROPINA</h4>
+        <div class="propina-chips">
+          <button
+            class="propina-chip"
+            [class.active]="propinaPorcentaje() === 0"
+            (click)="seleccionarPropina(0)"
+            id="propina-0"
+          >0%</button>
+          <button
+            class="propina-chip"
+            [class.active]="propinaPorcentaje() === 5"
+            (click)="seleccionarPropina(5)"
+            id="propina-5"
+          >5%</button>
+          <button
+            class="propina-chip"
+            [class.active]="propinaPorcentaje() === 10"
+            (click)="seleccionarPropina(10)"
+            id="propina-10"
+          >10%</button>
+        </div>
+
+        <!-- Total a Pagar (con propina) -->
+        <div class="total-pagar-row">
+          <span class="total-pagar-label">Total a Pagar</span>
+          <strong class="total-pagar-amount">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
+        </div>
+      </section>
+
+      <!-- Datos de Facturación -->
+      <section class="facturacion-card">
+        <h4 class="facturacion-title">DATOS DE FACTURACIÓN</h4>
+
+        <div class="form-group">
+          <label class="form-label">NIT / CI</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="Ingrese su NIT o CI"
+            [value]="nit()"
+            (input)="actualizarNit($event)"
+            id="input-nit"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">RAZÓN SOCIAL</label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="Nombre o Razón Social"
+            [value]="razonSocial()"
+            (input)="actualizarRazonSocial($event)"
+            id="input-razon-social"
+          />
+        </div>
+      </section>
+
+      <!-- Método de Pago -->
+      <section class="metodo-pago-section">
+        <h4 class="section-label">MÉTODO DE PAGO</h4>
+        <div class="metodo-pago-grid">
+          <button
+            class="metodo-btn"
+            [class.active]="metodoPago() === 'efectivo'"
+            (click)="seleccionarMetodo('efectivo')"
+            id="btn-efectivo"
+          >
+            <lucide-icon name="banknote" [size]="24" class="metodo-icon"></lucide-icon>
+            <span>Efectivo</span>
+          </button>
+
+          <button
+            class="metodo-btn"
+            [class.active]="metodoPago() === 'qr'"
+            (click)="seleccionarMetodo('qr')"
+            id="btn-qr"
+          >
+            <lucide-icon name="grid" [size]="24" class="metodo-icon"></lucide-icon>
+            <span>Pago QR</span>
+          </button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Pie: Botón Confirmar Pago -->
+    <footer class="cierre-footer">
+      @if (errorPago()) {
+        <div class="error-banner">
+          <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+          <span>{{ errorPago() }}</span>
+        </div>
+      }
+
+      <button
+        class="confirm-pago-btn"
+        [disabled]="confirmandoPago()"
+        (click)="confirmarPago()"
+        id="btn-confirmar-pago"
+      >
+        @if (confirmandoPago()) {
+          <span class="loader-spinner"></span>
+          <span>PROCESANDO...</span>
+        } @else {
+          <span>CONFIRMAR PAGO</span>
+          <lucide-icon name="check-circle-2" [size]="20"></lucide-icon>
+        }
+      </button>
+    </footer>
+
+  }
+
+  <!-- ═══════════════════════════════════════════
+       PANTALLA 2: ESCANEO DE CÓDIGO QR (WEBGL ENERGÍA DORADA)
+       ═══════════════════════════════════════════ -->
+  @if (pantallaActual() === 'escaneo-qr') {
+
+    <div class="qr-scanner-screen animate-in">
+
+      <!-- Header -->
+      <header class="cierre-header transparent-header">
+        <button class="header-back" (click)="cancelarQR()" id="btn-qr-back">
+          <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+        </button>
+        <div class="header-brand">
+          <h1>Tukuypaj</h1>
+        </div>
+        <div class="header-spacer"></div>
+      </header>
+
+      <!-- Contenido Principal con Animación de Energía Dorada WebGL -->
+      <div class="qr-body">
+        <div class="qr-title-box">
+          <h2 class="qr-heading">Escaneando Código QR...</h2>
+          <p class="qr-subheading">Mantén la cámara enfocada en el código</p>
+        </div>
+
+        <!-- Marco de Escáner con Aura de Energía Dorada Animada -->
+        <div class="qr-aura-container">
+          <div class="golden-energy-particles"></div>
+          <div class="golden-aura-glow"></div>
+          
+          <div class="qr-scanner-frame">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+
+            <div class="laser-scanner-line"></div>
+
+            <!-- Patrón de Código QR Dorado -->
+            <div class="qr-pattern-grid">
+              <div class="qr-eye top-l"></div>
+              <div class="qr-eye top-r"></div>
+              <div class="qr-eye bottom-l"></div>
+              <div class="qr-center-box"></div>
+              <div class="qr-dots-group"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de Acción QR -->
+      <footer class="qr-footer">
+        <button class="qr-cancel-btn" (click)="cancelarQR()" id="btn-qr-cancelar">
+          CANCELAR
+        </button>
+
+        <button class="qr-simulate-btn" (click)="simularPagoExitoso()" id="btn-qr-simular">
+          <span>SIMULAR PAGO EXITOSO</span>
+          <lucide-icon name="check-circle-2" [size]="20"></lucide-icon>
+        </button>
+      </footer>
+
+    </div>
+
+  }
+
+  <!-- ═══════════════════════════════════════════
+       PANTALLA 3: RECIBO DIGITAL PREMIUM (CINEMATOGRÁFICO & MINIMALISTA)
+       ═══════════════════════════════════════════ -->
+  @if (pantallaActual() === 'recibo-digital') {
+
+    <div class="recibo-screen animate-in">
+
+      <!-- Header del Recibo -->
+      <header class="recibo-header">
+        <button class="recibo-close-box" (click)="irAFeedback()" aria-label="Cerrar">
+          <lucide-icon name="x" [size]="20"></lucide-icon>
+        </button>
+        <h2 class="recibo-title">Recibo</h2>
+        <div class="drawer-header-spacer"></div>
+      </header>
+
+      <!-- Selector de Variante (Cinematográfica vs Minimalista) -->
+      <div class="variante-selector-row">
+        <button
+          class="variante-chip"
+          [class.active]="varianteRecibo() === 'cinematografica'"
+          (click)="cambiarVarianteRecibo('cinematografica')"
+        >
+          Cinematográfica
+        </button>
+        <button
+          class="variante-chip"
+          [class.active]="varianteRecibo() === 'minimalista'"
+          (click)="cambiarVarianteRecibo('minimalista')"
+        >
+          Minimalista
+        </button>
+      </div>
+
+      <!-- Contenedor del Recibo Digital Ticket -->
+      <div class="recibo-body" [class.minimal-style]="varianteRecibo() === 'minimalista'">
+
+        <article class="ticket-card">
+
+          <!-- Cabecera del Ticket: Checkmark y Agradecimiento -->
+          <div class="ticket-top-section">
+            <div class="check-gold-box">
+              <lucide-icon name="check-circle-2" [size]="32" class="check-gold-icon"></lucide-icon>
+            </div>
+            <h3 class="ticket-thanks-heading">Gracias por visitarnos</h3>
+            <p class="ticket-thanks-sub">Su pago ha sido procesado con éxito.</p>
+            <span class="ticket-brand-tag">TUKUYPAJ PEÑA</span>
+          </div>
+
+          <!-- Muescas Lateral Estilo Ticket -->
+          <div class="ticket-notches-row">
+            <div class="notch left"></div>
+            <div class="dashed-ticket-line"></div>
+            <div class="notch right"></div>
+          </div>
+
+          <!-- Cuerpo con Detalle de Comanda -->
+          <div class="ticket-middle-section">
+            <div class="ticket-meta-row">
+              <span class="table-label">Mesa {{ mesaNumero() }}</span>
+              <span class="date-label">{{ fechaHoraActual() }}</span>
+            </div>
+
+            <!-- Lista de Platos -->
+            <div class="ticket-items-list">
+              @if (pedido(); as p) {
+                @for (item of p.items; track $index) {
+                  <div class="ticket-item-row">
+                    <div class="item-name-qty">
+                      <span class="name">{{ item.nombre }}</span>
+                      <span class="qty">x{{ item.cantidad }}</span>
+                    </div>
+                    <span class="price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
+                  </div>
+                }
+              } @else {
+                <div class="ticket-item-row">
+                  <div class="item-name-qty">
+                    <span class="name">Chicharrón de Cerdo</span>
+                    <span class="qty">x1</span>
+                  </div>
+                  <span class="price">Bs. 85.00</span>
+                </div>
+                <div class="ticket-item-row">
+                  <div class="item-name-qty">
+                    <span class="name">Mocochinchi</span>
+                    <span class="qty">x2</span>
+                  </div>
+                  <span class="price">Bs. 20.00</span>
+                </div>
+              }
+            </div>
+
+            <div class="ticket-inner-dashed"></div>
+
+            <!-- Subtotal, Propina y Total -->
+            <div class="ticket-calc-row">
+              <span>Subtotal</span>
+              <span>Bs. {{ subtotal() | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="ticket-calc-row">
+              <span>Propina ({{ propinaPorcentaje() }}%)</span>
+              <span>Bs. {{ propinaMonto() | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="ticket-total-row">
+              <span class="total-label">Total</span>
+              <strong class="total-value">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
+            </div>
+
+            <div class="ticket-inner-dashed"></div>
+
+            <!-- Despedida Personalizada de Don Roberto -->
+            <div class="ticket-quote-section">
+              <div class="award-gold-box">
+                <lucide-icon name="award" [size]="24" class="award-icon"></lucide-icon>
+              </div>
+              <p class="quote-text">"Esperamos verle pronto de nuevo."</p>
+              <span class="quote-author">— DON ROBERTO</span>
+            </div>
+          </div>
+
+          <!-- Acciones de Descarga y Compartir -->
+          <div class="ticket-actions-section">
+            <button class="pdf-download-btn" (click)="descargarPDF()">
+              <lucide-icon name="download" [size]="18"></lucide-icon>
+              <span>DESCARGAR PDF</span>
+            </button>
+
+            <button class="share-receipt-btn" (click)="compartirReciboDigital()">
+              <lucide-icon name="share-2" [size]="18"></lucide-icon>
+              <span>COMPARTIR</span>
+            </button>
+          </div>
+
+        </article>
+
+      </div>
+
+      <!-- Pie con Continuar a Feedback -->
+      <footer class="recibo-footer">
+        <button class="continue-feedback-btn" (click)="irAFeedback()">
+          <span>CONTINUAR A EVALUACIÓN</span>
+          <lucide-icon name="arrow-left" [size]="18" class="rotate-180"></lucide-icon>
+        </button>
+      </footer>
+
+    </div>
+
+  }
+
+  <!-- ═══════════════════════════════════════════
+       PANTALLA 4: CALIFICACIÓN Y FEEDBACK
+       ═══════════════════════════════════════════ -->
+  @if (pantallaActual() === 'feedback') {
+
+    <div class="feedback-screen animate-in">
+
+      <!-- Ícono Premium de Tenedores -->
+      <div class="feedback-hero-icon">
+        <lucide-icon name="utensils-crossed" [size]="42"></lucide-icon>
+      </div>
+
+      <h2 class="feedback-title">¡Gracias por su visita!</h2>
+      <p class="feedback-desc">
+        Esperamos que haya disfrutado de la auténtica experiencia Tukuypaj. ¿Qué le pareció su velada?
+      </p>
+
+      <!-- Tarjeta de Calificación General con Estrellas -->
+      <section class="rating-card">
+        <h3 class="rating-card-title">Calificación General</h3>
+        <div class="stars-row">
+          @for (star of [1, 2, 3, 4, 5]; track star) {
+            <button
+              class="star-btn"
+              [class.active]="estrellas() >= star"
+              (click)="seleccionarEstrellas(star)"
+              [id]="'star-' + star"
+            >
+              <svg viewBox="0 0 24 24" class="star-svg">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                  [attr.fill]="estrellas() >= star ? '#e5c158' : 'none'"
+                  [attr.stroke]="estrellas() >= star ? '#e5c158' : '#6e665e'"
+                  stroke-width="1.5"
+                />
+              </svg>
+            </button>
+          }
+        </div>
+      </section>
+
+      <!-- Su Mesero -->
+      <section class="mesero-section">
+        <div class="mesero-avatar-box">
+          <div class="mesero-avatar-circle">
+            <lucide-icon name="user" [size]="28"></lucide-icon>
+          </div>
+        </div>
+        <div class="mesero-info">
+          <span class="mesero-label">SU MESERO</span>
+          <span class="mesero-nombre">Don Beto</span>
+        </div>
+      </section>
+
+      <!-- Evaluación Rápida (Excelente / Regular / A Mejorar) -->
+      <section class="eval-rapida-grid">
+        <button
+          class="eval-btn"
+          [class.active]="calificacionRapida() === 'excelente'"
+          (click)="seleccionarCalificacion('excelente')"
+          id="eval-excelente"
+        >
+          <lucide-icon name="thumbs-up" [size]="22" class="eval-icon"></lucide-icon>
+          <span class="eval-label">EXCELENTE</span>
+        </button>
+
+        <button
+          class="eval-btn"
+          [class.active]="calificacionRapida() === 'regular'"
+          (click)="seleccionarCalificacion('regular')"
+          id="eval-regular"
+        >
+          <lucide-icon name="smile" [size]="22" class="eval-icon"></lucide-icon>
+          <span class="eval-label">REGULAR</span>
+        </button>
+
+        <button
+          class="eval-btn"
+          [class.active]="calificacionRapida() === 'a-mejorar'"
+          (click)="seleccionarCalificacion('a-mejorar')"
+          id="eval-a-mejorar"
+        >
+          <lucide-icon name="thumbs-down" [size]="22" class="eval-icon"></lucide-icon>
+          <span class="eval-label">A MEJORAR</span>
+        </button>
+      </section>
+
+      <!-- Botón Enviar y Cerrar -->
+      <footer class="feedback-footer">
+        <button
+          class="enviar-feedback-btn"
+          [disabled]="enviandoFeedback()"
+          (click)="enviarFeedback()"
+          id="btn-enviar-feedback"
+        >
+          @if (enviandoFeedback()) {
+            <span class="loader-spinner"></span>
+            <span>ENVIANDO...</span>
+          } @else {
+            <span>ENVIAR Y CERRAR</span>
+          }
+        </button>
+      </footer>
+
+    </div>
+
+  }
+
+  <!-- ═══════════════════════════════════════════
+       PANTALLA 5: CONFIRMACIÓN FINAL
+       ═══════════════════════════════════════════ -->
+  @if (pantallaActual() === 'completado') {
+
+    <div class="completado-screen animate-in">
+      <div class="completado-icon-box">
+        <lucide-icon name="check-circle-2" [size]="56"></lucide-icon>
+      </div>
+      <h2 class="completado-title">¡Hasta pronto!</h2>
+      <p class="completado-desc">
+        Tu cuenta ha sido cerrada exitosamente. Gracias por elegir <strong>Peña Restaurant Tukuypaj</strong>.
+      </p>
+      <p class="completado-redirect">Redirigiendo a la carta...</p>
+    </div>
+
+  }
+
+</div>
