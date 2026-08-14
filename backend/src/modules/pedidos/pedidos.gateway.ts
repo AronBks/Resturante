@@ -140,7 +140,38 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
       .to(`role:${RolUsuario.CHEF}`)
       .emit('pedido:ia-creado', payload);
 
+    // Emitir también globalmente para tableros interactivos y salones
+    this.server.emit('pedido:creado', pedido);
+    this.server.emit('pedido:ia-creado', payload);
+
     this.logger.log(`🤖 Pedido IA emitido para Mesa ${mesaNumero}`);
+  }
+
+  /**
+   * Emite una notificación de llamada de mesero a todos los garzones y administradores
+   */
+  broadcastLlamarMesero(mesaNumero: string, motivo: string) {
+    const payload = {
+      mesaNumero,
+      motivo,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.emit('mesero:llamado', payload);
+    this.logger.log(`🛎️ Alerta 'mesero:llamado' emitida para Mesa ${mesaNumero}`);
+  }
+
+  /**
+   * Emite a la app del cliente que el garzón ya va en camino a atender la mesa
+   */
+  broadcastMeseroAtendido(mesaNumero: string) {
+    const payload = {
+      mesaNumero,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.emit('mesero:atendido', payload);
+    this.logger.log(`🏃‍♂️ Alerta 'mesero:atendido' emitida para Mesa ${mesaNumero}`);
   }
 
   /**

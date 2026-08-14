@@ -26,6 +26,8 @@ import {
 } from './dto/ia-pedido.dto';
 import { EstadoItemPedido, EstadoPedido } from '@prisma/client';
 
+import { CartaGateway } from '../carta/carta.gateway';
+
 @Controller('pedidos')
 export class PedidosController {
   private readonly logger = new Logger(PedidosController.name);
@@ -34,6 +36,7 @@ export class PedidosController {
     private readonly pedidosService: PedidosService,
     private readonly iaPedidosService: IaPedidosService,
     private readonly gateway: PedidosGateway,
+    private readonly cartaGateway: CartaGateway,
   ) {}
 
   // ─────────────────────────────────────────────
@@ -97,6 +100,36 @@ export class PedidosController {
     this.logger.log(`✅ Pedido IA confirmado para Mesa ${dto.mesaNumero} — ID: ${pedido.id}`);
 
     return pedido;
+  }
+
+  /**
+   * Solicitud de atención presencial (Llamar al Mesero) desde la app del cliente.
+   */
+  @Post('llamar-mesero')
+  async llamarMesero(@Body() dto: { mesaNumero: string; motivo?: string }) {
+    this.logger.log(`🛎️ Solicitud de mesero para Mesa ${dto.mesaNumero}`);
+    const mesa = await this.iaPedidosService.resolverMesa(dto.mesaNumero);
+
+    // Emitir alerta a todos los administradores y garzones
+    this.gateway.broadcastLlamarMesero(mesa.numero, dto.motivo || 'Atención presencial solicitada en mesa');
+
+    return {
+      exito: true,
+      mensaje: `Mesero notificado para la Mesa ${mesa.numero}`,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post('atender-mesero')
+  async atenderMesero(@Body() dto: { mesaNumero: string }) {
+    this.logger.log(`🏃‍♂️ Garzón en camino a la Mesa ${dto.mesaNumero}`);
+    this.gateway.broadcastMeseroAtendido(dto.mesaNumero);
+    this.cartaGateway.broadcastMeseroAtendido(dto.mesaNumero);
+    return {
+      exito: true,
+      mensaje: `Notificación enviada a la Mesa ${dto.mesaNumero}: Garzón en camino`,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   // ─────────────────────────────────────────────

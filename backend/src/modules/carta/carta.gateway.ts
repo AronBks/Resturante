@@ -59,4 +59,18 @@ export class CartaGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `📡 Broadcast público: Plato ${platoId} → ${disponible ? 'DISPONIBLE' : 'AGOTADO'} (${this.clientCount} clientes)`,
     );
   }
+
+  /**
+   * Emite a la app cliente que el garzón ya va en camino a atender la mesa
+   */
+  broadcastMeseroAtendido(mesaNumero: string) {
+    this.server.emit('mesero:atendido', {
+      mesaNumero,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(
+      `🏃‍♂️ Broadcast público: Mesero en camino a Mesa ${mesaNumero}`,
+    );
+  }
 }
