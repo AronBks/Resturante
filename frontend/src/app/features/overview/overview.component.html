@@ -5,9 +5,9 @@
       <h1 class="font-playfair">{{ getSaludo() }}</h1>
       <p class="subtitle">Panel operativo de <strong class="brand-gold">Peña Tukuypaj</strong> — Estado del día en tiempo real.</p>
     </div>
-    <div class="turno-badge">
-      <span class="turno-dot animate-pulse active-pulse"></span>
-      TURNO ACTIVO
+    <div class="turno-badge" [class.cerrado]="!isCajaAbierta()">
+      <span class="turno-dot" [class.active-pulse]="isCajaAbierta()" [class.cerrado]="!isCajaAbierta()"></span>
+      {{ isCajaAbierta() ? 'TURNO ACTIVO' : 'TURNO CERRADO' }}
     </div>
   </div>
 
@@ -159,33 +159,68 @@
       </div>
     </div>
 
-    <!-- System Status & Turn Details Split Card -->
+    <!-- Executive Operations & Session Details Card -->
     <div class="stat-card glass-panel status-card animate-in" style="animation-delay: 0.3s">
-      <!-- Top Half: Estado del sistema -->
+      <!-- Top Half: Control Operativo -->
       <div class="stat-header">
-        <h2>ESTADO OPERATIVO DEL SISTEMA</h2>
+        <h2>CONTROL OPERATIVO DEL SALÓN</h2>
       </div>
       <div class="system-status">
         <div class="status-row">
-          <span>Conexión de Terminales</span>
-          <div class="status-badge online">
-            <span class="pulse-mini active-pulse"></span>
-            OPERACIONAL
-          </div>
+          <span>Apertura de Turno</span>
+          @if (isCajaAbierta()) {
+            <div class="status-badge online">
+              <span class="pulse-mini active-pulse"></span>
+              ACTIVO
+            </div>
+          } @else {
+            <div class="status-badge offline">
+              <span class="pulse-mini"></span>
+              CERRADO
+            </div>
+          }
         </div>
         <div class="status-row">
-          <span>Servicio WebSockets</span>
-          <div class="status-badge online">
-            <span class="pulse-mini active-pulse"></span>
-            ACTIVO
-          </div>
+          <span>Estado de Caja</span>
+          @if (isCajaAbierta()) {
+            <div class="status-badge online">
+              <span class="pulse-mini active-pulse"></span>
+              ABIERTA / REGISTRANDO
+            </div>
+          } @else {
+            <div class="status-badge offline">
+              <span class="pulse-mini"></span>
+              SIN CAJA ACTIVA
+            </div>
+          }
         </div>
         <div class="status-row">
-          <span>Motor PostgreSQL</span>
-          <div class="status-badge online">
+          <span>Mesero IA "Don Beto"</span>
+          <div class="status-badge online gold-badge">
             <span class="pulse-mini active-pulse"></span>
-            SINCRONIZADO
+            EN LÍNEA
           </div>
+        </div>
+      </div>
+
+      <!-- Middle: Accesos Rápidos de Gestión -->
+      <div class="quick-actions-section">
+        <div class="stat-header">
+          <h2>ACCESOS RÁPIDOS</h2>
+        </div>
+        <div class="quick-actions-grid">
+          <button class="quick-action-btn" (click)="navegarAMesas()" id="btn-quick-mesas">
+            <lucide-icon name="layout-grid" class="icon-sm"></lucide-icon>
+            <span>Ver Mesas</span>
+          </button>
+          <button class="quick-action-btn" (click)="navegarACaja()" id="btn-quick-caja">
+            <lucide-icon name="wallet" class="icon-sm"></lucide-icon>
+            <span>Arqueo Caja</span>
+          </button>
+          <button class="quick-action-btn" (click)="navegarACarta()" id="btn-quick-carta">
+            <lucide-icon name="book-open" class="icon-sm"></lucide-icon>
+            <span>Nuestra Carta</span>
+          </button>
         </div>
       </div>
 

@@ -67,6 +67,7 @@
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: all 0.3s ease;
 
   .turno-dot {
     width: 7px;
@@ -74,6 +75,17 @@
     border-radius: 50%;
     background: var(--success);
     box-shadow: 0 0 8px rgba(90, 158, 111, 0.5);
+
+    &.cerrado {
+      background: #f97316;
+      box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
+    }
+  }
+
+  &.cerrado {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.2);
+    color: #f97316;
   }
 }
 
@@ -573,6 +585,28 @@
     border: 1px solid rgba(90, 158, 111, 0.15);
   }
 
+  &.offline {
+    background: rgba(249, 115, 22, 0.08);
+    color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+
+    .pulse-mini {
+      background: #f97316;
+      box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
+    }
+  }
+
+  &.gold-badge {
+    background: rgba(212, 168, 83, 0.08);
+    color: #d4af37;
+    border: 1px solid rgba(212, 168, 83, 0.2);
+
+    .pulse-mini {
+      background: #d4af37;
+      box-shadow: 0 0 8px #d4af37;
+    }
+  }
+
   .pulse-mini {
     width: 5px;
     height: 5px;
@@ -596,6 +630,65 @@
     transform: scale(1.15);
     opacity: 1;
     box-shadow: 0 0 8px var(--success), 0 0 14px var(--success);
+  }
+}
+
+/* Quick Executive Actions Grid */
+.quick-actions-section {
+  border-top: 1px solid var(--border-glass);
+  margin-top: 16px;
+  padding-top: 16px;
+
+  .stat-header {
+    margin-bottom: 12px;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  color: var(--text-warm);
+  font-family: var(--font-title);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  lucide-icon, svg {
+    color: var(--accent);
+    width: 16px;
+    height: 16px;
+    transition: transform 0.25s ease;
+  }
+
+  &:hover {
+    background: rgba(212, 168, 83, 0.08);
+    border-color: rgba(212, 168, 83, 0.3);
+    color: var(--accent);
+    transform: translateY(-2px);
+
+    lucide-icon, svg {
+      transform: scale(1.15);
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 

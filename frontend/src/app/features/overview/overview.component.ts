@@ -31,6 +31,9 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
   comandasActivas = signal(0);
   platoEstrella = signal('Ninguno');
 
+  // Real-time Caja & Shift state
+  cajaActiva = signal<any | null>(null);
+
   // Live Feed & Toasts
   movimientos = signal<any[]>([]);
   toasts = signal<any[]>([]);
@@ -50,6 +53,12 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
   flashPlato = signal(false);
 
   private subs: Subscription[] = [];
+
+  // Computed property to check if cash drawer is open
+  isCajaAbierta = computed(() => {
+    const caja = this.cajaActiva();
+    return !!caja && caja.estado === 'ABIERTA';
+  });
 
   // Computed properties for occupancy distribution donut
   mesasPorZona = computed(() => {
@@ -112,6 +121,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.cargarResumenHoy();
     this.cargarMesas();
+    this.cargarCajaActiva();
     this.suscribirAActualizaciones();
   }
 
@@ -147,6 +157,18 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
     }
   }
 
+  cargarCajaActiva() {
+    this.http.get<any>(`${this.baseUrl}/caja/resumen-activa`).subscribe({
+      next: (res) => {
+        this.cajaActiva.set(res.data || null);
+      },
+      error: (err) => {
+        console.error('Error cargando caja activa', err);
+        this.cajaActiva.set(null);
+      }
+    });
+  }
+
   cargarResumenHoy() {
     this.http.get<any>(`${this.baseUrl}/analitica/resumen-hoy`).subscribe({
       next: (res) => {
@@ -177,6 +199,14 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
 
   navegarAMesas() {
     this.router.navigate(['/dashboard/mesas']);
+  }
+
+  navegarACaja() {
+    this.router.navigate(['/dashboard/caja']);
+  }
+
+  navegarACarta() {
+    this.router.navigate(['/dashboard/carta']);
   }
 
   toggleDrawer() {
@@ -246,7 +276,21 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
         this.mostrarToastIa(payload);
       });
 
-    this.subs.push(subMesa, subPedido, subPedidoAct, subPedidoIa);
+    const subCajaCerrada = this.socketService
+      .onEvent<any>('caja:cerrada')
+      .subscribe(() => {
+        this.cargarCajaActiva();
+        this.cargarResumenHoy();
+      });
+
+    const subTransaccion = this.socketService
+      .onEvent<any>('transaccion:creada')
+      .subscribe(() => {
+        this.cargarCajaActiva();
+        this.cargarResumenHoy();
+      });
+
+    this.subs.push(subMesa, subPedido, subPedidoAct, subPedidoIa, subCajaCerrada, subTransaccion);
   }
 
   mostrarToastIa(payload: any) {
