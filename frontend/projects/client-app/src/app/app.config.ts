@@ -67,7 +67,9 @@ import {
   Star,
   Download,
   Award,
-  QrCode
+  QrCode,
+  BellRing,
+  CheckCircle
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -133,7 +135,9 @@ export const appIcons = {
   Star,
   Download,
   Award,
-  QrCode
+  QrCode,
+  BellRing,
+  CheckCircle
 };
 
 export const appConfig: ApplicationConfig = {

@@ -23,11 +23,14 @@ export interface ResumenPedidoConfirmado {
   total: number;
 }
 
+import { SocketPublicoService } from './socket-publico.service';
+
 @Injectable({
   providedIn: 'root',
 })
 export class CarritoService {
   private readonly http = inject(HttpClient);
+  private readonly socketPublico = inject(SocketPublicoService);
   private readonly apiUrl = 'http://localhost:3000/api/pedidos';
 
   // ── Estado reactivo del carrito ──
@@ -37,9 +40,16 @@ export class CarritoService {
   ultimoPedido = signal<ResumenPedidoConfirmado | null>(null);
   error = signal<string | null>(null);
 
+  // ── Solicitar Atención Presencial (Llamar Mesero) ──
+  meseroLlamadoStatus = signal<'idle' | 'calling' | 'success' | 'en_camino' | 'error'>('idle');
+
   // ── Inicialización desde localStorage (Persistencia) ──
   constructor() {
     this.cargarDeLocalStorage();
+    this.socketPublico.onMeseroAtendido().subscribe(() => {
+      this.meseroLlamadoStatus.set('en_camino');
+      setTimeout(() => this.meseroLlamadoStatus.set('idle'), 12000);
+    });
   }
 
   // ── Computed Signals ──
@@ -50,6 +60,8 @@ export class CarritoService {
   totalAcumulado = computed(() => {
     return this.items().reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0);
   });
+
+  subtotal = computed(() => this.totalAcumulado());
 
   // ── Operaciones del Carrito ──
 
@@ -207,6 +219,26 @@ export class CarritoService {
             err.error?.message ||
             'Error al enviar el pedido a la cocina. Intenta de nuevo.';
           this.error.set(msg);
+          subscriber.error(err);
+        },
+      });
+    });
+  }
+
+  // ── Solicitar Atención Presencial (Llamar Mesero) ──
+  llamarMesero(mesaNumero: string, motivo?: string): Observable<any> {
+    this.meseroLlamadoStatus.set('calling');
+    return new Observable((subscriber) => {
+      this.http.post(`${this.apiUrl}/llamar-mesero`, { mesaNumero, motivo }).subscribe({
+        next: (res: any) => {
+          this.meseroLlamadoStatus.set('success');
+          setTimeout(() => this.meseroLlamadoStatus.set('idle'), 6000);
+          subscriber.next(res);
+          subscriber.complete();
+        },
+        error: (err) => {
+          this.meseroLlamadoStatus.set('error');
+          setTimeout(() => this.meseroLlamadoStatus.set('idle'), 4000);
           subscriber.error(err);
         },
       });

@@ -68,6 +68,22 @@ export class SocketPublicoService implements OnDestroy {
     });
   }
 
+  /**
+   * Observable que emite cuando el mesero o administrador marca 'Atender'
+   * para notificar al cliente que un garzón va en camino.
+   */
+  onMeseroAtendido(): Observable<{ mesaNumero: string }> {
+    return new Observable<{ mesaNumero: string }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+
+      this.socket.on('mesero:atendido', handler);
+
+      return () => {
+        this.socket.off('mesero:atendido', handler);
+      };
+    });
+  }
+
   ngOnDestroy(): void {
     this.socket.disconnect();
   }

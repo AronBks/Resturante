@@ -5,6 +5,20 @@
 
 <div class="menu-layout">
 
+  <!-- Floating Alert Banner when Waiter is En Camino -->
+  @if (carritoService.meseroLlamadoStatus() === 'en_camino') {
+    <div class="waiter-en-camino-floating-alert animate-bounce-in" id="alert-mesero-en-camino">
+      <div class="alert-content">
+        <span class="runner-icon">🏃‍♂️</span>
+        <div class="alert-text-group">
+          <h4 class="alert-title">¡Garzón en camino a la Mesa {{ mesaNumero() }}!</h4>
+          <p class="alert-desc">Tu solicitud ha sido atendida por el personal. Un mesero viene en camino a tu mesa.</p>
+        </div>
+      </div>
+      <button class="alert-dismiss-btn" (click)="carritoService.meseroLlamadoStatus.set('idle')" title="Cerrar aviso">&times;</button>
+    </div>
+  }
+
   <!-- ── Sidebar de Navegación Lateral (Desktop) ── -->
   <aside class="menu-sidebar">
     <div class="menu-sidebar__header">
@@ -41,6 +55,27 @@
     </nav>
 
     <div class="menu-sidebar__footer">
+      <!-- Tarjeta / Botón de Carrito Desktop en Sidebar -->
+      <button class="sidebar-cart-btn" (click)="abrirCarrito()" id="sidebar-btn-cart">
+        <div class="sidebar-cart-btn__icon">
+          <lucide-icon name="shopping-bag" [size]="20"></lucide-icon>
+          @if (carritoService.cantidadTotalItems() > 0) {
+            <span class="sidebar-cart-badge">{{ carritoService.cantidadTotalItems() }}</span>
+          }
+        </div>
+        <div class="sidebar-cart-btn__info">
+          <span class="lbl">Mi Pedido</span>
+          <span class="val">
+            @if (carritoService.cantidadTotalItems() > 0) {
+              Bs. {{ carritoService.subtotal() | number:'1.2-2' }}
+            } @else {
+              0 platos
+            }
+          </span>
+        </div>
+        <lucide-icon name="chevron-right" [size]="16" class="sidebar-cart-chevron"></lucide-icon>
+      </button>
+
       <a
         [routerLink]="['/pedido-ia']"
         [queryParams]="{ mesa: mesaNumero() }"
@@ -55,6 +90,35 @@
 
   <!-- ── Área Principal de Contenido ── -->
   <main class="menu-main">
+
+    <!-- Header Desktop Premium con Accesos a Carrito, Mesa y Asistente IA -->
+    <header class="desktop-header">
+      <div class="desktop-header__left">
+        <button class="desktop-table-btn" (click)="abrirMesaModal()" id="btn-desktop-table">
+          <lucide-icon name="user" [size]="16"></lucide-icon>
+          <span>Mesa {{ mesaNumero() }}</span>
+        </button>
+        <div class="desktop-sync-status">
+          <span class="live-pulse-dot"></span>
+          <span>Carta en Vivo</span>
+        </div>
+      </div>
+
+      <div class="desktop-header__right">
+        <button class="desktop-cart-action-btn" (click)="abrirCarrito()" id="btn-desktop-cart-header">
+          <div class="cart-icon-wrapper">
+            <lucide-icon name="shopping-bag" [size]="18"></lucide-icon>
+            @if (carritoService.cantidadTotalItems() > 0) {
+              <span class="cart-pill-count">{{ carritoService.cantidadTotalItems() }}</span>
+            }
+          </div>
+          <span class="cart-btn-text">Ver Mi Pedido</span>
+          @if (carritoService.cantidadTotalItems() > 0) {
+            <span class="cart-total-badge">Bs. {{ carritoService.subtotal() | number:'1.2-2' }}</span>
+          }
+        </button>
+      </div>
+    </header>
 
     <!-- Header Móvil (Estilo Cochabamba Peña con Menú Hamburguesa y Carrito) -->
     <header class="mobile-header">
@@ -207,7 +271,7 @@
                           @if (carritoService.obtenerCantidad(plato.id) === 0) {
                             <button
                               class="mobile-quick-add-btn"
-                              (click)="carritoService.agregarPlato(plato); $event.stopPropagation()"
+                              (click)="carritoService.agregarPlato(plato); abrirCarrito(); $event.stopPropagation()"
                               [id]="'btn-add-' + plato.id"
                             >
                               <lucide-icon name="plus" [size]="22"></lucide-icon>
@@ -442,6 +506,29 @@
         (click)="agregarPlatoConVariante(plato)"
       >
         Agregar al Pedido (Bs. {{ (selectedVariante()?.precio || 0) | number:'1.2-2' }})
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ── BOTÓN FLOTANTE DE CARRITO EN DESKTOP ── -->
+@if (carritoService.cantidadTotalItems() > 0) {
+  <div class="desktop-floating-cart-bar" (click)="abrirCarrito()" id="btn-desktop-floating-cart">
+    <div class="floating-cart-left">
+      <div class="floating-cart-icon-box">
+        <lucide-icon name="shopping-bag" [size]="22"></lucide-icon>
+        <span class="floating-cart-count">{{ carritoService.cantidadTotalItems() }}</span>
+      </div>
+      <div class="floating-cart-text">
+        <span class="floating-cart-title">Tu Pedido Actual</span>
+        <span class="floating-cart-subtitle">Mesa {{ mesaNumero() }} • Cochabamba Peña</span>
+      </div>
+    </div>
+    <div class="floating-cart-right">
+      <span class="floating-cart-total">Bs. {{ carritoService.subtotal() | number:'1.2-2' }}</span>
+      <button class="floating-cart-btn">
+        <span>VER MI PEDIDO</span>
+        <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
       </button>
     </div>
   </div>

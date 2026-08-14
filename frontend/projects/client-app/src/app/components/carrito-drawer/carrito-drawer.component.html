@@ -283,6 +283,30 @@
             <lucide-icon name="rocket" [size]="20" class="btn-rocket-icon"></lucide-icon>
           }
         </button>
+
+        <!-- Opción Alternativa: Solicitar Atención Presencial / Llamar Mesero -->
+        <button
+          class="call-waiter-btn"
+          [class.calling]="carritoService.meseroLlamadoStatus() === 'calling'"
+          [class.success]="carritoService.meseroLlamadoStatus() === 'success'"
+          [class.en-camino]="carritoService.meseroLlamadoStatus() === 'en_camino'"
+          (click)="solicitarAtencionPresencial()"
+          id="btn-llamar-mesero-drawer"
+        >
+          @if (carritoService.meseroLlamadoStatus() === 'calling') {
+            <span class="loader-spinner"></span>
+            <span>LLAMANDO MESERO...</span>
+          } @else if (carritoService.meseroLlamadoStatus() === 'en_camino') {
+            <lucide-icon name="user-check" [size]="18"></lucide-icon>
+            <span>🏃‍♂️ ¡UN GARZÓN VA EN CAMINO A TU MESA!</span>
+          } @else if (carritoService.meseroLlamadoStatus() === 'success') {
+            <lucide-icon name="check-circle" [size]="18"></lucide-icon>
+            <span>¡SOLICITUD RECIBIDA! EN ESPERA DE ATENCIÓN...</span>
+          } @else {
+            <lucide-icon name="bell-ring" [size]="18"></lucide-icon>
+            <span>PEDIR ATENCIÓN EN MESA (LLAMAR MESERO)</span>
+          }
+        </button>
       </footer>
     }
   }

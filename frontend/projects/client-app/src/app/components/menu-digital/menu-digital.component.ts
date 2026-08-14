@@ -158,6 +158,7 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
     if (varSel) {
       this.carritoService.agregarPlato(plato, varSel);
       this.cerrarSelectorVariante();
+      this.abrirCarrito();
     }
   }
 

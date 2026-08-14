@@ -67,8 +67,13 @@ export class CarritoDrawerComponent {
     this.close.emit();
   }
 
+  solicitarAtencionPresencial(): void {
+    const mesa = this.mesaNumero() || 'M01';
+    this.carritoService.llamarMesero(mesa, 'Atención presencial en mesa solicitada').subscribe();
+  }
+
   llamarRestaurante(): void {
-    alert(`Un mesero atenderá tu Mesa ${this.mesaNumero()} en breve.`);
+    this.solicitarAtencionPresencial();
   }
 
   pedirCuenta(): void {
