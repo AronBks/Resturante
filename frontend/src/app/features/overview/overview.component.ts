@@ -276,6 +276,12 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
         this.mostrarToastIa(payload);
       });
 
+    const subMeseroLlamado = this.socketService
+      .onEvent<any>('mesero:llamado')
+      .subscribe((payload) => {
+        this.mostrarToastMesero(payload);
+      });
+
     const subCajaCerrada = this.socketService
       .onEvent<any>('caja:cerrada')
       .subscribe(() => {
@@ -290,7 +296,30 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
         this.cargarResumenHoy();
       });
 
-    this.subs.push(subMesa, subPedido, subPedidoAct, subPedidoIa, subCajaCerrada, subTransaccion);
+    this.subs.push(subMesa, subPedido, subPedidoAct, subPedidoIa, subMeseroLlamado, subCajaCerrada, subTransaccion);
+  }
+
+  mostrarToastMesero(payload: any) {
+    const mesaNumero = payload?.mesaNumero || 'Mesa';
+    const motivo = payload?.motivo || 'Atención presencial solicitada';
+    const id = Date.now() + Math.random();
+
+    const nuevoToast = {
+      id,
+      mesaNumero,
+      total: 0,
+      count: 0,
+      esMeseroLlamado: true,
+      motivo,
+      timestamp: new Date()
+    };
+
+    this.toasts.update((arr) => [...arr, nuevoToast]);
+    this.playNotificationSound();
+
+    setTimeout(() => {
+      this.removerToast(id);
+    }, 10000);
   }
 
   mostrarToastIa(payload: any) {

@@ -241,25 +241,40 @@
     </div>
   </div>
 
-  <!-- Contenedor de Alertas de Pedidos por IA -->
+  <!-- Contenedor de Alertas de Pedidos e Interacciones del Cliente -->
   <div class="toast-overlay" id="ia-toast-container">
     @for (toast of toasts(); track toast.id) {
-      <div class="ia-toast glass-panel animate-slide-in-right" [id]="'toast-' + toast.id">
-        <div class="toast-header">
-          <span class="toast-icon"><lucide-icon name="bot" class="icon-md icon-gold"></lucide-icon></span>
-          <div class="toast-title">
-            <h4>¡Pedido por IA Recibido!</h4>
-            <span class="toast-mesa">Mesa {{ toast.mesaNumero }}</span>
+      <div class="ia-toast glass-panel animate-slide-in-right" [class.mesero-toast]="toast.esMeseroLlamado" [id]="'toast-' + toast.id">
+        @if (toast.esMeseroLlamado) {
+          <div class="toast-header">
+            <span class="toast-icon"><lucide-icon name="bell-ring" class="icon-md icon-gold"></lucide-icon></span>
+            <div class="toast-title">
+              <h4>¡Mesero Solicitado!</h4>
+              <span class="toast-mesa">Mesa {{ toast.mesaNumero }}</span>
+            </div>
+            <button class="toast-close" (click)="removerToast(toast.id)" [id]="'btn-close-toast-' + toast.id">&times;</button>
           </div>
-          <button class="toast-close" (click)="removerToast(toast.id)" [id]="'btn-close-toast-' + toast.id">&times;</button>
-        </div>
-        <div class="toast-body">
-          <p>Se ha registrado un pedido autónomo con <strong>{{ toast.count }} platos</strong>.</p>
-          <div class="toast-total">
-            <span>Total comanda:</span>
-            <strong>Bs. {{ toast.total | number:'1.2-2' }}</strong>
+          <div class="toast-body">
+            <p>La <strong>Mesa {{ toast.mesaNumero }}</strong> solicita atención presencial de un garzón.</p>
+            <span class="toast-motivo">{{ toast.motivo }}</span>
           </div>
-        </div>
+        } @else {
+          <div class="toast-header">
+            <span class="toast-icon"><lucide-icon name="bot" class="icon-md icon-gold"></lucide-icon></span>
+            <div class="toast-title">
+              <h4>¡Pedido por IA Recibido!</h4>
+              <span class="toast-mesa">Mesa {{ toast.mesaNumero }}</span>
+            </div>
+            <button class="toast-close" (click)="removerToast(toast.id)" [id]="'btn-close-toast-' + toast.id">&times;</button>
+          </div>
+          <div class="toast-body">
+            <p>Se ha registrado un pedido autónomo con <strong>{{ toast.count }} platos</strong>.</p>
+            <div class="toast-total">
+              <span>Total comanda:</span>
+              <strong>Bs. {{ toast.total | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        }
         <div class="toast-progress">
           <div class="toast-progress-fill"></div>
         </div>

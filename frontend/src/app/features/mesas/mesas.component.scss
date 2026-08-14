@@ -366,4 +366,65 @@
   }
 }
 
+/* ── SOLICITA MESERO ALERT STYLES ── */
+.mesa-card.solicita-mesero {
+  border: 2px solid #E5C158 !important;
+  background: linear-gradient(180deg, #322814 0%, #20190D 100%) !important;
+  animation: meseroGlowPulse 1.5s infinite alternate !important;
+}
+
+@keyframes meseroGlowPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(229, 193, 88, 0.4), inset 0 0 15px rgba(229, 193, 88, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 25px rgba(229, 193, 88, 0.95), inset 0 0 25px rgba(229, 193, 88, 0.45);
+  }
+}
+
+.mesero-call-alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(229, 193, 88, 0.25);
+  border: 1px solid #E5C158;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 8px;
+  color: #E5C158;
+  font-size: 0.78rem;
+  font-weight: 700;
+
+  .atender-btn {
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: #E5C158;
+    color: #12100d;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #ffffff;
+      transform: scale(1.05);
+    }
+  }
+}
+
+.alert-bar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #E5C158 0%, #C8956C 100%);
+  color: #12100d;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 16px rgba(229, 193, 88, 0.4);
+}
+
 

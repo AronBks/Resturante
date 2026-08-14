@@ -28,6 +28,15 @@
         </div>
       </div>
     </div>
+
+    @if (mesasLlamando().size > 0) {
+      <div class="alert-bar-top animate-in" style="margin-top: 14px;">
+        <div class="alert-info" style="display: flex; align-items: center; gap: 10px;">
+          <lucide-icon name="bell-ring" class="icon-md"></lucide-icon>
+          <span>¡ATENCIÓN EN SALÓN! Mesa <strong>{{ mesaNumeroLlamandoTexto() }}</strong> requiere la presencia de un garzón.</span>
+        </div>
+      </div>
+    }
   </header>
 
   <!-- Zones Section Layout -->
@@ -94,6 +103,14 @@
           <span class="cap-text"><lucide-icon name="users" class="icon-sm icon-muted"></lucide-icon> {{ mesa.capacidad }} pers.</span>
         </div>
       </div>
+
+      @if (mesasLlamando().has(mesa.numero)) {
+        <div class="mesero-call-alert-banner" (click)="$event.stopPropagation()">
+          <lucide-icon name="bell-ring" class="icon-sm"></lucide-icon>
+          <span>SOLICITA MESERO</span>
+          <button class="atender-btn" (click)="atenderMesero(mesa.numero, $event)">Atender</button>
+        </div>
+      }
 
       <!-- Card Body: Dynamic Content by State -->
       <div class="card-body-content">

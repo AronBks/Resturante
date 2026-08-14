@@ -52,7 +52,8 @@ import {
   UserPlus,
   Mail,
   Download,
-  Shield
+  Shield,
+  BellRing
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -102,7 +103,8 @@ export const appIcons = {
   UserPlus,
   Mail,
   Download,
-  Shield
+  Shield,
+  BellRing
 };
 
 export const appConfig: ApplicationConfig = {

@@ -68,10 +68,12 @@ export class SocketService {
     // Registrar escuchadores para los eventos operativos core
     const coreEvents = [
       'pedido:creado',
+      'pedido:ia-creado',
       'pedido:estado-actualizado',
       'item:estado-actualizado',
       'mesa:estado-actualizado',
       'menu:actualizado',
+      'mesero:llamado',
     ];
 
     coreEvents.forEach((event) => {

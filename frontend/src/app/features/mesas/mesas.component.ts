@@ -56,6 +56,7 @@ export class MesasComponent implements OnInit, OnDestroy {
   libresCount = computed(() => this.mesas().filter((m) => m.estado === 'LIBRE').length);
   ocupadasCount = computed(() => this.mesas().filter((m) => m.estado === 'OCUPADA').length);
   porCobrarCount = computed(() => this.mesas().filter((m) => m.estado === 'POR_COBRAR').length);
+  mesaNumeroLlamandoTexto = computed(() => Array.from(this.mesasLlamando()).join(', '));
 
   // Drawer & Cobro modal states
   isDrawerOpen = false;
@@ -64,6 +65,7 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   // Real-time UI enhancements
   flashingMesas = signal<Record<number, boolean>>({});
+  mesasLlamando = signal<Set<string>>(new Set());
   elapsedTimes = signal<Record<number, string>>({});
   private timerInterval: any;
   private subs: Subscription[] = [];
@@ -80,6 +82,19 @@ export class MesasComponent implements OnInit, OnDestroy {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
     }
+  }
+
+  atenderMesero(mesaNumero: string, event?: Event) {
+    if (event) event.stopPropagation();
+    this.http.post(`${this.baseUrl}/pedidos/atender-mesero`, { mesaNumero }).subscribe({
+      next: () => console.log(`Garzón en camino notificado para Mesa ${mesaNumero}`),
+      error: (err) => console.error('Error al notificar mesero en camino', err),
+    });
+    this.mesasLlamando.update((prev) => {
+      const next = new Set(prev);
+      next.delete(mesaNumero);
+      return next;
+    });
   }
 
   cargarMesas() {
@@ -150,7 +165,22 @@ export class MesasComponent implements OnInit, OnDestroy {
       this.cargarMesas();
     });
 
-    this.subs.push(subMesa, subMenu, subPedido, subPedidoAct, subPedidoIa);
+    const subMeseroLlamado = this.socketService
+      .onEvent<{ mesaNumero: string; motivo: string }>('mesero:llamado')
+      .subscribe((data) => {
+        const mesaNum = data?.mesaNumero || 'M01';
+        this.mesasLlamando.update((prev) => {
+          const next = new Set(prev);
+          next.add(mesaNum);
+          return next;
+        });
+        const targetMesa = this.mesas().find((m) => m.numero === mesaNum);
+        if (targetMesa) {
+          this.flashingMesas.update((fm) => ({ ...fm, [targetMesa.id]: true }));
+        }
+      });
+
+    this.subs.push(subMesa, subMenu, subPedido, subPedidoAct, subPedidoIa, subMeseroLlamado);
   }
 
   iniciarTemporizador() {
@@ -196,7 +226,8 @@ export class MesasComponent implements OnInit, OnDestroy {
   getMesaClass(mesa: Mesa): string {
     const base = mesa.estado.toLowerCase().replace('_', '-');
     const isFlashing = this.flashingMesas()[mesa.id] ? ' ws-flash-active' : '';
-    return `${base}${isFlashing}`;
+    const isCalling = this.mesasLlamando().has(mesa.numero) ? ' solicita-mesero' : '';
+    return `${base}${isFlashing}${isCalling}`;
   }
 }
 
