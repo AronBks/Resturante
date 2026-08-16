@@ -190,7 +190,7 @@
   }
 
   <!-- ═══════════════════════════════════════════
-       PANTALLA 2: ESCANEO DE CÓDIGO QR (WEBGL ENERGÍA DORADA)
+       PANTALLA 2: PAGO CON CÓDIGO QR Y SUBIDA DE COMPROBANTE
        ═══════════════════════════════════════════ -->
   @if (pantallaActual() === 'escaneo-qr') {
 
@@ -207,52 +207,271 @@
         <div class="header-spacer"></div>
       </header>
 
-      <!-- Contenido Principal con Animación de Energía Dorada WebGL -->
+      <!-- Contenido Principal con Scroll -->
       <div class="qr-body">
+        
         <div class="qr-title-box">
-          <h2 class="qr-heading">Escaneando Código QR...</h2>
-          <p class="qr-subheading">Mantén la cámara enfocada en el código</p>
+          <h2 class="qr-heading">Pago con Código QR</h2>
+          <p class="qr-subheading">Escanea o guarda el QR de la tienda con tu app bancaria y sube tu comprobante para verificar</p>
         </div>
 
-        <!-- Marco de Escáner con Aura de Energía Dorada Animada -->
-        <div class="qr-aura-container">
-          <div class="golden-energy-particles"></div>
-          <div class="golden-aura-glow"></div>
-          
-          <div class="qr-scanner-frame">
-            <div class="corner top-left"></div>
-            <div class="corner top-right"></div>
-            <div class="corner bottom-left"></div>
-            <div class="corner bottom-right"></div>
-
-            <div class="laser-scanner-line"></div>
-
-            <!-- Patrón de Código QR Dorado -->
-            <div class="qr-pattern-grid">
-              <div class="qr-eye top-l"></div>
-              <div class="qr-eye top-r"></div>
-              <div class="qr-eye bottom-l"></div>
-              <div class="qr-center-box"></div>
-              <div class="qr-dots-group"></div>
+        <!-- Tarjeta del Código QR Oficial de la Tienda -->
+        <div class="qr-card">
+          <div class="qr-card-header">
+            <div class="qr-brand-badge">
+              <lucide-icon name="qr-code" [size]="18"></lucide-icon>
+              <span>SIMPLE QR BANCARIO</span>
+            </div>
+            <div class="qr-total-badge">
+              <span>Total a Transferir</span>
+              <strong>Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
             </div>
           </div>
+
+          <!-- Visualizador de QR con Marco Dorado -->
+          <div class="qr-aura-container">
+            <div class="golden-aura-glow"></div>
+            
+            <div class="qr-display-box">
+              <div class="qr-code-graphic">
+                <svg viewBox="0 0 200 200" width="100%" height="100%" class="qr-svg">
+                  <!-- QR Background -->
+                  <rect x="0" y="0" width="200" height="200" fill="#ffffff" rx="16" />
+                  
+                  <!-- Esquinas QR (Finder Patterns) -->
+                  <g fill="#14110e">
+                    <!-- Top Left -->
+                    <rect x="15" y="15" width="45" height="45" rx="8" />
+                    <rect x="22" y="22" width="31" height="31" fill="#ffffff" rx="4" />
+                    <rect x="28" y="28" width="19" height="19" fill="#d4af37" rx="3" />
+
+                    <!-- Top Right -->
+                    <rect x="140" y="15" width="45" height="45" rx="8" />
+                    <rect x="147" y="22" width="31" height="31" fill="#ffffff" rx="4" />
+                    <rect x="153" y="28" width="19" height="19" fill="#d4af37" rx="3" />
+
+                    <!-- Bottom Left -->
+                    <rect x="15" y="140" width="45" height="45" rx="8" />
+                    <rect x="22" y="147" width="31" height="31" fill="#ffffff" rx="4" />
+                    <rect x="28" y="153" width="19" height="19" fill="#d4af37" rx="3" />
+
+                    <!-- Data Grid Elements -->
+                    <rect x="70" y="18" width="12" height="12" rx="2" />
+                    <rect x="90" y="18" width="12" height="12" rx="2" />
+                    <rect x="115" y="18" width="12" height="12" rx="2" />
+                    
+                    <rect x="70" y="38" width="12" height="12" rx="2" fill="#d4af37" />
+                    <rect x="100" y="38" width="24" height="12" rx="2" />
+                    
+                    <rect x="18" y="70" width="12" height="24" rx="2" />
+                    <rect x="38" y="70" width="24" height="12" rx="2" />
+                    <rect x="70" y="70" width="12" height="12" rx="2" fill="#d4af37" />
+                    <rect x="90" y="70" width="20" height="20" rx="3" />
+                    <rect x="120" y="70" width="12" height="12" rx="2" />
+                    <rect x="140" y="70" width="24" height="12" rx="2" />
+                    <rect x="170" y="70" width="12" height="24" rx="2" />
+
+                    <rect x="18" y="100" width="24" height="12" rx="2" />
+                    <rect x="50" y="100" width="12" height="12" rx="2" fill="#d4af37" />
+                    <rect x="135" y="100" width="12" height="24" rx="2" />
+                    <rect x="160" y="100" width="22" height="12" rx="2" />
+
+                    <rect x="70" y="125" width="24" height="12" rx="2" />
+                    <rect x="105" y="125" width="12" height="12" rx="2" fill="#d4af37" />
+                    <rect x="125" y="125" width="24" height="12" rx="2" />
+                    <rect x="160" y="125" width="22" height="22" rx="3" />
+
+                    <rect x="70" y="150" width="12" height="32" rx="2" />
+                    <rect x="90" y="165" width="24" height="12" rx="2" />
+                    <rect x="120" y="150" width="12" height="12" rx="2" fill="#d4af37" />
+                    <rect x="140" y="165" width="12" height="18" rx="2" />
+                  </g>
+
+                  <!-- Central Logo Badge -->
+                  <rect x="76" y="76" width="48" height="48" rx="10" fill="#14110e" stroke="#d4af37" stroke-width="2" />
+                  <text x="100" y="105" font-family="'Playfair Display', serif" font-weight="bold" font-size="20" fill="#e5c158" text-anchor="middle">T</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pasos para pagar -->
+          <div class="qr-steps-banner">
+            <div class="qr-step-item">
+              <span class="step-num">1</span>
+              <span>Guarda la imagen del QR en tu celular</span>
+            </div>
+            <div class="qr-step-item">
+              <span class="step-num">2</span>
+              <span>Abre tu App Bancaria (Simple QR) y transfiere</span>
+            </div>
+            <div class="qr-step-item">
+              <span class="step-num">3</span>
+              <span>Sube el comprobante abajo para confirmar</span>
+            </div>
+          </div>
+
+          <!-- Botón Principal: Guardar QR -->
+          <button class="guardar-qr-primary-btn" (click)="descargarQRImage()" id="btn-guardar-qr">
+            <lucide-icon name="download" [size]="20"></lucide-icon>
+            <span>DESCARGAR / GUARDAR CÓDIGO QR</span>
+          </button>
         </div>
+
+        <!-- Seccion: Subir Comprobante de Pago -->
+        <div class="comprobante-card">
+          <div class="comprobante-card-header">
+            <h3 class="comprobante-title">
+              <lucide-icon name="upload" [size]="18" class="gold-icon"></lucide-icon>
+              <span>Subir Comprobante de Pago</span>
+            </h3>
+            <p class="comprobante-desc">Adjunta la captura de pantalla o foto del comprobante de transferencia</p>
+          </div>
+
+          <input
+            type="file"
+            #fileInput
+            (change)="onComprobanteSelected($event)"
+            accept="image/*"
+            class="hidden-file-input"
+            id="file-input-comprobante"
+          />
+
+          @if (!comprobantePreviewUrl()) {
+            <!-- Dropzone interactivo -->
+            <div class="upload-dropzone" (click)="fileInput.click()" id="dropzone-comprobante">
+              <div class="upload-icon-circle">
+                <lucide-icon name="image" [size]="28" class="gold-icon"></lucide-icon>
+              </div>
+              <span class="upload-primary-text">Seleccionar foto del comprobante</span>
+              <span class="upload-subtext">Toca aquí para elegir desde tu galería o cámara</span>
+              <span class="upload-formats">JPG, PNG o WEBP (Máx. 5MB)</span>
+            </div>
+          } @else {
+            <!-- Vista Previa del Comprobante -->
+            <div class="preview-box">
+              <div class="preview-img-container">
+                <img [src]="comprobantePreviewUrl()" alt="Comprobante de Pago" class="comprobante-img" />
+                <button class="remove-img-btn" (click)="quitarComprobante($event)" title="Quitar imagen" id="btn-quitar-comprobante">
+                  <lucide-icon name="x" [size]="16"></lucide-icon>
+                </button>
+              </div>
+              <div class="preview-meta">
+                <div class="preview-status">
+                  <lucide-icon name="check-circle-2" [size]="16" class="check-green"></lucide-icon>
+                  <span>Comprobante listo para verificar</span>
+                </div>
+                <span class="preview-filename">{{ comprobanteFile()?.name }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- Nro de Referencia / Comprobante (Opcional) -->
+          <div class="form-group margin-top-12">
+            <label class="form-label">NRO. DE TRANSACCIÓN / REFERENCIA (OPCIONAL)</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="Ej: 84920194"
+              [value]="nroTransaccion()"
+              (input)="nroTransaccion.set($any($event.target).value)"
+              id="input-nro-transaccion"
+            />
+          </div>
+
+          @if (errorComprobante()) {
+            <div class="error-banner">
+              <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+              <span>{{ errorComprobante() }}</span>
+            </div>
+          }
+        </div>
+
       </div>
 
-      <!-- Botones de Acción QR -->
+      <!-- Pie de Pantalla QR -->
       <footer class="qr-footer">
         <button class="qr-cancel-btn" (click)="cancelarQR()" id="btn-qr-cancelar">
           CANCELAR
         </button>
 
-        <button class="qr-simulate-btn" (click)="simularPagoExitoso()" id="btn-qr-simular">
-          <span>SIMULAR PAGO EXITOSO</span>
-          <lucide-icon name="check-circle-2" [size]="20"></lucide-icon>
+        <button
+          class="qr-simulate-btn"
+          [disabled]="verificandoPago()"
+          (click)="verificarYConfirmarPago()"
+          id="btn-qr-simular"
+        >
+          @if (verificandoPago()) {
+            <span class="loader-spinner"></span>
+            <span>VERIFICANDO COMPROBANTE...</span>
+          } @else {
+            <span>{{ comprobantePreviewUrl() ? 'ENVIAR COMPROBANTE Y VERIFICAR' : 'CONFIRMAR PAGO REALIZADO' }}</span>
+            <lucide-icon name="check-circle-2" [size]="20"></lucide-icon>
+          }
         </button>
       </footer>
 
     </div>
 
+  }
+
+  <!-- ═══════════════════════════════════════════
+       PANTALLA INTERMEDIA: NOTIFICACIÓN DE COBRO EN EFECTIVO ENVIADA
+       ═══════════════════════════════════════════ -->
+  @if (pantallaActual() === 'notificacion-efectivo') {
+    <div class="notif-efectivo-screen animate-in">
+      
+      <!-- Header -->
+      <header class="cierre-header transparent-header">
+        <div class="header-brand">
+          <h1>Tukuypaj</h1>
+        </div>
+      </header>
+
+      <!-- Cuerpo Notificación -->
+      <div class="notif-efectivo-body">
+        <div class="notif-card">
+          <div class="notif-icon-halo">
+            <lucide-icon name="bell-ring" [size]="44" class="notif-gold-icon"></lucide-icon>
+          </div>
+          
+          <h2 class="notif-title">¡Notificación Enviada a Caja y Garzón!</h2>
+          <p class="notif-subtext">Hemos avisado al panel administrativo de Tukuypaj. Un garzón se dirige a tu mesa para cobrar tu cuenta en efectivo.</p>
+
+          <div class="notif-status-badge">
+            <span class="pulse-dot"></span>
+            <span>GARZÓN NOTIFICADO — EN CAMINO 🏃‍♂️</span>
+          </div>
+
+          <div class="notif-details-box">
+            <div class="detail-row">
+              <span class="detail-label">Mesa / Referencia:</span>
+              <span class="detail-val">Mesa {{ mesaNumero() }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Método de Pago:</span>
+              <span class="detail-val">Efectivo</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Total a Cancelar:</span>
+              <span class="detail-val gold">Bs. {{ totalConPropina() | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <div class="notif-tip-box">
+            <p>💡 El garzón llegará en breve a tu mesa. Puedes ver tu recibo digital mientras esperas.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie con Acción -->
+      <footer class="qr-footer">
+        <button class="qr-simulate-btn" (click)="pantallaActual.set('recibo-digital')" id="btn-ver-recibo-efectivo">
+          <span>VER MI RECIBO DIGITAL</span>
+          <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
+        </button>
+      </footer>
+    </div>
   }
 
   <!-- ═══════════════════════════════════════════

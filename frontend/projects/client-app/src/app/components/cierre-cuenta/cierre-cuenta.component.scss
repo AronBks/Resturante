@@ -451,7 +451,7 @@
 }
 
 /* ══════════════════════════════════════
-   PANTALLA 2: ESCANEO QR CON WEBGL ENERGÍA DORADA
+   PANTALLA 2: PAGO CÓDIGO QR Y SUBIDA DE COMPROBANTE
    ══════════════════════════════════════ */
 .qr-scanner-screen {
   display: flex;
@@ -463,38 +463,92 @@
 
 .qr-body {
   flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  text-align: center;
+  gap: 20px;
 }
 
 .qr-title-box {
-  margin-bottom: 32px;
+  text-align: center;
+  margin-bottom: 4px;
 }
 
 .qr-heading {
   font-family: var(--font-serif);
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: var(--gold-primary);
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .qr-subheading {
   font-family: var(--font-sans);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
   margin: 0;
+  line-height: 1.4;
 }
 
-/* Contenedor de Aura de Energía Dorada */
+/* ── Tarjeta QR de la Tienda ── */
+.qr-card {
+  background: var(--bg-card);
+  border: 1px solid var(--gold-border);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.qr-card-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.qr-brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold-primary);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.qr-total-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--font-sans);
+
+  span {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  strong {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    color: var(--gold-primary);
+  }
+}
+
+/* Visualizador QR */
 .qr-aura-container {
   position: relative;
-  width: 280px;
-  height: 280px;
+  width: 210px;
+  height: 210px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -502,148 +556,301 @@
 
 .golden-aura-glow {
   position: absolute;
-  inset: -20px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(229, 193, 88, 0.35) 0%, rgba(212, 175, 55, 0.12) 50%, transparent 70%);
+  inset: -10px;
+  border-radius: 28px;
+  background: radial-gradient(circle, rgba(229, 193, 88, 0.25) 0%, rgba(212, 175, 55, 0.08) 50%, transparent 75%);
   animation: pulseAura 3s ease-in-out infinite alternate;
   pointer-events: none;
 }
 
-.golden-energy-particles {
-  position: absolute;
-  inset: -40px;
-  background: radial-gradient(circle, rgba(229, 193, 88, 0.2) 10%, transparent 60%);
-  filter: blur(12px);
-  animation: particleRotate 8s linear infinite;
-  pointer-events: none;
-}
-
 @keyframes pulseAura {
-  0% { transform: scale(0.92); opacity: 0.6; }
-  100% { transform: scale(1.1); opacity: 0.95; }
+  0% { transform: scale(0.95); opacity: 0.6; }
+  100% { transform: scale(1.05); opacity: 0.95; }
 }
 
-@keyframes particleRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Marco del Escáner QR */
-.qr-scanner-frame {
+.qr-display-box {
   position: relative;
-  width: 250px;
-  height: 250px;
-  border-radius: 28px;
-  background: rgba(28, 24, 20, 0.85);
-  border: 1.5px solid rgba(229, 193, 88, 0.4);
-  box-shadow: 0 0 32px rgba(229, 193, 88, 0.3), inset 0 0 24px rgba(229, 193, 88, 0.15);
+  width: 200px;
+  height: 200px;
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 10px;
+  box-shadow: 0 0 24px rgba(229, 193, 88, 0.3);
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.qr-code-graphic {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  z-index: 2;
 }
 
-/* Esquinas Doradas */
-.corner {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  border-color: var(--gold-primary);
-  border-style: solid;
+.qr-svg {
+  width: 100%;
+  height: 100%;
 }
 
-.corner.top-left {
-  top: 14px; left: 14px;
-  border-width: 3px 0 0 3px;
-  border-top-left-radius: 10px;
+/* Pasos de Pago QR */
+.qr-steps-banner {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid rgba(229, 193, 88, 0.15);
 }
 
-.corner.top-right {
-  top: 14px; right: 14px;
-  border-width: 3px 3px 0 0;
-  border-top-right-radius: 10px;
-}
+.qr-step-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-muted);
 
-.corner.bottom-left {
-  bottom: 14px; left: 14px;
-  border-width: 0 0 3px 3px;
-  border-bottom-left-radius: 10px;
-}
-
-.corner.bottom-right {
-  bottom: 14px; right: 14px;
-  border-width: 0 3px 3px 0;
-  border-bottom-right-radius: 10px;
-}
-
-/* Línea Láser Laser Scanning Line */
-.laser-scanner-line {
-  position: absolute;
-  left: 10px; right: 10px;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
-  box-shadow: 0 0 16px var(--gold-primary), 0 0 8px var(--gold-primary);
-  animation: scanLine 2.8s ease-in-out infinite alternate;
-  z-index: 3;
-}
-
-@keyframes scanLine {
-  0% { top: 15px; }
-  100% { top: 230px; }
-}
-
-/* Patrón de Código QR Dorado */
-.qr-pattern-grid {
-  position: relative;
-  width: 170px;
-  height: 170px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 12px;
-  opacity: 0.85;
-}
-
-.qr-eye {
-  border: 3px solid var(--gold-primary);
-  border-radius: 8px;
-  position: relative;
-  background: rgba(229, 193, 88, 0.08);
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 8px;
+  .step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
     background: var(--gold-primary);
-    border-radius: 3px;
+    color: #14110e;
+    font-weight: 800;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 }
 
-.qr-center-box {
-  background: rgba(229, 193, 88, 0.25);
-  border-radius: 6px;
-  grid-column: 2;
-  grid-row: 2;
+/* Botón Principal Guardar QR */
+.guardar-qr-primary-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  border: 1.5px solid var(--gold-primary);
+  background: rgba(229, 193, 88, 0.12);
+  color: var(--gold-primary);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(229, 193, 88, 0.15);
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: rgba(229, 193, 88, 0.2);
+    box-shadow: 0 6px 20px rgba(229, 193, 88, 0.25);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ── Tarjeta Subir Comprobante ── */
+.comprobante-card {
+  background: var(--bg-card);
+  border: 1px solid var(--gold-border);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.comprobante-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comprobante-title {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .gold-icon {
+    color: var(--gold-primary);
+  }
+}
+
+.comprobante-desc {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+/* Dropzone de subida */
+.upload-dropzone {
+  border: 2px dashed var(--gold-border);
+  border-radius: 18px;
+  background: rgba(229, 193, 88, 0.03);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.25s ease;
+
+  &:hover, &:active {
+    border-color: var(--gold-primary);
+    background: rgba(229, 193, 88, 0.08);
+  }
+}
+
+.upload-icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(229, 193, 88, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.upload-primary-text {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+}
+
+.upload-subtext {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.upload-formats {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Preview de la imagen */
+.preview-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(229, 193, 88, 0.25);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.preview-img-container {
+  position: relative;
+  width: 100%;
+  max-height: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comprobante-img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.remove-img-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &:hover {
+    background: #dc3545;
+  }
+}
+
+.preview-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4cd964;
+}
+
+.preview-filename {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.margin-top-12 {
+  margin-top: 12px;
 }
 
 /* Pie del QR: Botones */
 .qr-footer {
-  padding: 24px 20px 32px;
+  padding: 16px 20px 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: #100e0b;
+  border-top: 1px solid var(--gold-border);
+  flex-shrink: 0;
 }
 
 .qr-cancel-btn {
   width: 100%;
-  height: 52px;
-  border-radius: 16px;
+  height: 48px;
+  border-radius: 14px;
   background: transparent;
   border: 1.5px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
   font-family: var(--font-sans);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
@@ -656,7 +863,7 @@
 
 .qr-simulate-btn {
   width: 100%;
-  height: 56px;
+  height: 54px;
   border-radius: 16px;
   background: var(--gold-primary);
   border: none;
@@ -675,6 +882,11 @@
 
   &:active {
     transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 }
 
@@ -1329,6 +1541,148 @@
   font-size: 0.82rem;
   color: var(--text-dim);
   animation: blink 1.5s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════
+   PANTALLA NOTIFICACIÓN PAGO EN EFECTIVO
+   ══════════════════════════════════════ */
+.notif-efectivo-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-obsidian);
+}
+
+.notif-efectivo-body {
+  flex: 1;
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--gold-border);
+  border-radius: 28px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.notif-icon-halo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(229, 193, 88, 0.12);
+  border: 1.5px solid var(--gold-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 0 30px var(--gold-glow);
+  animation: pulse-gold 2.5s ease-in-out infinite;
+
+  .notif-gold-icon {
+    color: var(--gold-primary);
+  }
+}
+
+.notif-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  margin: 0 0 10px;
+  line-height: 1.3;
+}
+
+.notif-subtext {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.notif-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(76, 217, 100, 0.12);
+  border: 1px solid rgba(76, 217, 100, 0.3);
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #4cd964;
+  letter-spacing: 0.5px;
+  margin-bottom: 24px;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4cd964;
+  box-shadow: 0 0 10px #4cd964;
+  animation: blink 1.2s infinite;
+}
+
+.notif-details-box {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 18px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+}
+
+.detail-label {
+  color: var(--text-muted);
+}
+
+.detail-val {
+  color: #ffffff;
+  font-weight: 600;
+
+  &.gold {
+    color: var(--gold-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+}
+
+.notif-tip-box {
+  background: rgba(229, 193, 88, 0.05);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+
+  p {
+    margin: 0;
+  }
 }
 
 /* ══════════════════════════════════════
