@@ -58,9 +58,10 @@ export class CartaPublicaService {
     this.loading.set(true);
     this.error.set(null);
 
-    this.http.get<{ data: CategoriaPublica[] }>(this.apiUrl).subscribe({
+    this.http.get<any>(this.apiUrl).subscribe({
       next: (res) => {
-        this.categorias.set(res.data ?? []);
+        const items = Array.isArray(res) ? res : (res?.data ?? []);
+        this.categorias.set(items);
         this.loading.set(false);
       },
       error: (err) => {
@@ -93,9 +94,10 @@ export class CartaPublicaService {
    * Esto es más simple y seguro que mantener un cache parcial.
    */
   recargarCarta(): void {
-    this.http.get<{ data: CategoriaPublica[] }>(this.apiUrl).subscribe({
+    this.http.get<any>(this.apiUrl).subscribe({
       next: (res) => {
-        this.categorias.set(res.data ?? []);
+        const items = Array.isArray(res) ? res : (res?.data ?? []);
+        this.categorias.set(items);
       },
     });
   }

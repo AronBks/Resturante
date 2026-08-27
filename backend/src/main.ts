@@ -16,7 +16,9 @@ async function bootstrap() {
     origin: [
       'http://localhost:4200',  // admin-app (Portal Administrativo)
       'http://127.0.0.1:4200',
-      'http://localhost:4300',  // client-app (Menú Digital Público)
+      'http://localhost:4201',  // client-app (Menú Digital Público)
+      'http://127.0.0.1:4201',
+      'http://localhost:4300',
       'http://127.0.0.1:4300',
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
