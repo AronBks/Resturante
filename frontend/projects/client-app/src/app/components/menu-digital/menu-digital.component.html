@@ -226,6 +226,7 @@
                 <article
                   class="editorial-card"
                   [class.removing]="isPlatoRemoving(plato.id)"
+                  [class.editorial-card--disabled]="plato.disponibleAhora === false"
                   [id]="'plato-' + plato.id"
                 >
                   <!-- Visual / Imagen Expansiva de Alta Calidad -->
@@ -237,6 +238,12 @@
                       loading="lazy"
                       (error)="onImgError($event, plato.nombre)"
                     />
+                    @if (plato.disponibleAhora === false) {
+                      <div class="card-out-of-hours-overlay">
+                        <lucide-icon name="clock" [size]="18"></lucide-icon>
+                        <span>No disponible</span>
+                      </div>
+                    }
                   </div>
 
                   <!-- Info de la Tarjeta Editorial -->
@@ -254,7 +261,7 @@
                         @if (plato.disponibleAhora) {
                           <span>Disponible ahora · {{ plato.horaInicio }} – {{ plato.horaFin }}</span>
                         } @else {
-                          <span>Disponible de {{ plato.horaInicio }} a {{ plato.horaFin }}</span>
+                          <span>Disponible solo de {{ plato.horaInicio }} a {{ plato.horaFin }}</span>
                         }
                       </div>
                     }
@@ -275,41 +282,48 @@
 
                       <!-- Botón (+) o Stepper de Pedido Rápidos -->
                       <div class="editorial-card__action">
-                        @if (plato.variantes && plato.variantes.length > 0) {
-                          <button
-                            class="mobile-quick-add-btn"
-                            (click)="abrirSelectorVariante(plato); $event.stopPropagation()"
-                            [id]="'btn-add-var-' + plato.id"
-                          >
-                            <lucide-icon name="plus" [size]="22"></lucide-icon>
-                          </button>
+                        @if (plato.disponibleAhora === false) {
+                          <div class="horario-agotado-badge" title="Horario: {{ plato.horaInicio }} a {{ plato.horaFin }}">
+                            <lucide-icon name="lock" [size]="13"></lucide-icon>
+                            <span>Fuera de Horario</span>
+                          </div>
                         } @else {
-                          @if (carritoService.obtenerCantidad(plato.id) === 0) {
+                          @if (plato.variantes && plato.variantes.length > 0) {
                             <button
                               class="mobile-quick-add-btn"
-                              (click)="carritoService.agregarPlato(plato); abrirCarrito(); $event.stopPropagation()"
-                              [id]="'btn-add-' + plato.id"
+                              (click)="abrirSelectorVariante(plato); $event.stopPropagation()"
+                              [id]="'btn-add-var-' + plato.id"
                             >
                               <lucide-icon name="plus" [size]="22"></lucide-icon>
                             </button>
                           } @else {
-                            <div class="editorial-stepper" (click)="$event.stopPropagation()">
+                            @if (carritoService.obtenerCantidad(plato.id) === 0) {
                               <button
-                                class="stepper-btn minus"
-                                (click)="carritoService.removerPlato(plato.id)"
-                                [id]="'btn-minus-' + plato.id"
+                                class="mobile-quick-add-btn"
+                                (click)="carritoService.agregarPlato(plato); abrirCarrito(); $event.stopPropagation()"
+                                [id]="'btn-add-' + plato.id"
                               >
-                                <lucide-icon name="minus" [size]="16"></lucide-icon>
+                                <lucide-icon name="plus" [size]="22"></lucide-icon>
                               </button>
-                              <span class="stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
-                              <button
-                                class="stepper-btn plus"
-                                (click)="carritoService.agregarPlato(plato)"
-                                [id]="'btn-plus-' + plato.id"
-                              >
-                                <lucide-icon name="plus" [size]="16"></lucide-icon>
-                              </button>
-                            </div>
+                            } @else {
+                              <div class="editorial-stepper" (click)="$event.stopPropagation()">
+                                <button
+                                  class="stepper-btn minus"
+                                  (click)="carritoService.removerPlato(plato.id)"
+                                  [id]="'btn-minus-' + plato.id"
+                                >
+                                  <lucide-icon name="minus" [size]="16"></lucide-icon>
+                                </button>
+                                <span class="stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
+                                <button
+                                  class="stepper-btn plus"
+                                  (click)="carritoService.agregarPlato(plato)"
+                                  [id]="'btn-plus-' + plato.id"
+                                >
+                                  <lucide-icon name="plus" [size]="16"></lucide-icon>
+                                </button>
+                              </div>
+                            }
                           }
                         }
                       </div>

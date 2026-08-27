@@ -736,6 +736,40 @@
     animation: fadeOut 0.4s ease forwards;
     pointer-events: none;
   }
+
+  &.editorial-card--disabled {
+    opacity: 0.75;
+    border-color: rgba(239, 68, 68, 0.25);
+
+    &:hover {
+      background: var(--bg-card);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .editorial-card__img {
+      filter: grayscale(45%) brightness(0.8);
+    }
+  }
+}
+
+.card-out-of-hours-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(18, 16, 13, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  padding: 6px 12px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .editorial-card__visual {
@@ -797,10 +831,27 @@
   }
 
   &--no-disponible {
-    background: rgba(255, 159, 10, 0.1);
-    color: #ff9f0a;
-    border: 1px solid rgba(255, 159, 10, 0.25);
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
   }
+}
+
+.horario-agotado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  cursor: not-allowed;
+  user-select: none;
 }
 
 .editorial-card__desc {

@@ -139,6 +139,7 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   // ── Operaciones con Variantes ──
 
   abrirSelectorVariante(plato: PlatoPublico): void {
+    if (plato.disponibleAhora === false) return;
     this.selectedPlatoParaVariante.set(plato);
     const disponible = plato.variantes?.find((v) => v.disponible);
     this.selectedVariante.set(disponible || null);

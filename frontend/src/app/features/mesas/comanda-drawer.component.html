@@ -173,9 +173,9 @@
                 <article 
                   *ngFor="let plato of filteredPlatos()" 
                   class="dish-catalog-card-consolidated"
-                  [class.disabled]="!plato.disponible"
+                  [class.disabled]="!plato.disponible || plato.disponibleAhora === false"
                 >
-                  <div class="dish-header-row" (click)="!plato.tieneVariantes && agregarPlatoSinVariante(plato, $event)">
+                  <div class="dish-header-row" (click)="(!plato.tieneVariantes && plato.disponibleAhora !== false) && agregarPlatoSinVariante(plato, $event)">
                     <div class="dish-thumb-box">
                       <img *ngIf="plato.imagenUrl" [src]="plato.imagenUrl" [alt]="plato.nombre" class="dish-img" />
                       <div *ngIf="!plato.imagenUrl" class="dish-no-img">
@@ -185,26 +185,31 @@
 
                     <div class="dish-title-box">
                       <h4 class="dish-title">{{ plato.nombre }}</h4>
-                      <span class="dish-price-sub" *ngIf="plato.tieneVariantes">
+                      <span class="schedule-warning-pill" *ngIf="plato.disponibleAhora === false">
+                        <lucide-icon name="clock" class="icon-xs"></lucide-icon>
+                        Fuera de horario ({{ plato.horaInicio }} - {{ plato.horaFin }})
+                      </span>
+                      <span class="dish-price-sub" *ngIf="plato.tieneVariantes && plato.disponibleAhora !== false">
                         Desde <strong class="gold-text">Bs. {{ (plato.precioDesde || 0) | number:'1.2-2' }}</strong>
                       </span>
-                      <span class="dish-price-single" *ngIf="!plato.tieneVariantes">
+                      <span class="dish-price-single" *ngIf="!plato.tieneVariantes && plato.disponibleAhora !== false">
                         Bs. {{ (plato.precioVenta || 0) | number:'1.2-2' }}
                       </span>
                     </div>
 
-                    <div class="dish-action-box">
+                    <div class="dish-action-box" *ngIf="plato.disponibleAhora !== false">
                       <button *ngIf="!plato.tieneVariantes" type="button" class="add-plus-btn" (click)="agregarPlatoSinVariante(plato, $event)">
                         <lucide-icon name="plus" class="icon-sm"></lucide-icon>
                       </button>
                     </div>
                   </div>
 
-                  <div class="variants-segment-grid" *ngIf="plato.tieneVariantes">
+                  <div class="variants-segment-grid" *ngIf="plato.tieneVariantes && plato.disponibleAhora !== false">
                     <button 
                       *ngFor="let v of plato.variantes" 
                       type="button"
                       class="variant-select-btn"
+                      [disabled]="!v.disponible"
                       (click)="agregarPlatoConVariante(plato, v, $event)"
                     >
                       <span class="v-label">{{ v.nombre }}</span>

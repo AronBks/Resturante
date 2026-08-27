@@ -70,6 +70,9 @@ export class PedidosService {
           throw new BadRequestException(`El plato "${plato.nombre}" no está disponible temporalmente`);
         }
 
+        // Validación estricta de horario (ej. Caldos 09:00 - 13:00 / Platos 12:00 - 17:00)
+        this.validarHorarioPlato(plato);
+
         let precioVenta = Number(plato.precioVenta);
         let varianteNombreSnapshot: string | null = null;
 
@@ -196,6 +199,9 @@ export class PedidosService {
       if (!plato.disponible) {
         throw new BadRequestException(`El plato "${plato.nombre}" no está disponible`);
       }
+
+      // Validación estricta de horario
+      this.validarHorarioPlato(plato);
 
       let precio = Number(plato.precioVenta);
       let varianteNombreSnapshot: string | null = null;
@@ -410,5 +416,30 @@ export class PedidosService {
     }
 
     return pedidoActualizado;
+  }
+
+  /**
+   * Valida estrictamente si un plato está dentro de su ventana horaria permitida
+   */
+  private validarHorarioPlato(plato: { nombre: string; horaInicio: string | null; horaFin: string | null }) {
+    if (!plato.horaInicio) return;
+    try {
+      const boliviaStr = new Date().toLocaleString('en-US', { timeZone: 'America/La_Paz', hour12: false });
+      const boliviaDate = new Date(boliviaStr);
+      const ahoraMin = boliviaDate.getHours() * 60 + boliviaDate.getMinutes();
+
+      const [hI, mI] = plato.horaInicio.split(':').map(Number);
+      const inicioMin = hI * 60 + mI;
+      const [hF, mF] = (plato.horaFin || '23:59').split(':').map(Number);
+      const finMin = hF * 60 + mF;
+
+      if (ahoraMin < inicioMin || ahoraMin > finMin) {
+        throw new BadRequestException(
+          `El plato "${plato.nombre}" no se puede ordenar a esta hora. Su horario de servicio es de ${plato.horaInicio} a ${plato.horaFin || 'cierre'}.`
+        );
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+    }
   }
 }

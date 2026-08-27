@@ -22,6 +22,9 @@ interface Plato {
   imagenUrl?: string;
   disponible: boolean;
   categoriaId: number;
+  horaInicio?: string | null;
+  horaFin?: string | null;
+  disponibleAhora?: boolean;
   variantes?: {
     id: string;
     nombre: string;
@@ -269,7 +272,12 @@ export class ComandaDrawerComponent implements OnChanges {
 
   agregarPlatoConVariante(plato: any, variante: any, event?: Event) {
     if (event) event.stopPropagation();
-    if (!plato.disponible || !variante.disponible) return;
+    if (!plato.disponible || !variante.disponible || plato.disponibleAhora === false) {
+      if (plato.disponibleAhora === false) {
+        this.errorMessage.set(`"${plato.nombre}" solo está disponible de ${plato.horaInicio} a ${plato.horaFin || 'cierre'}.`);
+      }
+      return;
+    }
 
     this.comandaItems.update(items => {
       const idx = items.findIndex(i => i.platoId === plato.id && i.varianteId === variante.id);
@@ -293,7 +301,12 @@ export class ComandaDrawerComponent implements OnChanges {
 
   agregarPlatoSinVariante(plato: any, event?: Event) {
     if (event) event.stopPropagation();
-    if (!plato.disponible) return;
+    if (!plato.disponible || plato.disponibleAhora === false) {
+      if (plato.disponibleAhora === false) {
+        this.errorMessage.set(`"${plato.nombre}" solo está disponible de ${plato.horaInicio} a ${plato.horaFin || 'cierre'}.`);
+      }
+      return;
+    }
 
     this.comandaItems.update(items => {
       const idx = items.findIndex(i => i.platoId === plato.id && !i.varianteId);

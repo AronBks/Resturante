@@ -518,9 +518,19 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
   }
 
   /**
-   * Obtiene la carta completa disponible de la BD.
+   * Obtiene la carta completa disponible de la BD considerando el horario de atención.
    */
   private async obtenerCartaDisponible(): Promise<PlatoDisponible[]> {
+    let ahoraMinutos = 0;
+    try {
+      const boliviaStr = new Date().toLocaleString('en-US', { timeZone: 'America/La_Paz', hour12: false });
+      const boliviaDate = new Date(boliviaStr);
+      ahoraMinutos = boliviaDate.getHours() * 60 + boliviaDate.getMinutes();
+    } catch {
+      const now = new Date();
+      ahoraMinutos = now.getHours() * 60 + now.getMinutes();
+    }
+
     const platos = await this.prisma.plato.findMany({
       where: { disponible: true },
       select: {
@@ -528,6 +538,8 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
         nombre: true,
         precioVenta: true,
         categoriaId: true,
+        horaInicio: true,
+        horaFin: true,
         variantes: {
           where: { disponible: true },
           select: {
@@ -538,7 +550,17 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
         },
       },
     });
-    return platos.map((p) => ({
+
+    const platosDisponibles = platos.filter((p) => {
+      if (!p.horaInicio) return true;
+      const [hI, mI] = p.horaInicio.split(':').map(Number);
+      const inicioMin = hI * 60 + mI;
+      const [hF, mF] = (p.horaFin || '23:59').split(':').map(Number);
+      const finMin = hF * 60 + mF;
+      return ahoraMinutos >= inicioMin && ahoraMinutos <= finMin;
+    });
+
+    return platosDisponibles.map((p) => ({
       id: p.id,
       nombre: p.nombre,
       precioVenta: Number(p.precioVenta),

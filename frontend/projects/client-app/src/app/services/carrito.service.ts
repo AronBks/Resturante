@@ -65,7 +65,12 @@ export class CarritoService {
 
   // ── Operaciones del Carrito ──
 
-  agregarPlato(plato: PlatoPublico, variante?: VariantePublica): void {
+  agregarPlato(plato: PlatoPublico, variante?: VariantePublica): boolean {
+    if (plato.disponibleAhora === false) {
+      this.error.set(`"${plato.nombre}" no está disponible en este horario (${plato.horaInicio || ''} a ${plato.horaFin || 'cierre'}).`);
+      return false;
+    }
+
     this.items.update((currentItems) => {
       const index = currentItems.findIndex(
         (item) => item.platoId === plato.id && item.varianteId === (variante?.id || undefined)
@@ -94,6 +99,7 @@ export class CarritoService {
       this.guardarEnLocalStorage(updated);
       return updated;
     });
+    return true;
   }
 
   removerPlato(platoId: string, varianteId?: string): void {

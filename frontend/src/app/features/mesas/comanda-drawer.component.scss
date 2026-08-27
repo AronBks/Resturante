@@ -312,6 +312,20 @@
           margin: 0;
         }
 
+        .schedule-warning-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.72rem;
+          font-weight: 600;
+          color: #f87171;
+          background: rgba(239, 68, 68, 0.12);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          padding: 2px 6px;
+          border-radius: 6px;
+          margin-top: 2px;
+        }
+
         .dish-price-sub {
           font-size: 0.8rem;
           color: #A39786;

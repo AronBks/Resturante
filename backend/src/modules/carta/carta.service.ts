@@ -38,7 +38,7 @@ export class CartaService {
   // ── Platos ──
 
   async findAllPlatos(categoriaId?: number) {
-    return this.prisma.plato.findMany({
+    const platos = await this.prisma.plato.findMany({
       where: categoriaId ? { categoriaId } : {},
       include: {
         categoria: { select: { id: true, nombre: true } },
@@ -54,6 +54,16 @@ export class CartaService {
       },
       orderBy: { nombre: 'asc' },
     });
+
+    const ahoraMinutos = this.minutosDelDia(new Date());
+    return platos.map((plato) => ({
+      ...plato,
+      disponibleAhora: this.estaDisponibleAhora(
+        plato.horaInicio,
+        plato.horaFin,
+        ahoraMinutos,
+      ),
+    }));
   }
 
   async findOnePlato(id: string) {
@@ -326,9 +336,15 @@ export class CartaService {
     }));
   }
 
-  /** Convierte "HH:MM" a minutos desde medianoche */
+  /** Convierte "HH:MM" a minutos desde medianoche según la hora local de Bolivia (UTC-4) */
   private minutosDelDia(date: Date): number {
-    return date.getHours() * 60 + date.getMinutes();
+    try {
+      const boliviaStr = date.toLocaleString('en-US', { timeZone: 'America/La_Paz', hour12: false });
+      const boliviaDate = new Date(boliviaStr);
+      return boliviaDate.getHours() * 60 + boliviaDate.getMinutes();
+    } catch {
+      return date.getHours() * 60 + date.getMinutes();
+    }
   }
 
   /** Retorna true si el plato está en su ventana horaria (o si no tiene restricción) */
