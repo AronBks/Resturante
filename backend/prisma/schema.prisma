@@ -143,8 +143,9 @@ model Pedido {
   mesero    Usuario @relation(fields: [meseroId], references: [id])
 
   // Relaciones
-  detalles     DetallePedido[]
+  detalles      DetallePedido[]
   transacciones Transaccion[]
+  facturas      Factura[]
 
   @@index([mesaId])
   @@index([meseroId])
@@ -242,9 +243,42 @@ model Transaccion {
   pedidoId  String @map("pedido_id") @db.Uuid
   pedido    Pedido @relation(fields: [pedidoId], references: [id])
 
+  // Relaciones
+  factura   Factura?
+
   @@index([cajaId])
   @@index([createdAt])
   @@map("transacciones")
+}
+
+enum EstadoFactura {
+  EMITIDA
+  ANULADA
+}
+
+model Factura {
+  id              String        @id @default(uuid()) @db.Uuid
+  nroFactura      String        @unique @map("nro_factura") @db.VarChar(50)
+  codigoControl   String        @map("codigo_control") @db.VarChar(100)
+  nitCliente      String        @map("nit_cliente") @db.VarChar(50)
+  razonSocial     String        @map("razon_social") @db.VarChar(150)
+  telefonoCliente String?       @map("telefono_cliente") @db.VarChar(50)
+  subtotal        Decimal       @db.Decimal(10, 2)
+  propina         Decimal       @default(0) @db.Decimal(10, 2)
+  total           Decimal       @db.Decimal(10, 2)
+  metodoPago      MetodoPago    @map("metodo_pago")
+  estado          EstadoFactura @default(EMITIDA)
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // FKs
+  transaccionId   String?       @unique @map("transaccion_id") @db.Uuid
+  transaccion     Transaccion?  @relation(fields: [transaccionId], references: [id])
+  pedidoId        String?       @map("pedido_id") @db.Uuid
+  pedido          Pedido?       @relation(fields: [pedidoId], references: [id])
+
+  @@index([nitCliente])
+  @@index([createdAt])
+  @@map("facturas")
 }
 
 model VariantePlato {
@@ -262,3 +296,4 @@ model VariantePlato {
   @@index([platoId])
   @@map("variantes_plato")
 }
+

@@ -107,14 +107,17 @@
 
       <!-- Datos de Facturación -->
       <section class="facturacion-card">
-        <h4 class="facturacion-title">DATOS DE FACTURACIÓN</h4>
+        <div class="facturacion-header-row">
+          <h4 class="facturacion-title">DATOS DE FACTURACIÓN</h4>
+          <span class="facturacion-badge">OFICIAL</span>
+        </div>
 
         <div class="form-group">
           <label class="form-label">NIT / CI</label>
           <input
             type="text"
             class="form-input"
-            placeholder="Ingrese su NIT o CI"
+            placeholder="Ej. 10293848 (o 0 para sin NIT)"
             [value]="nit()"
             (input)="actualizarNit($event)"
             id="input-nit"
@@ -122,15 +125,34 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">RAZÓN SOCIAL</label>
+          <label class="form-label">RAZÓN SOCIAL / NOMBRE</label>
           <input
             type="text"
             class="form-input"
-            placeholder="Nombre o Razón Social"
+            placeholder="Nombre completo o Empresa"
             [value]="razonSocial()"
             (input)="actualizarRazonSocial($event)"
             id="input-razon-social"
           />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <span>CELULAR (PARA ENVIAR FACTURA A WHATSAPP)</span>
+            <span class="whatsapp-tag">🟢 WhatsApp</span>
+          </label>
+          <div class="phone-input-group">
+            <span class="phone-prefix">+591</span>
+            <input
+              type="tel"
+              class="form-input phone-input"
+              placeholder="Ej. 77912345"
+              [value]="telefono()"
+              (input)="actualizarTelefono($event)"
+              id="input-telefono"
+            />
+          </div>
+          <span class="form-hint">Te enviaremos el comprobante y factura oficial directamente a tu WhatsApp.</span>
         </div>
       </section>
 
@@ -518,9 +540,13 @@
             <div class="check-gold-box">
               <lucide-icon name="check-circle-2" [size]="32" class="check-gold-icon"></lucide-icon>
             </div>
-            <h3 class="ticket-thanks-heading">Gracias por visitarnos</h3>
-            <p class="ticket-thanks-sub">Su pago ha sido procesado con éxito.</p>
-            <span class="ticket-brand-tag">TUKUYPAJ PEÑA</span>
+            <h3 class="ticket-thanks-heading">¡Pago Confirmado!</h3>
+            <p class="ticket-thanks-sub">Factura electrónica emitida exitosamente.</p>
+            <div class="ticket-fiscal-badge">
+              <span class="pulse-dot-green"></span>
+              <strong>{{ facturaEmitida()?.nroFactura || 'FAC-2026-0042' }}</strong>
+            </div>
+            <span class="ticket-brand-tag">PEÑA RESTAURANT TUKUYPAJ S.R.L.</span>
           </div>
 
           <!-- Muescas Lateral Estilo Ticket -->
@@ -530,12 +556,29 @@
             <div class="notch right"></div>
           </div>
 
-          <!-- Cuerpo con Detalle de Comanda -->
+          <!-- Cuerpo con Detalle de Comanda y Facturación -->
           <div class="ticket-middle-section">
-            <div class="ticket-meta-row">
-              <span class="table-label">Mesa {{ mesaNumero() }}</span>
-              <span class="date-label">{{ fechaHoraActual() }}</span>
+            <!-- Metadatos de la Factura -->
+            <div class="ticket-meta-box">
+              <div class="ticket-meta-row">
+                <span class="table-label">Mesa {{ mesaNumero() }}</span>
+                <span class="date-label">{{ fechaHoraActual() }}</span>
+              </div>
+              <div class="ticket-client-row">
+                <span class="client-label">Razón Social:</span>
+                <strong class="client-val">{{ razonSocial() || facturaEmitida()?.razonSocialCliente || 'Cliente Final' }}</strong>
+              </div>
+              <div class="ticket-client-row">
+                <span class="client-label">NIT / CI:</span>
+                <strong class="client-val">{{ nit() || facturaEmitida()?.nitCliente || '0' }}</strong>
+              </div>
+              <div class="ticket-client-row">
+                <span class="client-label">Método:</span>
+                <span class="client-val payment-tag">{{ (metodoPago() || 'QR').toUpperCase() }}</span>
+              </div>
             </div>
+
+            <div class="ticket-inner-dashed"></div>
 
             <!-- Lista de Platos -->
             <div class="ticket-items-list">
@@ -581,8 +624,14 @@
             </div>
 
             <div class="ticket-total-row">
-              <span class="total-label">Total</span>
+              <span class="total-label">Total Cancelado</span>
               <strong class="total-value">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
+            </div>
+
+            <!-- Código de Control Tributario -->
+            <div class="ticket-control-row">
+              <span class="control-label">CÓDIGO DE CONTROL:</span>
+              <span class="control-code">{{ facturaEmitida()?.codigoControl || '4B-9F-1A-C8' }}</span>
             </div>
 
             <div class="ticket-inner-dashed"></div>
@@ -592,21 +641,21 @@
               <div class="award-gold-box">
                 <lucide-icon name="award" [size]="24" class="award-icon"></lucide-icon>
               </div>
-              <p class="quote-text">"Esperamos verle pronto de nuevo."</p>
+              <p class="quote-text">"Esperamos verle pronto de nuevo. ¡Tukuypaj es su casa!"</p>
               <span class="quote-author">— DON ROBERTO</span>
             </div>
           </div>
 
-          <!-- Acciones de Descarga y Compartir -->
+          <!-- Acciones de Descarga y WhatsApp -->
           <div class="ticket-actions-section">
-            <button class="pdf-download-btn" (click)="descargarPDF()">
-              <lucide-icon name="download" [size]="18"></lucide-icon>
-              <span>DESCARGAR PDF</span>
+            <button class="whatsapp-share-btn" (click)="enviarFacturaWhatsApp()" id="btn-factura-whatsapp">
+              <lucide-icon name="send" [size]="18"></lucide-icon>
+              <span>ENVIAR POR WHATSAPP</span>
             </button>
 
-            <button class="share-receipt-btn" (click)="compartirReciboDigital()">
-              <lucide-icon name="share-2" [size]="18"></lucide-icon>
-              <span>COMPARTIR</span>
+            <button class="pdf-download-btn" (click)="descargarFacturaPDF()" id="btn-factura-pdf">
+              <lucide-icon name="download" [size]="18"></lucide-icon>
+              <span>DESCARGAR FACTURA PDF</span>
             </button>
           </div>
 
