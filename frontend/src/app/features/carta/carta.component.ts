@@ -163,48 +163,10 @@ interface Categoria {
                           <lucide-icon name="pencil" class="icon-xs"></lucide-icon>
                         </button>
 
-                        <!-- Photo Upload Overlay Controls on Hover -->
-                        <div class="img-hover-actions">
-                          <button 
-                            type="button" 
-                            class="hover-btn" 
-                            (click)="triggerFileInput(plato.id, $event)"
-                          >
-                            <lucide-icon name="upload" class="icon-xs"></lucide-icon> Subir Foto
-                          </button>
-                          <button 
-                            type="button" 
-                            class="hover-btn" 
-                            (click)="toggleUrlInput(plato.id, $event)"
-                          >
-                            <lucide-icon name="link" class="icon-xs"></lucide-icon> Enlace
-                          </button>
-                          <input 
-                            type="file" 
-                            [id]="'file-input-' + plato.id" 
-                            accept="image/*" 
-                            style="display: none" 
-                            (change)="onFileSelected($event, plato)"
-                          />
-                        </div>
                       }
                     </div>
 
-                    <!-- URL Input Popover -->
-                    @if (activeUrlInputPlatoId() === plato.id) {
-                      <div class="url-input-popover animate-fade-in" (click)="$event.stopPropagation()">
-                        <lucide-icon name="link" class="url-icon icon-xs"></lucide-icon>
-                        <input 
-                          type="text" 
-                          [(ngModel)]="pastedUrl" 
-                          placeholder="https://..." 
-                          class="url-input-text" 
-                          (keyup.enter)="guardarImagenUrlPasted(plato)"
-                        />
-                        <button type="button" class="btn-save-url" (click)="guardarImagenUrlPasted(plato)">Ok</button>
-                        <button type="button" class="btn-cancel-url" (click)="cancelarUrlInput()">&times;</button>
-                      </div>
-                    }
+
 
                     <!-- Card Body -->
                     <div class="card-body-admin">
