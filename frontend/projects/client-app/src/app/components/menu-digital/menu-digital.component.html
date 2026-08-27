@@ -243,6 +243,22 @@
                   <div class="editorial-card__body">
                     <h3 class="editorial-card__title">{{ plato.nombre }}</h3>
 
+                    <!-- Badge de Horario para caldos y platos con restricción -->
+                    @if (plato.horaInicio) {
+                      <div
+                        class="horario-badge"
+                        [class.horario-badge--disponible]="plato.disponibleAhora"
+                        [class.horario-badge--no-disponible]="!plato.disponibleAhora"
+                      >
+                        <lucide-icon name="clock" [size]="12"></lucide-icon>
+                        @if (plato.disponibleAhora) {
+                          <span>Disponible ahora · {{ plato.horaInicio }} – {{ plato.horaFin }}</span>
+                        } @else {
+                          <span>Disponible de {{ plato.horaInicio }} a {{ plato.horaFin }}</span>
+                        }
+                      </div>
+                    }
+
                     <p class="editorial-card__desc">
                       {{ plato.descripcion || 'Especialidad tradicional de la casa preparada con sazón única y productos locales de la más alta calidad.' }}
                     </p>

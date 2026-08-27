@@ -22,6 +22,9 @@ export interface PlatoPublico {
   descripcion?: string;
   precioVenta: number;
   imagenUrl?: string;
+  horaInicio?: string | null;
+  horaFin?: string | null;
+  disponibleAhora?: boolean;
   variantes?: VariantePublica[];
 }
 
@@ -29,6 +32,7 @@ export interface CategoriaPublica {
   id: number;
   nombre: string;
   descripcion?: string;
+  orden?: number;
   platos: PlatoPublico[];
 }
 

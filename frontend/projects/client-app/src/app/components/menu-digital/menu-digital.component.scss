@@ -772,6 +772,37 @@
   margin-bottom: 8px;
 }
 
+/* ── Badge de Horario de Disponibilidad ── */
+.horario-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+
+  lucide-icon {
+    flex-shrink: 0;
+  }
+
+  &--disponible {
+    background: rgba(52, 199, 89, 0.12);
+    color: #34c759;
+    border: 1px solid rgba(52, 199, 89, 0.3);
+  }
+
+  &--no-disponible {
+    background: rgba(255, 159, 10, 0.1);
+    color: #ff9f0a;
+    border: 1px solid rgba(255, 159, 10, 0.25);
+  }
+}
+
 .editorial-card__desc {
   font-family: var(--font-sans);
   font-size: 0.85rem;
