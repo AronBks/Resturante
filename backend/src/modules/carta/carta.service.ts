@@ -270,7 +270,7 @@ export class CartaService {
    * - Ordenada por el campo 'orden' de la categoría
    */
   async findCartaPublica() {
-    return this.prisma.categoriaPlato.findMany({
+    const categorias = await this.prisma.categoriaPlato.findMany({
       where: {
         activa: true,
         platos: { some: { disponible: true } },
@@ -279,6 +279,7 @@ export class CartaService {
         id: true,
         nombre: true,
         descripcion: true,
+        orden: true,
         platos: {
           where: { disponible: true },
           select: {
@@ -287,6 +288,8 @@ export class CartaService {
             descripcion: true,
             precioVenta: true,
             imagenUrl: true,
+            horaInicio: true,
+            horaFin: true,
             variantes: {
               where: { disponible: true },
               select: {
@@ -303,5 +306,43 @@ export class CartaService {
       },
       orderBy: { orden: 'asc' },
     });
+
+    // Enriquecer cada plato con flag de disponibilidad horaria actual
+    const ahoraMinutos = this.minutosDelDia(new Date());
+
+    return categorias.map((cat) => ({
+      ...cat,
+      platos: cat.platos.map((plato) => {
+        const disponibleAhora = this.estaDisponibleAhora(
+          plato.horaInicio,
+          plato.horaFin,
+          ahoraMinutos,
+        );
+        return {
+          ...plato,
+          disponibleAhora,
+        };
+      }),
+    }));
+  }
+
+  /** Convierte "HH:MM" a minutos desde medianoche */
+  private minutosDelDia(date: Date): number {
+    return date.getHours() * 60 + date.getMinutes();
+  }
+
+  /** Retorna true si el plato está en su ventana horaria (o si no tiene restricción) */
+  private estaDisponibleAhora(
+    horaInicio: string | null,
+    horaFin: string | null,
+    ahoraMinutos: number,
+  ): boolean {
+    if (!horaInicio) return true; // Sin restricción horaria
+    const [hI, mI] = horaInicio.split(':').map(Number);
+    const inicioMin = hI * 60 + mI;
+    if (!horaFin) return ahoraMinutos >= inicioMin;
+    const [hF, mF] = horaFin.split(':').map(Number);
+    const finMin = hF * 60 + mF;
+    return ahoraMinutos >= inicioMin && ahoraMinutos <= finMin;
   }
 }
