@@ -95,6 +95,10 @@ model Plato {
   precioVenta  Decimal  @map("precio_venta") @db.Decimal(10, 2)
   imagenUrl    String?  @map("imagen_url") @db.VarChar(500)
   disponible   Boolean  @default(true)
+  /// Hora de inicio de disponibilidad en formato "HH:MM" (null = siempre disponible)
+  horaInicio   String?  @map("hora_inicio") @db.VarChar(5)
+  /// Hora de fin de disponibilidad en formato "HH:MM" (null = siempre disponible)
+  horaFin      String?  @map("hora_fin") @db.VarChar(5)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
