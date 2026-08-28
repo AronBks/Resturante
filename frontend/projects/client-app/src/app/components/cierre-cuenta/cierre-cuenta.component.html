@@ -438,16 +438,20 @@
   }
 
   <!-- ═══════════════════════════════════════════
-       PANTALLA INTERMEDIA: NOTIFICACIÓN DE COBRO EN EFECTIVO ENVIADA
+       PANTALLA INTERMEDIA: NOTIFICACIÓN DE COBRO EN EFECTIVO / QR ENVIADA
        ═══════════════════════════════════════════ -->
   @if (pantallaActual() === 'notificacion-efectivo') {
     <div class="notif-efectivo-screen animate-in">
       
       <!-- Header -->
       <header class="cierre-header transparent-header">
+        <button class="header-back" (click)="volver()" id="btn-cierre-back">
+          <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
+        </button>
         <div class="header-brand">
           <h1>Tukuypaj</h1>
         </div>
+        <div class="header-spacer"></div>
       </header>
 
       <!-- Cuerpo Notificación -->
@@ -458,7 +462,13 @@
           </div>
           
           <h2 class="notif-title">¡Notificación Enviada a Caja y Garzón!</h2>
-          <p class="notif-subtext">Hemos avisado al panel administrativo de Tukuypaj. Un garzón se dirige a tu mesa para cobrar tu cuenta en efectivo.</p>
+          <p class="notif-subtext">
+            @if (metodoPago() === 'efectivo') {
+              Hemos avisado al panel de administración de Tukuypaj. Un garzón se dirige a tu mesa para cobrar tu cuenta en efectivo.
+            } @else {
+              Tu comprobante de pago fue enviado al panel de caja para su verificación inmediata.
+            }
+          </p>
 
           <div class="notif-status-badge">
             <span class="pulse-dot"></span>
@@ -472,7 +482,7 @@
             </div>
             <div class="detail-row">
               <span class="detail-label">Método de Pago:</span>
-              <span class="detail-val">Efectivo</span>
+              <span class="detail-val">{{ (metodoPago() || 'Efectivo') | uppercase }}</span>
             </div>
             <div class="detail-row">
               <span class="detail-label">Total a Cancelar:</span>
@@ -480,24 +490,24 @@
             </div>
           </div>
 
-          <div class="notif-tip-box">
-            <p>💡 El garzón llegará en breve a tu mesa. Puedes ver tu recibo digital mientras esperas.</p>
+          <div class="notif-tip-box security-tip">
+            <p>🔒 <strong>Seguridad Tributaria:</strong> Por normativa fiscal, tu Factura Digital Oficial y código de control se desbloquearán automáticamente en esta pantalla en cuanto el garzón registre tu cobro en caja.</p>
           </div>
         </div>
       </div>
 
-      <!-- Pie con Acción -->
+      <!-- Pie con Estado de Espera en Vivo -->
       <footer class="qr-footer">
-        <button class="qr-simulate-btn" (click)="pantallaActual.set('recibo-digital')" id="btn-ver-recibo-efectivo">
-          <span>VER MI RECIBO DIGITAL</span>
-          <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
-        </button>
+        <div class="waiting-payment-box">
+          <span class="loader-spinner gold"></span>
+          <span>ESPERANDO CONFIRMACIÓN DE PAGO EN CAJA...</span>
+        </div>
       </footer>
     </div>
   }
 
   <!-- ═══════════════════════════════════════════
-       PANTALLA 3: RECIBO DIGITAL PREMIUM (CINEMATOGRÁFICO & MINIMALISTA)
+       PANTALLA 3: RECIBO DIGITAL PREMIUM
        ═══════════════════════════════════════════ -->
   @if (pantallaActual() === 'recibo-digital') {
 
@@ -505,33 +515,15 @@
 
       <!-- Header del Recibo -->
       <header class="recibo-header">
-        <button class="recibo-close-box" (click)="irAFeedback()" aria-label="Cerrar">
+        <button class="recibo-close-box" (click)="finalizarDirecto()" aria-label="Cerrar">
           <lucide-icon name="x" [size]="20"></lucide-icon>
         </button>
-        <h2 class="recibo-title">Recibo</h2>
+        <h2 class="recibo-title">Recibo Digital Oficial</h2>
         <div class="drawer-header-spacer"></div>
       </header>
 
-      <!-- Selector de Variante (Cinematográfica vs Minimalista) -->
-      <div class="variante-selector-row">
-        <button
-          class="variante-chip"
-          [class.active]="varianteRecibo() === 'cinematografica'"
-          (click)="cambiarVarianteRecibo('cinematografica')"
-        >
-          Cinematográfica
-        </button>
-        <button
-          class="variante-chip"
-          [class.active]="varianteRecibo() === 'minimalista'"
-          (click)="cambiarVarianteRecibo('minimalista')"
-        >
-          Minimalista
-        </button>
-      </div>
-
       <!-- Contenedor del Recibo Digital Ticket -->
-      <div class="recibo-body" [class.minimal-style]="varianteRecibo() === 'minimalista'">
+      <div class="recibo-body">
 
         <article class="ticket-card">
 
@@ -580,63 +572,52 @@
 
             <div class="ticket-inner-dashed"></div>
 
-            <!-- Lista de Platos -->
+            <!-- Desglose de Ítems del Pedido -->
             <div class="ticket-items-list">
-              @if (pedido(); as p) {
-                @for (item of p.items; track $index) {
+              @if (facturaEmitida(); as fac) {
+                @for (item of fac.items; track $index) {
                   <div class="ticket-item-row">
                     <div class="item-name-qty">
                       <span class="name">{{ item.nombre }}</span>
                       <span class="qty">x{{ item.cantidad }}</span>
                     </div>
-                    <span class="price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
+                    <span class="price">Bs. {{ item.subtotal | number:'1.2-2' }}</span>
                   </div>
                 }
               } @else {
                 <div class="ticket-item-row">
                   <div class="item-name-qty">
-                    <span class="name">Chicharrón de Cerdo</span>
+                    <span class="name">Charque Tradicional</span>
                     <span class="qty">x1</span>
                   </div>
-                  <span class="price">Bs. 85.00</span>
-                </div>
-                <div class="ticket-item-row">
-                  <div class="item-name-qty">
-                    <span class="name">Mocochinchi</span>
-                    <span class="qty">x2</span>
-                  </div>
-                  <span class="price">Bs. 20.00</span>
+                  <span class="price">Bs. {{ subtotal() | number:'1.2-2' }}</span>
                 </div>
               }
             </div>
 
             <div class="ticket-inner-dashed"></div>
 
-            <!-- Subtotal, Propina y Total -->
-            <div class="ticket-calc-row">
-              <span>Subtotal</span>
-              <span>Bs. {{ subtotal() | number:'1.2-2' }}</span>
-            </div>
-
-            <div class="ticket-calc-row">
-              <span>Propina ({{ propinaPorcentaje() }}%)</span>
-              <span>Bs. {{ propinaMonto() | number:'1.2-2' }}</span>
-            </div>
-
-            <div class="ticket-total-row">
-              <span class="total-label">Total Cancelado</span>
-              <strong class="total-value">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
-            </div>
-
-            <!-- Código de Control Tributario -->
-            <div class="ticket-control-row">
-              <span class="control-label">CÓDIGO DE CONTROL:</span>
-              <span class="control-code">{{ facturaEmitida()?.codigoControl || '4B-9F-1A-C8' }}</span>
+            <!-- Resumen Financiero Formal -->
+            <div class="ticket-totals-box">
+              <div class="ticket-calc-row">
+                <span>SUBTOTAL</span>
+                <span>Bs. {{ subtotal() | number:'1.2-2' }}</span>
+              </div>
+              @if (propinaMonto() > 0) {
+                <div class="ticket-calc-row tip">
+                  <span>PROPINA (VOLUNTARIA)</span>
+                  <span>Bs. {{ propinaMonto() | number:'1.2-2' }}</span>
+                </div>
+              }
+              <div class="ticket-total-row">
+                <span class="total-label">TOTAL CANCELADO</span>
+                <strong class="total-value">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
+              </div>
             </div>
 
             <div class="ticket-inner-dashed"></div>
 
-            <!-- Despedida Personalizada de Don Roberto -->
+            <!-- Cita / Don Roberto -->
             <div class="ticket-quote-section">
               <div class="award-gold-box">
                 <lucide-icon name="award" [size]="24" class="award-icon"></lucide-icon>
@@ -663,12 +644,22 @@
 
       </div>
 
-      <!-- Pie con Continuar a Feedback -->
+      <!-- Pie con Opciones de Finalización / Evaluación Opcional -->
       <footer class="recibo-footer">
-        <button class="continue-feedback-btn" (click)="irAFeedback()">
-          <span>CONTINUAR A EVALUACIÓN</span>
-          <lucide-icon name="arrow-left" [size]="18" class="rotate-180"></lucide-icon>
-        </button>
+        <div class="evaluation-prompt-card">
+          <h4 class="prompt-title">¿Deseas evaluar tu experiencia en Tukuypaj?</h4>
+          <p class="prompt-sub">Tu opinión nos ayuda a mantener nuestra tradición culinaria.</p>
+          <div class="prompt-actions-row">
+            <button class="prompt-btn-rate" (click)="irAFeedback()">
+              <lucide-icon name="star" [size]="18"></lucide-icon>
+              <span>Calificar Atención</span>
+            </button>
+            <button class="prompt-btn-finish" (click)="finalizarDirecto()">
+              <span>Finalizar y Salir</span>
+              <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
+            </button>
+          </div>
+        </div>
       </footer>
 
     </div>
@@ -676,7 +667,7 @@
   }
 
   <!-- ═══════════════════════════════════════════
-       PANTALLA 4: CALIFICACIÓN Y FEEDBACK
+       PANTALLA 4: CALIFICACIÓN Y FEEDBACK (OPCIONAL)
        ═══════════════════════════════════════════ -->
   @if (pantallaActual() === 'feedback') {
 
@@ -762,7 +753,7 @@
         </button>
       </section>
 
-      <!-- Botón Enviar y Cerrar -->
+      <!-- Botones de Enviar y Omitir -->
       <footer class="feedback-footer">
         <button
           class="enviar-feedback-btn"
@@ -774,8 +765,12 @@
             <span class="loader-spinner"></span>
             <span>ENVIANDO...</span>
           } @else {
-            <span>ENVIAR Y CERRAR</span>
+            <span>ENVIAR CALIFICACIÓN</span>
           }
+        </button>
+
+        <button class="omitir-feedback-btn" (click)="finalizarDirecto()" type="button" id="btn-omitir-feedback">
+          Omitir y Finalizar
         </button>
       </footer>
 
@@ -799,6 +794,63 @@
       <p class="completado-redirect">Redirigiendo a la carta...</p>
     </div>
 
+  }
+
+  <!-- ═══════════════════════════════════════════
+       MODAL DE NÚMERO DE WHATSAPP (VALIDACIÓN)
+       ═══════════════════════════════════════════ -->
+  @if (mostrarModalWhatsApp()) {
+    <div class="whatsapp-modal-overlay animate-in" (click)="cerrarModalWhatsApp()">
+      <div class="whatsapp-modal-card" (click)="$event.stopPropagation()">
+        
+        <div class="modal-header-row">
+          <div class="modal-icon-wa">
+            <lucide-icon name="send" [size]="20"></lucide-icon>
+          </div>
+          <button class="modal-close-btn" (click)="cerrarModalWhatsApp()" type="button" aria-label="Cerrar modal">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <h3 class="modal-wa-title">Enviar Factura a tu WhatsApp</h3>
+        <p class="modal-wa-sub">
+          Ingresa tu número de celular boliviano (8 dígitos) para enviarte la factura digital y tu comprobante oficial de Mesa {{ mesaNumero() }}.
+        </p>
+
+        <div class="modal-phone-group">
+          <span class="modal-prefix">+591</span>
+          <input
+            type="tel"
+            class="modal-phone-input"
+            placeholder="Ej: 71234567"
+            maxlength="8"
+            [value]="telefonoWhatsAppInput()"
+            (input)="actualizarTelefonoModal($event)"
+            (keydown.enter)="confirmarModalWhatsApp()"
+            autofocus
+            id="input-wa-modal"
+          />
+        </div>
+
+        @if (errorWhatsApp()) {
+          <div class="modal-wa-error">
+            <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+            <span>{{ errorWhatsApp() }}</span>
+          </div>
+        }
+
+        <div class="modal-wa-actions">
+          <button class="modal-wa-cancel" (click)="cerrarModalWhatsApp()" type="button">
+            Cancelar
+          </button>
+          <button class="modal-wa-send" (click)="confirmarModalWhatsApp()" type="button" id="btn-confirmar-wa">
+            <span>Abrir en WhatsApp</span>
+            <lucide-icon name="send" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+      </div>
+    </div>
   }
 
 </div>

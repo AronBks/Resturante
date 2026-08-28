@@ -1134,10 +1134,43 @@
 }
 
 /* Secciones del Cuerpo */
-.ticket-middle-section {
+.ticket-fiscal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: 6px 0 4px;
+}
+
+.pulse-dot-green {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse-green 2s infinite ease-in-out;
+}
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.ticket-meta-box {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .ticket-meta-row {
@@ -1147,6 +1180,40 @@
   font-family: var(--font-sans);
   font-size: 0.88rem;
   color: var(--text-muted);
+}
+
+.ticket-client-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+
+  .client-label {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .client-val {
+    color: #ffffff;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .payment-tag {
+    background: rgba(229, 193, 88, 0.15);
+    color: var(--gold-primary);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+}
+
+.ticket-middle-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .ticket-items-list {
@@ -1190,127 +1257,141 @@
   border-top: 1px dashed rgba(255, 255, 255, 0.12);
 }
 
+.ticket-totals-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .ticket-calc-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-sans);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
+
+  &.tip {
+    color: #e5c158;
+  }
 }
 
 .ticket-total-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 4px;
+  padding: 8px 0 4px;
+  border-top: 1px dashed rgba(229, 193, 88, 0.2);
 
   .total-label {
     font-family: var(--font-serif);
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     color: var(--gold-primary);
-    font-weight: 600;
+    font-weight: 700;
   }
 
   .total-value {
     font-family: var(--font-serif);
-    font-size: 1.8rem;
+    font-size: 1.45rem;
     color: var(--gold-primary);
-    font-weight: 700;
+    font-weight: 800;
   }
 }
 
-/* Metadata fiscal y comprador */
-.ticket-fiscal-badge {
-  display: inline-flex;
+.ticket-fiscal-base-row {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  color: #4ade80;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  font-weight: 700;
-  margin: 6px 0 4px;
-}
-
-.pulse-dot-green {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 8px #22c55e;
-  animation: pulse-green 2s infinite ease-in-out;
-}
-
-@keyframes pulse-green {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.8); }
-}
-
-.ticket-meta-box {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.ticket-client-row {
-  display: flex;
   justify-content: space-between;
-  align-items: center;
   font-family: var(--font-sans);
   font-size: 0.78rem;
+  color: #a89f91;
+  letter-spacing: 0.3px;
 
-  .client-label {
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .client-val {
+  .fiscal-base-val {
+    font-weight: 700;
     color: #ffffff;
-    font-weight: 600;
-    text-align: right;
-  }
-
-  .payment-tag {
-    background: rgba(229, 193, 88, 0.15);
-    color: var(--gold-primary);
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.72rem;
   }
 }
 
-.ticket-control-row {
+/* Bloque Fiscal Tributario SIN */
+.ticket-fiscal-block {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  padding: 6px 0;
+  text-align: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.fiscal-qr-box {
+  width: 136px;
+  height: 136px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px auto;
+}
+
+.fiscal-qr-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.fiscal-text-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.ctrl-code-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font-family: var(--font-sans);
+  font-size: 0.78rem;
+  background: rgba(229, 193, 88, 0.08);
+  border: 1px dashed rgba(229, 193, 88, 0.3);
+  padding: 4px 14px;
+  border-radius: 8px;
+  color: var(--text-muted);
 
-  .control-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.5px;
+  .ctrl-code-label {
+    font-weight: 600;
   }
 
-  .control-code {
+  .ctrl-code-val {
     font-family: monospace;
-    font-size: 0.82rem;
-    font-weight: 700;
+    font-size: 0.92rem;
+    font-weight: 800;
     color: var(--gold-primary);
-    background: rgba(229, 193, 88, 0.1);
-    padding: 2px 8px;
-    border-radius: 4px;
-    border: 1px dashed rgba(229, 193, 88, 0.3);
+    letter-spacing: 1px;
   }
+}
+
+.fiscal-legend {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+  margin: 0;
+  max-width: 320px;
+  text-align: center;
+}
+
+.auth-legend {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  letter-spacing: 0.5px;
 }
 
 /* Despedida de Don Roberto */
@@ -1915,4 +1996,330 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.loader-spinner.gold {
+  border-color: rgba(229, 193, 88, 0.3);
+  border-top-color: var(--gold-primary);
+}
+
+.security-tip {
+  background: rgba(229, 193, 88, 0.08);
+  border: 1px dashed var(--gold-border);
+  color: #eed47d;
+  line-height: 1.5;
+  font-size: 0.82rem;
+
+  strong {
+    color: var(--gold-primary);
+  }
+}
+
+.waiting-payment-box {
+  width: 100%;
+  height: 54px;
+  border-radius: 16px;
+  background: rgba(229, 193, 88, 0.1);
+  border: 1.5px solid var(--gold-border);
+  color: var(--gold-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.evaluation-prompt-card {
+  background: #181511;
+  border: 1px solid var(--gold-border);
+  border-radius: 20px;
+  padding: 20px 16px;
+  text-align: center;
+  margin-top: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+
+  .prompt-title {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    color: var(--gold-primary);
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+
+  .prompt-sub {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0 0 16px;
+  }
+
+  .prompt-actions-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .prompt-btn-rate {
+      width: 100%;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--gold-primary);
+      color: #12100d;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(229, 193, 88, 0.3);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #eed47d;
+        transform: translateY(-2px);
+      }
+    }
+
+    .prompt-btn-finish {
+      width: 100%;
+      height: 44px;
+      border-radius: 14px;
+      background: transparent;
+      border: 1px solid var(--gold-border);
+      color: #b5ad9e;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+      }
+    }
+  }
+}
+
+.omitir-feedback-btn {
+  width: 100%;
+  height: 44px;
+  margin-top: 10px;
+  border-radius: 14px;
+  background: transparent;
+  border: 1px solid var(--gold-border);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(229, 193, 88, 0.08);
+    color: var(--gold-primary);
+  }
+}
+
+/* ══════════════════════════════════════
+   MODAL DE ENVÍO POR WHATSAPP (VALIDACIÓN)
+   ══════════════════════════════════════ */
+.whatsapp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.whatsapp-modal-card {
+  width: 100%;
+  max-width: 380px;
+  background: #181512;
+  border: 1px solid var(--gold-border);
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.modal-icon-wa {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(37, 211, 102, 0.15);
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  color: #25d366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.modal-wa-title {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  margin: 0 0 6px;
+}
+
+.modal-wa-sub {
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0 0 16px;
+}
+
+.modal-phone-group {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--gold-border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 12px rgba(229, 193, 88, 0.25);
+  }
+}
+
+.modal-prefix {
+  padding: 0 14px;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  background: rgba(229, 193, 88, 0.1);
+  border-right: 1px solid rgba(229, 193, 88, 0.2);
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.modal-phone-input {
+  flex: 1;
+  height: 48px;
+  background: transparent;
+  border: none;
+  padding: 0 14px;
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+  outline: none;
+  letter-spacing: 1.5px;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0;
+  }
+}
+
+.modal-wa-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(220, 53, 69, 0.15);
+  border: 1px solid rgba(220, 53, 69, 0.35);
+  color: #ff6b6b;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin-bottom: 14px;
+}
+
+.modal-wa-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+
+  .modal-wa-cancel {
+    flex: 1;
+    height: 46px;
+    border-radius: 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+    }
+  }
+
+  .modal-wa-send {
+    flex: 2;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+    border: none;
+    color: #ffffff;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(37, 211, 102, 0.35);
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+      transform: translateY(-1px);
+    }
+  }
 }

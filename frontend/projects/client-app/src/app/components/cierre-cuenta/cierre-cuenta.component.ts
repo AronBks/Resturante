@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { LucideAngularModule } from 'lucide-angular';
 import { CarritoService } from '../../services/carrito.service';
 import { FacturaPdfService, FacturaData } from '../../services/factura-pdf.service';
+import { SocketPublicoService } from '../../services/socket-publico.service';
 
 type MetodoPago = 'efectivo' | 'qr' | null;
 type CalificacionRapida = 'excelente' | 'regular' | 'a-mejorar' | null;
@@ -25,6 +26,7 @@ export class CierreCuentaComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
+  private readonly socketPublico = inject(SocketPublicoService);
   private readonly baseUrl = 'http://localhost:3000/api';
 
   // ── Estado de la Pantalla ──
@@ -44,6 +46,11 @@ export class CierreCuentaComponent {
   facturaEmitida = signal<FacturaData | null>(null);
   generandoFactura = signal<boolean>(false);
   enlaceCopiado = signal<boolean>(false);
+
+  // ── WhatsApp Modal State ──
+  mostrarModalWhatsApp = signal<boolean>(false);
+  telefonoWhatsAppInput = signal<string>('');
+  errorWhatsApp = signal<string | null>(null);
 
   // ── Método de Pago ──
   metodoPago = signal<MetodoPago>('qr');
@@ -75,7 +82,10 @@ export class CierreCuentaComponent {
 
   subtotal = computed(() => {
     const p = this.pedido();
-    return p ? p.total : 125;
+    if (p && p.total) return p.total;
+    const cartTotal = this.carritoService.totalAcumulado();
+    if (cartTotal > 0) return cartTotal;
+    return 80;
   });
 
   propinaMonto = computed(() => {
@@ -88,8 +98,32 @@ export class CierreCuentaComponent {
 
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
-      const mesa = params.get('mesa');
-      if (mesa) this.mesaNumero.set(mesa);
+      let mesa = params.get('mesa');
+      if (mesa) {
+        try { localStorage.setItem('tukuypaj_mesa_asignada', mesa); } catch (e) {}
+      } else {
+        try { mesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01'; } catch (e) { mesa = 'M01'; }
+      }
+      this.mesaNumero.set(mesa);
+      this.carritoService.consultarPedidoActivoMesa(mesa).subscribe();
+    });
+
+    // Escuchar confirmación oficial de cobro en caja en tiempo real
+    this.socketPublico.onPagoConfirmado().subscribe((evento) => {
+      const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || this.mesaNumero();
+      if (evento?.mesaNumero === currentMesa) {
+        this.pagoConfirmado.set(true);
+        if (evento.transaccion) {
+          this.facturaEmitida.set(this.construirFacturaDesdeTransaccion(evento.transaccion));
+        } else {
+          this.emitirFacturaAutomatica();
+        }
+        this.pantallaActual.set('recibo-digital');
+        this.carritoService.limpiarCarrito();
+        try {
+          localStorage.removeItem(`tukuypaj_pedido_activo_${currentMesa}`);
+        } catch (e) {}
+      }
     });
   }
 
@@ -108,7 +142,9 @@ export class CierreCuentaComponent {
   }
 
   actualizarTelefono(event: Event): void {
-    this.telefono.set((event.target as HTMLInputElement).value);
+    const raw = (event.target as HTMLInputElement).value;
+    const sanitized = raw.replace(/\D/g, '').slice(0, 8);
+    this.telefono.set(sanitized);
   }
 
   // ── Método de Pago ──
@@ -143,15 +179,13 @@ export class CierreCuentaComponent {
 
     setTimeout(() => {
       this.confirmandoPago.set(false);
-      this.pagoConfirmado.set(true);
 
       if (this.metodoPago() === 'qr') {
         // Ir a pantalla de transferencia y subida de comprobante QR
         this.pantallaActual.set('escaneo-qr');
       } else {
-        // Pago en efectivo -> Mostrar pantalla/modal elegante de notificación enviada
+        // Pago en efectivo -> Mostrar pantalla de espera segura de garzón
         this.notificacionEfectivoEnviada.set(true);
-        this.emitirFacturaAutomatica();
         this.pantallaActual.set('notificacion-efectivo');
       }
     }, 600);
@@ -234,19 +268,49 @@ export class CierreCuentaComponent {
     // Emitir evento al backend para alertar a la administración
     this.http.post(`${this.baseUrl}/pedidos/llamar-mesero`, {
       mesaNumero: this.mesaNumero(),
-      motivo: `Verificación Comprobante Pago QR — Total: Bs. ${this.totalConPropina().toFixed(2)}`,
+      motivo: `Verificación Comprobante Pago QR (${this.nroTransaccion() || 'Sin Ref'}) — Total: Bs. ${this.totalConPropina().toFixed(2)}`,
     }).subscribe({
-      next: () => console.log('Notificación de comprobante QR enviada'),
-      error: (err) => console.error('Error notificando comprobante QR', err),
+      next: () => {
+        console.log('Notificación de comprobante QR enviada a caja');
+        this.verificandoPago.set(false);
+        this.notificacionEfectivoEnviada.set(true);
+        this.pantallaActual.set('notificacion-efectivo');
+      },
+      error: (err) => {
+        console.error('Error notificando comprobante QR', err);
+        this.verificandoPago.set(false);
+        this.errorComprobante.set('No se pudo enviar el comprobante. Intenta nuevamente.');
+      },
     });
+  }
 
-    // Emisión automática de la factura
-    this.emitirFacturaAutomatica();
+  private construirFacturaDesdeTransaccion(tx: any): FacturaData {
+    const items = (tx?.items && Array.isArray(tx.items) && tx.items.length > 0)
+      ? tx.items
+      : this.obtenerItemsActuales();
 
-    setTimeout(() => {
-      this.verificandoPago.set(false);
-      this.pantallaActual.set('recibo-digital');
-    }, 1200);
+    return {
+      nroFactura: tx?.nroRecibo || `FAC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      codigoControl: '4B-9F-1A-C8',
+      nitEmisor: '394850021',
+      razonSocialEmisor: 'Peña Restaurant Tukuypaj S.R.L.',
+      casaMatriz: 'Av. Heroínas #456, Zona Central',
+      telefonoEmisor: '+591 4 4567890',
+      municipio: 'Cochabamba - Bolivia',
+      nitCliente: tx?.nit || this.nit() || '0',
+      razonSocialCliente: tx?.razonSocial || this.razonSocial() || 'Cliente Final',
+      telefonoCliente: this.telefono(),
+      mesaNumero: tx?.mesa?.numero || this.mesaNumero() || 'M01',
+      fechaEmision: tx?.fecha || new Date().toISOString(),
+      items,
+      subtotal: Number(tx?.subtotal || this.subtotal()),
+      propina: this.propinaMonto(),
+      total: Number(tx?.total || this.totalConPropina()),
+      metodoPago: tx?.metodoPago || this.metodoPago()?.toUpperCase() || 'EFECTIVO',
+      qrCodeUrl: '',
+      qrPayload: '',
+      leyendaFiscal: 'ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO SERÁ SANCIONADO PENALMENTE DE ACUERDO A LEY',
+    };
   }
 
   // ── Emisión de Factura Digital Automática ──
@@ -274,13 +338,12 @@ export class CierreCuentaComponent {
       items,
     };
 
-    this.http.post<FacturaData>(`${this.baseUrl}/caja/factura-digital`, payload).subscribe({
-      next: (factura) => {
-        this.facturaEmitida.set(factura);
+    this.http.post<any>(`${this.baseUrl}/caja/emitir-factura`, payload).subscribe({
+      next: (res) => {
+        this.facturaEmitida.set(res.data);
         this.generandoFactura.set(false);
       },
-      error: (err) => {
-        console.warn('Fallback a factura generada en frontend:', err);
+      error: () => {
         // Fallback robusto en el frontend si el servidor no responde
         const fallbackFactura: FacturaData = {
           nroFactura: `FAC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -328,12 +391,44 @@ export class CierreCuentaComponent {
   }
 
   enviarFacturaWhatsApp(): void {
+    const rawTel = (this.telefono() || '').trim().replace(/\D/g, '');
+    if (!rawTel || rawTel.length < 8) {
+      // Si no tiene número o tiene menos de 8 dígitos, abrir modal para pedirlo
+      this.telefonoWhatsAppInput.set(rawTel);
+      this.errorWhatsApp.set(null);
+      this.mostrarModalWhatsApp.set(true);
+      return;
+    }
+
+    this.ejecutarEnvioWhatsApp(rawTel);
+  }
+
+  confirmarModalWhatsApp(): void {
+    const clean = this.telefonoWhatsAppInput().replace(/\D/g, '');
+    if (!clean || clean.length < 8) {
+      this.errorWhatsApp.set('Por favor, ingresa un número de celular boliviano válido de 8 dígitos (Ej: 71234567 o 61234567).');
+      return;
+    }
+
+    this.telefono.set(clean);
+    this.mostrarModalWhatsApp.set(false);
+    this.ejecutarEnvioWhatsApp(clean);
+  }
+
+  actualizarTelefonoModal(event: Event): void {
+    const raw = (event.target as HTMLInputElement).value;
+    const sanitized = raw.replace(/\D/g, '').slice(0, 8);
+    this.telefonoWhatsAppInput.set(sanitized);
+  }
+
+  cerrarModalWhatsApp(): void {
+    this.mostrarModalWhatsApp.set(false);
+    this.errorWhatsApp.set(null);
+  }
+
+  private ejecutarEnvioWhatsApp(phone8Digits: string): void {
     const factura = this.obtenerFacturaCompleta();
-    const telefono = this.telefono() || factura.telefonoCliente || '';
-    const cleanPhone = telefono.replace(/\D/g, '');
-    const phoneWithPrefix = cleanPhone.length >= 7
-      ? (cleanPhone.startsWith('591') ? cleanPhone : `591${cleanPhone}`)
-      : '';
+    const phoneWithPrefix = `591${phone8Digits}`;
 
     const fecha = new Date(factura.fechaEmision || new Date());
     const fechaFormateada = fecha.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -377,9 +472,7 @@ ${propina > 0 ? `*Propina Voluntaria:* Bs. ${propina.toFixed(2)}\n` : ''}*TOTAL 
 ━━━━━━━━━━━━━━━━━━━━━━
 _"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO DE ÉSTA SERÁ SANCIONADO PENALMENTE DE ACUERDO A LEY."_`;
 
-    const url = phoneWithPrefix
-      ? `https://wa.me/${phoneWithPrefix}?text=${encodeURIComponent(textoMensaje)}`
-      : `https://wa.me/?text=${encodeURIComponent(textoMensaje)}`;
+    const url = `https://wa.me/${phoneWithPrefix}?text=${encodeURIComponent(textoMensaje)}`;
 
     const a = document.createElement('a');
     a.href = url;
@@ -424,7 +517,7 @@ _"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO DE ÉSTA SER�
     const pItems = this.pedido()?.items;
     if (pItems && pItems.length > 0) {
       return pItems.map(it => ({
-        nombre: it.nombre,
+        nombre: it.nombre + (it.varianteNombre ? ` (${it.varianteNombre})` : ''),
         cantidad: it.cantidad,
         precioUnitario: it.precioUnitario,
         subtotal: it.precioUnitario * it.cantidad,
@@ -433,7 +526,7 @@ _"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO DE ÉSTA SER�
     const cItems = this.carritoService.items();
     if (cItems && cItems.length > 0) {
       return cItems.map(it => ({
-        nombre: it.nombre,
+        nombre: it.nombre + (it.varianteNombre ? ` (${it.varianteNombre})` : ''),
         cantidad: it.cantidad,
         precioUnitario: it.precioUnitario,
         subtotal: it.precioUnitario * it.cantidad,
@@ -472,6 +565,20 @@ _"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO DE ÉSTA SER�
     this.pantallaActual.set('feedback');
   }
 
+  finalizarDirecto(): void {
+    this.carritoService.limpiarCarrito();
+    try {
+      localStorage.removeItem(`tukuypaj_pedido_activo_${this.mesaNumero()}`);
+    } catch (e) {}
+    this.pantallaActual.set('completado');
+
+    setTimeout(() => {
+      this.router.navigate(['/carta'], {
+        queryParams: { mesa: this.mesaNumero() },
+      });
+    }, 2500);
+  }
+
   // ── Calificación ──
   seleccionarEstrellas(n: number): void {
     this.estrellas.set(n);
@@ -487,15 +594,8 @@ _"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO DE ÉSTA SER�
 
     setTimeout(() => {
       this.enviandoFeedback.set(false);
-      this.pantallaActual.set('completado');
-
-      setTimeout(() => {
-        this.carritoService.limpiarCarrito();
-        this.router.navigate(['/carta'], {
-          queryParams: { mesa: this.mesaNumero() },
-        });
-      }, 3000);
-    }, 1200);
+      this.finalizarDirecto();
+    }, 800);
   }
 
   // ── Volver ──

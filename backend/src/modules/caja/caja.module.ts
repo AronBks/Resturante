@@ -5,9 +5,10 @@ import { CajaController } from './caja.controller';
 import { FacturaPublicaController } from './factura-publica.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PedidosModule } from '../pedidos/pedidos.module';
+import { CartaModule } from '../carta/carta.module';
 
 @Module({
-  imports: [PrismaModule, PedidosModule],
+  imports: [PrismaModule, PedidosModule, CartaModule],
   controllers: [CajaController, FacturaPublicaController],
   providers: [CajaService, FacturacionService],
   exports: [CajaService, FacturacionService],

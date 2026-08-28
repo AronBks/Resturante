@@ -14,6 +14,8 @@ import {
   MetodoPago,
   Prisma,
 } from '@prisma/client';
+import { CartaGateway } from '../carta/carta.gateway';
+import { PedidosService } from '../pedidos/pedidos.service';
 
 @Injectable()
 export class CajaService {
@@ -22,6 +24,8 @@ export class CajaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: PedidosGateway,
+    private readonly cartaGateway: CartaGateway,
+    private readonly pedidosService: PedidosService,
   ) {}
 
   /**
@@ -185,6 +189,9 @@ export class CajaService {
     this.gateway.broadcastMesaEstado(result.mesa.id, EstadoMesa.LIBRE);
     this.gateway.broadcastEstadoPedido(pedidoId, EstadoPedido.ENTREGADO);
     this.gateway.broadcastTransaccionCreada(result);
+    this.cartaGateway.broadcastPagoConfirmadoPublico(result.mesa.numero, result);
+    this.pedidosService.removerLlamadaMesero(result.mesa.numero);
+
     this.logger.log(
       `✅ Pago registrado: ${result.nroRecibo} | Mesa ${result.mesa.numero} | Bs. ${result.total} | ${result.metodoPago}`,
     );
