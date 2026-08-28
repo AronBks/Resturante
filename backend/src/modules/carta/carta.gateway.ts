@@ -73,4 +73,37 @@ export class CartaGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `🏃‍♂️ Broadcast público: Mesero en camino a Mesa ${mesaNumero}`,
     );
   }
+
+  /**
+   * Emite el cambio de estado de un pedido (ABIERTO, EN_COCINA, LISTO, ENTREGADO)
+   * a todos los clientes del namespace público (/publica) para actualizar el timeline en vivo.
+   */
+  broadcastEstadoPedidoPublico(pedidoId: string, mesaNumero: string, estado: string) {
+    this.server.emit('pedido:estado-actualizado', {
+      pedidoId,
+      mesaNumero,
+      estado,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(
+      `📡 Broadcast público: Pedido ${pedidoId} (Mesa ${mesaNumero}) → ${estado}`,
+    );
+  }
+
+  /**
+   * Emite a la app cliente que la cuenta de su mesa ya fue cobrada y confirmada en caja.
+   * Desbloquea la factura digital oficial descargable.
+   */
+  broadcastPagoConfirmadoPublico(mesaNumero: string, transaccion: any) {
+    this.server.emit('pago:confirmado', {
+      mesaNumero,
+      transaccion,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(
+      `💳 Broadcast público: Pago confirmado para Mesa ${mesaNumero} — Recibo: ${transaccion?.nroRecibo}`,
+    );
+  }
 }

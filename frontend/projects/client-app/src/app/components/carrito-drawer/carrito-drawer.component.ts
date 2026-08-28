@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,6 +20,15 @@ export class CarritoDrawerComponent {
   isOpen = input.required<boolean>();
   mesaNumero = input<string>('M01');
   close = output<void>();
+
+  constructor() {
+    effect(() => {
+      if (this.isOpen()) {
+        const mesa = this.mesaNumero() || localStorage.getItem('tukuypaj_mesa_asignada') || 'M01';
+        this.carritoService.consultarPedidoActivoMesa(mesa).subscribe();
+      }
+    });
+  }
 
   cerrarDrawer(): void {
     this.close.emit();

@@ -84,6 +84,38 @@ export class SocketPublicoService implements OnDestroy {
     });
   }
 
+  /**
+   * Observable que emite cambios de estado del pedido (ABIERTO, EN_COCINA, LISTO, ENTREGADO)
+   * para actualizar el timeline del cliente en tiempo real sin recargar la página.
+   */
+  onEstadoPedidoActualizado(): Observable<{ pedidoId: string; mesaNumero: string; estado: string }> {
+    return new Observable<{ pedidoId: string; mesaNumero: string; estado: string }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+
+      this.socket.on('pedido:estado-actualizado', handler);
+
+      return () => {
+        this.socket.off('pedido:estado-actualizado', handler);
+      };
+    });
+  }
+
+  /**
+   * Observable que emite cuando la cuenta de la mesa fue pagada y confirmada en caja.
+   * Desbloquea la factura digital oficial para el cliente.
+   */
+  onPagoConfirmado(): Observable<{ mesaNumero: string; transaccion: any }> {
+    return new Observable<{ mesaNumero: string; transaccion: any }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+
+      this.socket.on('pago:confirmado', handler);
+
+      return () => {
+        this.socket.off('pago:confirmado', handler);
+      };
+    });
+  }
+
   ngOnDestroy(): void {
     this.socket.disconnect();
   }

@@ -1,6 +1,7 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PedidosGateway } from './pedidos.gateway';
+import { CartaGateway } from '../carta/carta.gateway';
 import { CrearPedidoDto } from './dto/crear-pedido.dto';
 import {
   EstadoMesa,
@@ -14,7 +15,27 @@ export class PedidosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: PedidosGateway,
+    @Inject(forwardRef(() => CartaGateway))
+    private readonly cartaGateway: CartaGateway,
   ) {}
+
+  private llamadasMeseroPendientes = new Map<string, { mesaNumero: string; motivo: string; timestamp: string }>();
+
+  registrarLlamadaMesero(mesaNumero: string, motivo: string) {
+    this.llamadasMeseroPendientes.set(mesaNumero, {
+      mesaNumero,
+      motivo,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  removerLlamadaMesero(mesaNumero: string) {
+    this.llamadasMeseroPendientes.delete(mesaNumero);
+  }
+
+  obtenerLlamadasMeseroPendientes() {
+    return Array.from(this.llamadasMeseroPendientes.values());
+  }
 
   /**
    * Crea un nuevo pedido para una mesa libre y cambia su estado a ocupada.
@@ -330,6 +351,75 @@ export class PedidosService {
   }
 
   /**
+   * Consulta el pedido activo de una mesa usando su identificador visible (ej: "M01") para la Carta Digital
+   */
+  async obtenerPedidoActivoPorNumeroMesa(mesaNumero: string) {
+    const mesa = await this.prisma.mesa.findUnique({
+      where: { numero: mesaNumero },
+    });
+    if (!mesa || mesa.estado === EstadoMesa.LIBRE) {
+      return null;
+    }
+
+    const pedido = await this.prisma.pedido.findFirst({
+      where: {
+        mesaId: mesa.id,
+        estado: {
+          in: [
+            EstadoPedido.ABIERTO,
+            EstadoPedido.EN_COCINA,
+            EstadoPedido.LISTO,
+            EstadoPedido.ENTREGADO,
+          ],
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        detalles: {
+          include: {
+            plato: {
+              select: { id: true, nombre: true, precioVenta: true, imagenUrl: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!pedido) return null;
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const createdDate = new Date(pedido.createdAt);
+    const horaRecibido = `${pad(createdDate.getHours())}:${pad(createdDate.getMinutes())}`;
+    const cocinaDate = new Date(createdDate.getTime() + 5 * 60000);
+    const horaCocina = `${pad(cocinaDate.getHours())}:${pad(cocinaDate.getMinutes())}`;
+    const randomNum = pedido.id.replace(/\D/g, '').slice(-4) || '1000';
+
+    return {
+      id: pedido.id,
+      codigo: `TK-${randomNum}`,
+      mesaNumero: mesa.numero,
+      estado: pedido.estado,
+      horaRecibido,
+      horaCocina,
+      createdAt: pedido.createdAt,
+      total: Number(pedido.total),
+      subtotal: Number(pedido.subtotal),
+      items: pedido.detalles.map((d) => ({
+        platoId: d.platoId,
+        varianteId: d.varianteId || undefined,
+        varianteNombre: d.varianteNombreSnapshot || undefined,
+        nombre: d.plato?.nombre || 'Plato',
+        precioUnitario: Number(d.precioUnitario),
+        cantidad: d.cantidad,
+        notas: d.notas || '',
+        imagenUrl: d.plato?.imagenUrl,
+      })),
+    };
+  }
+
+  /**
    * Actualiza el estado de preparación de un plato individual en la comanda
    */
   async actualizarEstadoItem(pedidoId: string, itemId: string, nuevoEstado: EstadoItemPedido) {
@@ -395,8 +485,11 @@ export class PedidosService {
       data: { estado: nuevoEstado },
     });
 
-    // Difundir estado
+    // Difundir estado a admin y a la carta pública
     this.gateway.broadcastEstadoPedido(pedidoId, nuevoEstado);
+    if (pedido.mesa?.numero) {
+      this.cartaGateway.broadcastEstadoPedidoPublico(pedidoId, pedido.mesa.numero, nuevoEstado);
+    }
 
     // Ajustar estado de la mesa según ciclo de vida del pedido
     let nuevoEstadoMesa: EstadoMesa | null = null;

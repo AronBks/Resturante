@@ -197,6 +197,24 @@ export class ComandaDrawerComponent implements OnChanges {
     });
   }
 
+  activePedidoEstado = signal<string>('EN_COCINA');
+
+  cambiarEstadoPedido(nuevoEstado: 'EN_COCINA' | 'LISTO' | 'ENTREGADO') {
+    const pedidoId = this.activePedidoId();
+    if (!pedidoId) return;
+
+    this.activePedidoEstado.set(nuevoEstado);
+    this.http.patch(`${this.baseUrl}/pedidos/${pedidoId}/estado`, { estado: nuevoEstado }).subscribe({
+      next: () => {
+        this.saved.emit();
+        this.cargarPedidoActivo();
+      },
+      error: (err) => {
+        console.error('Error actualizando estado del pedido:', err);
+      }
+    });
+  }
+
   cargarPedidoActivo() {
     if (!this.mesa) return;
     this.http.get<any>(`${this.baseUrl}/pedidos/mesa/${this.mesa.id}`).subscribe({
@@ -204,6 +222,7 @@ export class ComandaDrawerComponent implements OnChanges {
         const pedido = res.data;
         if (pedido) {
           this.activePedidoId.set(pedido.id);
+          this.activePedidoEstado.set(pedido.estado || 'EN_COCINA');
           this.generalNotes.set(pedido.notas || '');
           this.selectedWaitership.set(pedido.meseroId);
           this.activeMeseroNombre.set(pedido.mesero?.nombre || 'Mesero');

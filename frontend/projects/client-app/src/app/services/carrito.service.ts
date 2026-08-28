@@ -15,8 +15,10 @@ export interface ItemCarrito {
 }
 
 export interface ResumenPedidoConfirmado {
+  id?: string;
   codigo: string;
   mesaNumero: string;
+  estado?: string;
   horaRecibido: string;
   horaCocina: string;
   items: ItemCarrito[];
@@ -49,6 +51,26 @@ export class CarritoService {
     this.socketPublico.onMeseroAtendido().subscribe(() => {
       this.meseroLlamadoStatus.set('en_camino');
       setTimeout(() => this.meseroLlamadoStatus.set('idle'), 12000);
+    });
+
+    this.socketPublico.onEstadoPedidoActualizado().subscribe((evento) => {
+      const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01';
+      if (evento.mesaNumero === currentMesa) {
+        this.ultimoPedido.update((p) => {
+          if (!p) return p;
+          const updated = {
+            ...p,
+            estado: evento.estado,
+          };
+          try {
+            localStorage.setItem(
+              `tukuypaj_pedido_activo_${evento.mesaNumero}`,
+              JSON.stringify(updated)
+            );
+          } catch (e) {}
+          return updated;
+        });
+      }
     });
   }
 
@@ -203,19 +225,30 @@ export class CarritoService {
         next: (response: any) => {
           const codigo = response?.pedido?.codigo || `TK-${randomNum}`;
 
-          this.ultimoPedido.set({
+          const resumen: ResumenPedidoConfirmado = {
             codigo,
             mesaNumero,
             horaRecibido,
             horaCocina,
             items: itemsSnapshot,
             total: totalSnapshot,
-          });
+          };
 
-          this.confirmando.set(false);
+          this.ultimoPedido.set(resumen);
           this.pedidoConfirmado.set(true);
           this.items.set([]);
           localStorage.removeItem('tukuypaj_carrito');
+
+          try {
+            localStorage.setItem(
+              `tukuypaj_pedido_activo_${mesaNumero}`,
+              JSON.stringify(resumen)
+            );
+          } catch (e) {
+            console.error('Error guardando pedido activo en localStorage:', e);
+          }
+
+          this.confirmando.set(false);
           subscriber.next(response);
           subscriber.complete();
         },
@@ -226,6 +259,57 @@ export class CarritoService {
             'Error al enviar el pedido a la cocina. Intenta de nuevo.';
           this.error.set(msg);
           subscriber.error(err);
+        },
+      });
+    });
+  }
+
+  /**
+   * Consulta el pedido activo de la mesa en el backend para restaurar el seguimiento
+   * incluso después de recargar la página (F5) o cerrar el navegador.
+   */
+  consultarPedidoActivoMesa(mesaNumero: string): Observable<any> {
+    return new Observable((subscriber) => {
+      // 1. Cargar cache local de inmediato para evitar pantalla en blanco
+      const cached = localStorage.getItem(`tukuypaj_pedido_activo_${mesaNumero}`);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          this.ultimoPedido.set(parsed);
+          this.pedidoConfirmado.set(true);
+        } catch (e) {}
+      }
+
+      // 2. Sincronizar en vivo con el backend
+      this.http.get<any>(`${this.apiUrl}/publica/mesa/${mesaNumero}/activo`).subscribe({
+        next: (res) => {
+          const pedidoActivo = res?.data?.pedidoActivo ?? res?.pedidoActivo ?? (res?.id ? res : null);
+          if (pedidoActivo) {
+            this.ultimoPedido.set(pedidoActivo);
+            this.pedidoConfirmado.set(true);
+            try {
+              localStorage.setItem(
+                `tukuypaj_pedido_activo_${mesaNumero}`,
+                JSON.stringify(pedidoActivo)
+              );
+            } catch (e) {}
+          } else {
+            // Mesa ya no tiene pedido activo (cuenta pagada o liberada)
+            if (!this.items().length) {
+              this.ultimoPedido.set(null);
+              this.pedidoConfirmado.set(false);
+            }
+            try {
+              localStorage.removeItem(`tukuypaj_pedido_activo_${mesaNumero}`);
+            } catch (e) {}
+          }
+          subscriber.next(pedidoActivo);
+          subscriber.complete();
+        },
+        error: (err) => {
+          console.warn('No se pudo sincronizar el pedido activo:', err);
+          subscriber.next(this.ultimoPedido());
+          subscriber.complete();
         },
       });
     });

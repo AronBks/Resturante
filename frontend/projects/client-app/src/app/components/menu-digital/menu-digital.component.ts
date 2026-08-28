@@ -66,6 +66,9 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   }
 
   abrirCarrito(): void {
+    if (this.carritoService.ultimoPedido() && !this.carritoService.items().length) {
+      this.carritoService.pedidoConfirmado.set(true);
+    }
     this.drawerOpen.set(true);
   }
 
@@ -88,9 +91,16 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   totalPlatos = this.cartaService.totalPlatos;
 
   ngOnInit(): void {
-    // 0. Leer mesa de la URL
+    // 0. Leer mesa de la URL o localStorage y restaurar comanda activa automáticamente
     this.route.queryParams.subscribe((params) => {
-      if (params['mesa']) this.mesaNumero.set(params['mesa']);
+      let mesa = params['mesa'];
+      if (mesa) {
+        try { localStorage.setItem('tukuypaj_mesa_asignada', mesa); } catch (e) {}
+      } else {
+        try { mesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01'; } catch (e) { mesa = 'M01'; }
+      }
+      this.mesaNumero.set(mesa);
+      this.carritoService.consultarPedidoActivoMesa(mesa).subscribe();
     });
 
     // 1. Carga inicial de la carta

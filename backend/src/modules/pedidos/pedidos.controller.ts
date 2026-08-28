@@ -109,9 +109,13 @@ export class PedidosController {
   async llamarMesero(@Body() dto: { mesaNumero: string; motivo?: string }) {
     this.logger.log(`🛎️ Solicitud de mesero para Mesa ${dto.mesaNumero}`);
     const mesa = await this.iaPedidosService.resolverMesa(dto.mesaNumero);
+    const motivoTexto = dto.motivo || 'Atención presencial solicitada en mesa';
+
+    // Persistir llamada pendiente en memoria del backend
+    this.pedidosService.registrarLlamadaMesero(mesa.numero, motivoTexto);
 
     // Emitir alerta a todos los administradores y garzones
-    this.gateway.broadcastLlamarMesero(mesa.numero, dto.motivo || 'Atención presencial solicitada en mesa');
+    this.gateway.broadcastLlamarMesero(mesa.numero, motivoTexto);
 
     return {
       exito: true,
@@ -123,12 +127,33 @@ export class PedidosController {
   @Post('atender-mesero')
   async atenderMesero(@Body() dto: { mesaNumero: string }) {
     this.logger.log(`🏃‍♂️ Garzón en camino a la Mesa ${dto.mesaNumero}`);
+    this.pedidosService.removerLlamadaMesero(dto.mesaNumero);
     this.gateway.broadcastMeseroAtendido(dto.mesaNumero);
     this.cartaGateway.broadcastMeseroAtendido(dto.mesaNumero);
     return {
       exito: true,
       mensaje: `Notificación enviada a la Mesa ${dto.mesaNumero}: Garzón en camino`,
       timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('llamadas-mesero')
+  obtenerLlamadasMesero() {
+    return {
+      success: true,
+      data: this.pedidosService.obtenerLlamadasMeseroPendientes(),
+    };
+  }
+
+  /**
+   * Consulta pública del pedido activo de una mesa para el Menú Digital (Client App)
+   */
+  @Get('publica/mesa/:mesaNumero/activo')
+  async obtenerPedidoActivoPublico(@Param('mesaNumero') mesaNumero: string) {
+    const pedido = await this.pedidosService.obtenerPedidoActivoPorNumeroMesa(mesaNumero);
+    return {
+      exito: true,
+      pedidoActivo: pedido,
     };
   }
 

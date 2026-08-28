@@ -72,6 +72,7 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.cargarMesas();
+    this.cargarLlamadasMesero();
     this.cargarPlatos();
     this.suscribirAActualizaciones();
     this.iniciarTemporizador();
@@ -103,8 +104,23 @@ export class MesasComponent implements OnInit, OnDestroy {
         const data: Mesa[] = res.data || [];
         this.mesas.set(data);
         this.clasificarMesas(data);
+        this.cargarLlamadasMesero();
       },
       error: (err) => console.error('Error cargando mesas', err),
+    });
+  }
+
+  cargarLlamadasMesero() {
+    this.http.get<any>(`${this.baseUrl}/pedidos/llamadas-mesero`).subscribe({
+      next: (res) => {
+        const llamadas = res.data || [];
+        const setLlamando = new Set<string>();
+        for (const l of llamadas) {
+          if (l.mesaNumero) setLlamando.add(l.mesaNumero);
+        }
+        this.mesasLlamando.set(setLlamando);
+      },
+      error: (err) => console.error('Error cargando llamadas de mesero', err),
     });
   }
 

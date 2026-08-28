@@ -230,6 +230,37 @@
                 <span class="order-id-badge" *ngIf="activePedidoId()">ID: #{{ activePedidoId()?.substring(0, 5) | uppercase }}</span>
               </div>
 
+              <!-- Control de Flujo de Estado en Vivo (Cocina / Garzón) -->
+              <div class="order-workflow-bar" *ngIf="activePedidoId()">
+                <button
+                  type="button"
+                  class="workflow-chip"
+                  [class.active]="activePedidoEstado() === 'EN_COCINA' || activePedidoEstado() === 'ABIERTO'"
+                  (click)="cambiarEstadoPedido('EN_COCINA')"
+                  title="Marcar como En Cocina"
+                >
+                  <lucide-icon name="flame" class="icon-xs"></lucide-icon> En Cocina
+                </button>
+                <button
+                  type="button"
+                  class="workflow-chip ready"
+                  [class.active]="activePedidoEstado() === 'LISTO'"
+                  (click)="cambiarEstadoPedido('LISTO')"
+                  title="Avisar que los platos están listos para salir a la mesa"
+                >
+                  <lucide-icon name="bell" class="icon-xs"></lucide-icon> ¡Listo!
+                </button>
+                <button
+                  type="button"
+                  class="workflow-chip delivered"
+                  [class.active]="activePedidoEstado() === 'ENTREGADO'"
+                  (click)="cambiarEstadoPedido('ENTREGADO')"
+                  title="Marcar platos como entregados en la mesa"
+                >
+                  <lucide-icon name="check-circle" class="icon-xs"></lucide-icon> Servido
+                </button>
+              </div>
+
               <!-- Lista de Ítems Enviados -->
               <div class="sent-items-list scrollbar-custom">
                 <div *ngFor="let item of activeSentItems()" class="sent-item-card">

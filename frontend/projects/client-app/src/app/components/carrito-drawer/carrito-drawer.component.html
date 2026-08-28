@@ -31,13 +31,15 @@
 
       <!-- Timeline Vertical del Estado del Pedido -->
       <section class="order-timeline">
+        @let estado = carritoService.ultimoPedido()?.estado || 'EN_COCINA';
+
         <!-- Paso 1: Pedido Recibido -->
         <div class="timeline-step completed">
           <div class="step-indicator">
             <div class="icon-circle">
               <lucide-icon name="check-circle-2" [size]="18"></lucide-icon>
             </div>
-            <div class="step-line active"></div>
+            <div class="step-line" [class.active]="estado === 'EN_COCINA' || estado === 'LISTO' || estado === 'ENTREGADO'"></div>
           </div>
           <div class="step-content">
             <div class="step-header">
@@ -48,36 +50,82 @@
           </div>
         </div>
 
-        <!-- Paso 2: En Cocina (Activo) -->
-        <div class="timeline-step active">
+        <!-- Paso 2: En Cocina -->
+        <div class="timeline-step" [ngClass]="{
+          'completed': estado === 'LISTO' || estado === 'ENTREGADO',
+          'active': estado === 'EN_COCINA' || estado === 'ABIERTO',
+          'pending': false
+        }">
           <div class="step-indicator">
-            <div class="icon-circle active-glow">
-              <lucide-icon name="flame" [size]="18"></lucide-icon>
+            <div class="icon-circle" [class.active-glow]="estado === 'EN_COCINA' || estado === 'ABIERTO'">
+              @if (estado === 'LISTO' || estado === 'ENTREGADO') {
+                <lucide-icon name="check" [size]="18"></lucide-icon>
+              } @else {
+                <lucide-icon name="flame" [size]="18"></lucide-icon>
+              }
             </div>
-            <div class="step-line"></div>
+            <div class="step-line" [class.active]="estado === 'LISTO' || estado === 'ENTREGADO'"></div>
           </div>
           <div class="step-content">
             <div class="step-header">
-              <h4 class="step-name active-gold">En Cocina</h4>
-              <span class="step-time active-gold">{{ carritoService.ultimoPedido()?.horaCocina || '19:35' }}</span>
+              <h4 class="step-name" [class.active-gold]="estado === 'EN_COCINA' || estado === 'ABIERTO'">En Cocina</h4>
+              <span class="step-time" [class.active-gold]="estado === 'EN_COCINA' || estado === 'ABIERTO'">{{ carritoService.ultimoPedido()?.horaCocina || '19:35' }}</span>
             </div>
-            <p class="step-desc active-gold">Preparando con amor y tradición.</p>
+            <p class="step-desc" [class.active-gold]="estado === 'EN_COCINA' || estado === 'ABIERTO'">
+              @if (estado === 'LISTO' || estado === 'ENTREGADO') {
+                Platos preparados con tradición.
+              } @else {
+                Preparando con amor y tradición.
+              }
+            </p>
           </div>
         </div>
 
-        <!-- Paso 3: Listo para Servir -->
-        <div class="timeline-step pending">
+        <!-- Paso 3: Listo para Servir / Entregado -->
+        <div class="timeline-step" [ngClass]="{
+          'completed': estado === 'ENTREGADO',
+          'active': estado === 'LISTO',
+          'pending': estado === 'EN_COCINA' || estado === 'ABIERTO'
+        }">
           <div class="step-indicator">
-            <div class="icon-circle">
-              <lucide-icon name="clock" [size]="18"></lucide-icon>
+            <div class="icon-circle" [class.active-glow]="estado === 'LISTO'">
+              @if (estado === 'ENTREGADO') {
+                <lucide-icon name="check-circle-2" [size]="18"></lucide-icon>
+              } @else if (estado === 'LISTO') {
+                <lucide-icon name="bell" [size]="18"></lucide-icon>
+              } @else {
+                <lucide-icon name="clock" [size]="18"></lucide-icon>
+              }
             </div>
           </div>
           <div class="step-content">
             <div class="step-header">
-              <h4 class="step-name">Listo para Servir</h4>
-              <span class="step-time">--:--</span>
+              <h4 class="step-name" [class.active-gold]="estado === 'LISTO'">
+                @if (estado === 'ENTREGADO') {
+                  Entregado en tu Mesa
+                } @else if (estado === 'LISTO') {
+                  ¡Listo para Servir!
+                } @else {
+                  Listo para Servir
+                }
+              </h4>
+              <span class="step-time" [class.active-gold]="estado === 'LISTO'">
+                @if (estado === 'LISTO' || estado === 'ENTREGADO') {
+                  ¡Ahora!
+                } @else {
+                  --:--
+                }
+              </span>
             </div>
-            <p class="step-desc">Te avisaremos cuando esté en tu mesa.</p>
+            <p class="step-desc" [class.active-gold]="estado === 'LISTO'">
+              @if (estado === 'ENTREGADO') {
+                ¡Buen provecho! Pedido entregado en tu mesa.
+              } @else if (estado === 'LISTO') {
+                🍽️ ¡Tu pedido está listo! El garzón lo está llevando a tu mesa.
+              } @else {
+                Te avisaremos cuando esté en tu mesa.
+              }
+            </p>
           </div>
         </div>
       </section>
@@ -179,16 +227,36 @@
     <!-- Cuerpo Principal -->
     <div class="drawer-body">
       @if (carritoService.items().length === 0) {
-        <div class="empty-screen">
-          <div class="empty-icon-box">
-            <lucide-icon name="shopping-bag" [size]="48" class="empty-icon-svg"></lucide-icon>
+        @if (carritoService.ultimoPedido(); as pedidoActivo) {
+          <div class="empty-screen active-order-screen">
+            <div class="empty-icon-box active-order-icon">
+              <lucide-icon name="flame" [size]="44" class="active-gold"></lucide-icon>
+            </div>
+            <h3>Comanda en Preparación</h3>
+            <p>Tienes un pedido activo (<strong>#{{ pedidoActivo.codigo }}</strong>) en la Mesa {{ mesaNumero() }}.</p>
+            <div class="active-order-summary-box">
+              <span class="active-order-summary-count">{{ pedidoActivo.items.length }} platos ordenados</span>
+              <strong class="active-order-summary-total">Bs. {{ (pedidoActivo.total || 0) | number:'1.2-2' }}</strong>
+            </div>
+            <button class="empty-btn gold-btn" (click)="carritoService.pedidoConfirmado.set(true)">
+              Ver Seguimiento en Vivo
+            </button>
+            <button class="empty-btn outline-btn" (click)="cerrarDrawer()">
+              Añadir más platos de la carta
+            </button>
           </div>
-          <h3>Tu carrito está vacío</h3>
-          <p>Añade deliciosos platos de nuestra carta para iniciar tu pedido.</p>
-          <button class="empty-btn" (click)="cerrarDrawer()">
-            Ver Menú
-          </button>
-        </div>
+        } @else {
+          <div class="empty-screen">
+            <div class="empty-icon-box">
+              <lucide-icon name="shopping-bag" [size]="48" class="empty-icon-svg"></lucide-icon>
+            </div>
+            <h3>Tu carrito está vacío</h3>
+            <p>Añade deliciosos platos de nuestra carta para iniciar tu pedido.</p>
+            <button class="empty-btn" (click)="cerrarDrawer()">
+              Ver Menú
+            </button>
+          </div>
+        }
       } @else {
         <div class="items-list">
           @for (item of carritoService.items(); track trackByPlatoId($index, item)) {
