@@ -76,7 +76,14 @@ import {
   BellRing,
   CheckCircle,
   Copy,
-  Image
+  Image,
+  ConciergeBell,
+  MessageSquare,
+  MessageSquareText,
+  Phone,
+  ShieldCheck,
+  HelpCircle,
+  CheckCheck
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -151,7 +158,14 @@ export const appIcons = {
   BellRing,
   CheckCircle,
   Copy,
-  Image
+  Image,
+  ConciergeBell,
+  MessageSquare,
+  MessageSquareText,
+  Phone,
+  ShieldCheck,
+  HelpCircle,
+  CheckCheck
 };
 
 export const appConfig: ApplicationConfig = {
@@ -159,6 +173,10 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(),
-    { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(appIcons) }
+    {
+      provide: LUCIDE_ICONS,
+      multi: true,
+      useValue: new LucideIconProvider(appIcons),
+    },
   ],
 };

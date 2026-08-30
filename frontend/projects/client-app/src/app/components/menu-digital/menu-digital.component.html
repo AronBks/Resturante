@@ -5,17 +5,25 @@
 
 <div class="menu-layout">
 
-  <!-- Floating Alert Banner when Waiter is En Camino -->
+  <!-- Toast de Servicio Presencial / Garzón en Camino (Hospitality Deluxe) -->
   @if (carritoService.meseroLlamadoStatus() === 'en_camino') {
     <div class="waiter-en-camino-floating-alert animate-bounce-in" id="alert-mesero-en-camino">
       <div class="alert-content">
-        <span class="runner-icon">🏃‍♂️</span>
+        <div class="service-badge-circle">
+          <lucide-icon name="concierge-bell" [size]="20" class="bell-icon"></lucide-icon>
+          <span class="live-ping"></span>
+        </div>
         <div class="alert-text-group">
-          <h4 class="alert-title">¡Garzón en camino a la Mesa {{ mesaNumero() }}!</h4>
-          <p class="alert-desc">Tu solicitud ha sido atendida por el personal. Un mesero viene en camino a tu mesa.</p>
+          <div class="alert-header-row">
+            <h4 class="alert-title">Atención en Sala · Mesa {{ mesaNumero() }}</h4>
+            <span class="alert-status-pill">En camino</span>
+          </div>
+          <p class="alert-desc">Tu solicitud ha sido confirmada. Un garzón se dirige a tu mesa para atenderte.</p>
         </div>
       </div>
-      <button class="alert-dismiss-btn" (click)="carritoService.meseroLlamadoStatus.set('idle')" title="Cerrar aviso">&times;</button>
+      <button class="alert-dismiss-btn" (click)="carritoService.meseroLlamadoStatus.set('idle')" title="Cerrar aviso" aria-label="Cerrar">
+        <lucide-icon name="x" [size]="15"></lucide-icon>
+      </button>
     </div>
   }
 

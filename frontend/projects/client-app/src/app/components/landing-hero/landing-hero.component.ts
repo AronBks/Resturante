@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink, ActivatedRoute } from '@angular/router';
+import { CarritoService } from '../../services/carrito.service';
+import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'client-landing-hero',
   standalone: true,
-  imports: [RouterLink],
+  imports: [CommonModule, RouterLink, LucideAngularModule],
   template: `
     <div class="landing-page">
       <!-- HERO SECTION -->
@@ -13,20 +16,54 @@ import { RouterLink } from '@angular/router';
         <div class="hero__ambient-glow"></div>
         <div class="hero__grain"></div>
 
+        <!-- Top Table Badge (Si está en salón o tiene mesa) -->
+        <div class="hero__table-pill animate-in">
+          <lucide-icon name="map-pin" [size]="14" class="pill-ico"></lucide-icon>
+          <span>Mesa Asignada: <strong>{{ mesaNumero() }}</strong></span>
+        </div>
+
         <!-- Brand content -->
         <div class="hero__content animate-in">
           <p class="hero__eyebrow">PEÑA & RESTAURANT</p>
           <h1 class="hero__title">TUKUYPAJ</h1>
           <p class="hero__subtitle">Sabores Cochabambinos desde el Corazón</p>
 
+          <!-- Banner de Estado de Comanda Activa si ya ordenó -->
+          @if (carritoService.ultimoPedido()) {
+            <div class="hero__active-order-badge animate-in">
+              <span class="pulse-dot"></span>
+              <span>Comanda Activa: <strong>#{{ carritoService.ultimoPedido()?.codigo }}</strong> ({{ carritoService.ultimoPedido()?.items?.length || 0 }} productos)</span>
+            </div>
+          } @else if (carritoService.cantidadTotalItems() > 0) {
+            <div class="hero__active-order-badge animate-in">
+              <lucide-icon name="shopping-bag" [size]="14"></lucide-icon>
+              <span>Tienes <strong>{{ carritoService.cantidadTotalItems() }} platos</strong> en tu comanda</span>
+            </div>
+          }
+
           <div class="hero__actions">
-            <a routerLink="/carta" class="hero__cta" id="cta-ver-carta">
+            <a
+              routerLink="/carta"
+              [queryParams]="{ mesa: mesaNumero() }"
+              class="hero__cta"
+              id="cta-ver-carta"
+            >
               <svg class="hero__cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
                 <path d="M7 2v20"/>
                 <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
               </svg>
-              <span>VER NUESTRA CARTA</span>
+              <span>{{ ctaText() }}</span>
+            </a>
+
+            <a
+              routerLink="/pedido-ia"
+              [queryParams]="{ mesa: mesaNumero() }"
+              class="hero__secondary-cta"
+              id="cta-pedir-ia"
+            >
+              <lucide-icon name="bot" [size]="16"></lucide-icon>
+              <span>Pedir con Don Beto (IA)</span>
             </a>
           </div>
         </div>
@@ -36,6 +73,7 @@ import { RouterLink } from '@angular/router';
           <div class="hero__scroll-mouse">
             <div class="hero__scroll-wheel"></div>
           </div>
+          <span class="scroll-lbl">Información & Concierge</span>
         </div>
       </section>
 
@@ -63,7 +101,7 @@ import { RouterLink } from '@angular/router';
               </div>
               <h3 class="concierge__card-title">Horarios</h3>
               <p class="concierge__card-detail">Lunes a Domingo</p>
-              <p class="concierge__card-highlight">11:30 — 22:00</p>
+              <p class="concierge__card-highlight">11:30 — 23:00</p>
             </div>
 
             <!-- Ubicación -->
@@ -150,4 +188,33 @@ import { RouterLink } from '@angular/router';
   `,
   styleUrl: './landing-hero.component.scss',
 })
-export class LandingHeroComponent {}
+export class LandingHeroComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  readonly carritoService = inject(CarritoService);
+
+  mesaNumero = signal<string>('M01');
+
+  ctaText = computed(() => {
+    if (this.carritoService.ultimoPedido()) {
+      return 'CONTINUAR CON MI COMANDA';
+    }
+    if (this.carritoService.cantidadTotalItems() > 0) {
+      return `VER COMANDA (${this.carritoService.cantidadTotalItems()} PLATOS)`;
+    }
+    return 'VER NUESTRA CARTA';
+  });
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe((params) => {
+      let mesa = params['mesa'];
+      if (mesa) {
+        try { localStorage.setItem('tukuypaj_mesa_asignada', mesa); } catch (e) {}
+      } else {
+        try { mesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01'; } catch (e) { mesa = 'M01'; }
+      }
+      this.mesaNumero.set(mesa);
+      this.carritoService.consultarPedidoActivoMesa(mesa).subscribe();
+    });
+  }
+}
+

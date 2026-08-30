@@ -146,35 +146,13 @@
                       <span class="item-variant">({{ item.varianteNombre }})</span>
                     }
                     @if (item.notas) {
-                      <span class="item-notes">Sin picante</span>
+                      <span class="item-notes">{{ item.notas }}</span>
                     }
                   </div>
                 </div>
-                <span class="summary-item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.0-2' }}</span>
+                <span class="summary-item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
               </div>
             }
-          } @else {
-            <div class="summary-item-row">
-              <div class="summary-item-left">
-                <span class="qty-badge">1x</span>
-                <div class="summary-item-details">
-                  <span class="item-name">Chicharrón de Cerdo</span>
-                  <span class="item-variant">(Personal)</span>
-                  <span class="item-notes">Sin picante</span>
-                </div>
-              </div>
-              <span class="summary-item-price">Bs. 45</span>
-            </div>
-            <div class="summary-item-row">
-              <div class="summary-item-left">
-                <span class="qty-badge">1x</span>
-                <div class="summary-item-details">
-                  <span class="item-name">Chicharrón de Cerdo</span>
-                  <span class="item-variant">(Mediano)</span>
-                </div>
-              </div>
-              <span class="summary-item-price">Bs. 80</span>
-            </div>
           }
         </div>
 
@@ -182,7 +160,7 @@
 
         <div class="summary-card-total">
           <span class="total-lbl">TOTAL</span>
-          <strong class="total-val">Bs. {{ (carritoService.ultimoPedido()?.total || 125) | number:'1.0-2' }}</strong>
+          <strong class="total-val">Bs. {{ (carritoService.ultimoPedido()?.total || 0) | number:'1.2-2' }}</strong>
         </div>
       </section>
 
@@ -363,16 +341,16 @@
         >
           @if (carritoService.meseroLlamadoStatus() === 'calling') {
             <span class="loader-spinner"></span>
-            <span>LLAMANDO MESERO...</span>
+            <span>SOLICITANDO ATENCIÓN...</span>
           } @else if (carritoService.meseroLlamadoStatus() === 'en_camino') {
-            <lucide-icon name="user-check" [size]="18"></lucide-icon>
-            <span>🏃‍♂️ ¡UN GARZÓN VA EN CAMINO A TU MESA!</span>
+            <lucide-icon name="concierge-bell" [size]="18"></lucide-icon>
+            <span>GARZÓN EN CAMINO A TU MESA</span>
           } @else if (carritoService.meseroLlamadoStatus() === 'success') {
             <lucide-icon name="check-circle" [size]="18"></lucide-icon>
-            <span>¡SOLICITUD RECIBIDA! EN ESPERA DE ATENCIÓN...</span>
+            <span>SOLICITUD ENVIADA · EN ESPERA DE ATENCIÓN</span>
           } @else {
-            <lucide-icon name="bell-ring" [size]="18"></lucide-icon>
-            <span>PEDIR ATENCIÓN EN MESA (LLAMAR MESERO)</span>
+            <lucide-icon name="bell" [size]="18"></lucide-icon>
+            <span>SOLICITAR ATENCIÓN EN MESA</span>
           }
         </button>
       </footer>
