@@ -53,7 +53,24 @@ import {
   Mail,
   Download,
   Shield,
-  BellRing
+  BellRing,
+  ArrowLeft,
+  QrCode,
+  Receipt,
+  RotateCcw,
+  BookOpen,
+  AlertTriangle,
+  PlusCircle,
+  Radio,
+  DoorOpen,
+  ArrowLeftRight,
+  User,
+  Info,
+  RefreshCw,
+  SlidersHorizontal,
+  ConciergeBell,
+  MessageSquare,
+  MessageSquareText
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -104,7 +121,24 @@ export const appIcons = {
   Mail,
   Download,
   Shield,
-  BellRing
+  BellRing,
+  ArrowLeft,
+  QrCode,
+  Receipt,
+  RotateCcw,
+  BookOpen,
+  AlertTriangle,
+  PlusCircle,
+  Radio,
+  DoorOpen,
+  ArrowLeftRight,
+  User,
+  Info,
+  RefreshCw,
+  SlidersHorizontal,
+  ConciergeBell,
+  MessageSquare,
+  MessageSquareText
 };
 
 export const appConfig: ApplicationConfig = {

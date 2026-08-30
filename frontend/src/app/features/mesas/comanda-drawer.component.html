@@ -1,558 +1,557 @@
 <div class="drawer-backdrop" *ngIf="isOpen" (click)="close.emit()"></div>
 
-<div class="comanda-drawer" [class.open]="isOpen">
+<aside class="comanda-drawer" [class.open]="isOpen" [class.modal-mode]="viewMode() === 'CATALOG'">
   
-  <!-- Header Superior Unificado -->
-  <header class="comanda-header" *ngIf="viewMode() !== 'CONFIRMATION'">
-    <div class="header-left">
-      <button class="back-btn" (click)="close.emit()" title="Regresar al Salón">
-        <lucide-icon name="arrow-left" class="icon-md"></lucide-icon>
-      </button>
-      <h2 class="mesa-title">
-        Mesa {{ mesa?.numero }} <span class="zone-name">— {{ mesa?.posicion?.zona || 'Zona Central' }}</span>
-        <span *ngIf="viewMode() === 'OCCUPIED_DETAIL'" class="occupied-status-badge">● OCUPADA - EN COCINA</span>
-      </h2>
-    </div>
-
-    <div class="header-center">
-      <div *ngIf="viewMode() === 'OCCUPIED_DETAIL'" class="detail-tabs">
-        <button 
-          class="tab-btn" 
-          [class.active]="activeSubTab() === 'DETALLE'"
-          (click)="setSubTab('DETALLE')"
-        >
-          Detalle de Mesa
-        </button>
-        <button 
-          class="tab-btn" 
-          [class.active]="activeSubTab() === 'HISTORIAL'"
-          (click)="setSubTab('HISTORIAL')"
-        >
-          Historial
-        </button>
-      </div>
-
-      <div *ngIf="viewMode() === 'FORM'" class="status-pill-header" [ngClass]="mesa?.estado?.toLowerCase()">
-        <span class="dot"></span>
-        <span class="lbl">{{ mesa?.estado === 'OCUPADA' ? 'Ocupada • 45 min' : (mesa?.estado === 'POR_COBRAR' ? 'Por Cobrar' : 'Libre') }}</span>
-      </div>
-    </div>
-
-    <div class="header-right">
-      <div class="operator-badge" *ngIf="viewMode() === 'FORM'">
-        <lucide-icon name="users" class="icon-sm icon-muted"></lucide-icon>
-        <span class="operator-label">Mesero:</span>
-        <select class="waiter-select-clean" [ngModel]="selectedWaitership()" (ngModelChange)="selectedWaitership.set($event)">
-          <option *ngFor="let w of waiters()" [value]="w.id">{{ w.nombre }}</option>
-        </select>
-      </div>
-
-      <span class="system-op-badge" *ngIf="viewMode() === 'OCCUPIED_DETAIL'">
-        <lucide-icon name="sparkles" class="icon-xs"></lucide-icon> Sistema Operativo
-      </span>
-    </div>
-  </header>
-
-  <!-- Error Alert -->
-  <div class="error-banner" *ngIf="errorMessage()">
-    <span><lucide-icon name="alert-circle" class="icon-sm icon-danger"></lucide-icon> {{ errorMessage() }}</span>
-  </div>
-
-  @switch (viewMode()) {
-    @case ('CONFIRMATION') {
-      <!-- ═══ VISTA 1: PANTALLA DE CONFIRMACIÓN ═══ -->
-      <div class="confirmation-screen animate-fade-in">
-        <div class="success-icon-glow">
-          <div class="inner-circle">
-            <lucide-icon name="check" class="icon-xl icon-gold"></lucide-icon>
-          </div>
-        </div>
-
-        <h1 class="conf-title">Comanda Enviada a Cocina</h1>
-        <p class="conf-subtitle">
-          La orden ha sido procesada correctamente y el equipo de cocina ya está trabajando en ella.
-        </p>
-
-        <div class="summary-card-dark">
-          <div class="card-top-row">
-            <span class="card-label-gold">RESUMEN DEL PEDIDO</span>
-            <span class="card-meta">Mesa #{{ lastSubmittedSummary()?.mesaNumero }} • {{ lastSubmittedSummary()?.hora }}</span>
+  <!-- ═══════════════════════════════════════════════════════
+       VISTA 1: DETALLE DE MESA (CENTRO DE MANDO MESA INDIVIDUAL)
+       ═══════════════════════════════════════════════════════ -->
+  @if (viewMode() === 'DETAIL') {
+    <div class="drawer-content-container animate-fade-in">
+      
+      <!-- ── ENCABEZADO SUPERIOR ── -->
+      <header class="drawer-mesa-header">
+        <div class="header-main-row">
+          <div class="mesa-title-group">
+            <h2 class="mesa-title-serif">Mesa {{ mesa?.numero?.replace('M', '') || mesa?.numero }}</h2>
+            <span class="status-pill-cmd" [ngClass]="mesa?.estado?.toLowerCase() || 'ocupada'">
+              {{ mesa?.estado === 'POR_COBRAR' ? 'POR COBRAR' : (mesa?.estado || 'LIBRE') }}
+            </span>
           </div>
 
-          <div class="summary-items-list scrollbar-custom">
-            <div *ngFor="let item of lastSubmittedSummary()?.items" class="summary-item-row">
-              <span class="qty-badge-sq">{{ item.cantidad }}</span>
-              <span class="item-full-name">
-                {{ item.nombreBase || item.nombre }} 
-                <strong *ngIf="item.varianteNombre" class="gold-variant-text">{{ item.varianteNombre }}</strong>
-              </span>
-            </div>
-          </div>
-
-          <div class="summary-info-footer">
-            <lucide-icon name="info" class="icon-sm icon-muted"></lucide-icon>
-            <span>El tiempo estimado para el primer plato es de 20-25 min.</span>
-          </div>
-        </div>
-
-        <div class="conf-actions-row">
-          <button type="button" class="btn-gold-solid" (click)="volverAlSalon()">
-            <lucide-icon name="grid" class="icon-sm"></lucide-icon> Volver al Salón
-          </button>
-          <button type="button" class="btn-dark-outline" (click)="verDetalleMesa()">
-            <lucide-icon name="layout-dashboard" class="icon-sm"></lucide-icon> Ver Detalle de Mesa
+          <button class="drawer-close-circle-btn" (click)="close.emit()" title="Cerrar">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
           </button>
         </div>
 
-        <div class="tukuypaj-watermark">
-          <span class="brand-title">TUKUYPAJ</span>
-          <span class="brand-sub">PEÑA & RESTAURANT</span>
-        </div>
-      </div>
-    }
-
-    @case ('OCCUPIED_DETAIL') {
-      <!-- ═══ VISTA 2: DETALLE DE MESA Y COMANDA EN PREPARACIÓN ═══ -->
-      <div class="occupied-detail-view animate-fade-in">
-
-        @if (activeSubTab() === 'HISTORIAL') {
-          <!-- Subtab Historial View -->
-          <div class="historial-tab-container scrollbar-custom p-4">
-            <h3 class="section-heading mb-3">Historial de Comandas — Mesa {{ mesa?.numero }}</h3>
-            
-            <div *ngIf="historialPedidos().length === 0" class="empty-drop-zone">
-              <lucide-icon name="clock" class="icon-lg icon-muted"></lucide-icon>
-              <p class="drop-text">No se registraron comandas previas en esta mesa hoy.</p>
-            </div>
-
-            <div *ngFor="let h of historialPedidos()" class="sent-item-card mb-3">
-              <div class="sent-item-header">
-                <div class="sent-item-left">
-                  <span class="qty-label">#{{ h.id?.substring(0, 6) | uppercase }}</span>
-                  <span class="item-name">{{ h.createdAt | date:'HH:mm' }} • {{ h.mesero?.nombre || 'Mesero' }}</span>
-                </div>
-                <span class="status-pill" [ngClass]="h.estado?.toLowerCase()">
-                  {{ h.estado }}
-                </span>
-              </div>
-              <div class="sent-item-price-row mt-2">
-                <span class="item-price">Total: Bs. {{ h.total | number:'1.2-2' }}</span>
-              </div>
-            </div>
+        <!-- Meta Subtítulo: Tiempo • Mesero • Pax -->
+        <div class="header-meta-row">
+          <div class="meta-item">
+            <lucide-icon name="clock" [size]="13"></lucide-icon>
+            <span>{{ tiempoTranscurridoText() }}</span>
           </div>
-        } @else {
-          <!-- Subtab Detalle Layout -->
-          <div class="comanda-split-layout">
-            <!-- Left Catalog Column (quick add) -->
-            <section class="catalog-column scrollbar-custom">
-              <div class="section-title-row">
-                <h3 class="section-heading">Añadir a la orden</h3>
+          <div class="meta-item">
+            <lucide-icon name="user" [size]="13"></lucide-icon>
+            <span>{{ activeMeseroNombre() || 'Don Roberto (Mesero)' }}</span>
+          </div>
+          <div class="meta-item">
+            <lucide-icon name="users" [size]="13"></lucide-icon>
+            <span>{{ mesa?.capacidad || 4 }} pax</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ── 4 BOTONES DE ACCIONES RÁPIDAS ── -->
+      <section class="quick-actions-bar">
+        <button class="qa-btn" (click)="abrirCatalogoAgregar()" title="Añadir platos a la orden">
+          <lucide-icon name="plus-circle" [size]="18" class="qa-icon"></lucide-icon>
+          <span>Añadir</span>
+        </button>
+
+        <button class="qa-btn" (click)="imprimirPrecuenta()" title="Emitir pre-cuenta">
+          <lucide-icon name="printer" [size]="18" class="qa-icon"></lucide-icon>
+          <span>Pre-cuenta</span>
+        </button>
+
+        <button class="qa-btn" (click)="llamarMesero()" title="Llamar al garzón">
+          <lucide-icon name="bell" [size]="18" class="qa-icon"></lucide-icon>
+          <span>Llamar</span>
+        </button>
+
+        <button class="qa-btn" (click)="cambiarMesa()" title="Cambiar o trasladar mesa">
+          <lucide-icon name="arrow-left-right" [size]="18" class="qa-icon"></lucide-icon>
+          <span>Cambiar</span>
+        </button>
+      </section>
+
+      <!-- ── CUERPO PRINCIPAL CON SCROLL ── -->
+      <div class="drawer-scrollable-body scrollbar-custom">
+        
+        <!-- Banner Informativo de Solicitud de Cuenta o Asistencia de Garzón -->
+        @if (llamadaActiva) {
+          <div class="comanda-call-alert-banner animate-in" [class.payment-style]="esSolicitudPago()">
+            <div class="cca-icon-wrapper">
+              <lucide-icon [name]="esSolicitudPago() ? 'wallet' : 'bell-ring'" [size]="18"></lucide-icon>
+            </div>
+            <div class="cca-info-box">
+              <div class="cca-header-row">
+                <strong class="cca-title">{{ esSolicitudPago() ? 'Solicitud de Cuenta por Comensal' : 'Llamada de Asistencia en Sala' }}</strong>
+                <span class="cca-badge">{{ esSolicitudPago() ? 'Pago Pendiente' : 'Atención en Sala' }}</span>
               </div>
-
-              <!-- Chips de Categorías -->
-              <nav class="categories-chips-row scrollbar-custom">
-                <button 
-                  class="chip-btn" 
-                  [class.active]="selectedCategoryId() === null"
-                  (click)="selectedCategoryId.set(null)"
-                >
-                  Todos
-                </button>
-                <button 
-                  *ngFor="let cat of categories()" 
-                  class="chip-btn" 
-                  [class.active]="selectedCategoryId() === cat.id"
-                  (click)="selectedCategoryId.set(cat.id)"
-                >
-                  {{ cat.nombre }}
-                </button>
-              </nav>
-
-              <!-- Grid de Platos -->
-              <div class="dishes-catalog-grid">
-                <article 
-                  *ngFor="let plato of filteredPlatos()" 
-                  class="dish-catalog-card-consolidated"
-                  [class.disabled]="!plato.disponible || plato.disponibleAhora === false"
-                >
-                  <div class="dish-header-row" (click)="(!plato.tieneVariantes && plato.disponibleAhora !== false) && agregarPlatoSinVariante(plato, $event)">
-                    <div class="dish-thumb-box">
-                      <img *ngIf="plato.imagenUrl" [src]="plato.imagenUrl" [alt]="plato.nombre" class="dish-img" />
-                      <div *ngIf="!plato.imagenUrl" class="dish-no-img">
-                        <lucide-icon name="utensils-crossed" class="icon-sm icon-muted"></lucide-icon>
-                      </div>
-                    </div>
-
-                    <div class="dish-title-box">
-                      <h4 class="dish-title">{{ plato.nombre }}</h4>
-                      <span class="schedule-warning-pill" *ngIf="plato.disponibleAhora === false">
-                        <lucide-icon name="clock" class="icon-xs"></lucide-icon>
-                        Fuera de horario ({{ plato.horaInicio }} - {{ plato.horaFin }})
-                      </span>
-                      <span class="dish-price-sub" *ngIf="plato.tieneVariantes && plato.disponibleAhora !== false">
-                        Desde <strong class="gold-text">Bs. {{ (plato.precioDesde || 0) | number:'1.2-2' }}</strong>
-                      </span>
-                      <span class="dish-price-single" *ngIf="!plato.tieneVariantes && plato.disponibleAhora !== false">
-                        Bs. {{ (plato.precioVenta || 0) | number:'1.2-2' }}
-                      </span>
-                    </div>
-
-                    <div class="dish-action-box" *ngIf="plato.disponibleAhora !== false">
-                      <button *ngIf="!plato.tieneVariantes" type="button" class="add-plus-btn" (click)="agregarPlatoSinVariante(plato, $event)">
-                        <lucide-icon name="plus" class="icon-sm"></lucide-icon>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="variants-segment-grid" *ngIf="plato.tieneVariantes && plato.disponibleAhora !== false">
-                    <button 
-                      *ngFor="let v of plato.variantes" 
-                      type="button"
-                      class="variant-select-btn"
-                      [disabled]="!v.disponible"
-                      (click)="agregarPlatoConVariante(plato, v, $event)"
-                    >
-                      <span class="v-label">{{ v.nombre }}</span>
-                      <span class="v-price">Bs. {{ v.precio }}</span>
-                    </button>
-                  </div>
-                </article>
-              </div>
-            </section>
-
-            <!-- Right Column: Comanda Enviada -->
-            <section class="order-summary-column scrollbar-custom">
-              <div class="summary-title-row">
-                <div>
-                  <h3 class="summary-heading">Comanda Enviada</h3>
-                  <span class="order-time-meta">Enviado por {{ activeMeseroNombre() || 'Mesero' }}</span>
-                </div>
-                <span class="order-id-badge" *ngIf="activePedidoId()">ID: #{{ activePedidoId()?.substring(0, 5) | uppercase }}</span>
-              </div>
-
-              <!-- Control de Flujo de Estado en Vivo (Cocina / Garzón) -->
-              <div class="order-workflow-bar" *ngIf="activePedidoId()">
-                <button
-                  type="button"
-                  class="workflow-chip"
-                  [class.active]="activePedidoEstado() === 'EN_COCINA' || activePedidoEstado() === 'ABIERTO'"
-                  (click)="cambiarEstadoPedido('EN_COCINA')"
-                  title="Marcar como En Cocina"
-                >
-                  <lucide-icon name="flame" class="icon-xs"></lucide-icon> En Cocina
-                </button>
-                <button
-                  type="button"
-                  class="workflow-chip ready"
-                  [class.active]="activePedidoEstado() === 'LISTO'"
-                  (click)="cambiarEstadoPedido('LISTO')"
-                  title="Avisar que los platos están listos para salir a la mesa"
-                >
-                  <lucide-icon name="bell" class="icon-xs"></lucide-icon> ¡Listo!
-                </button>
-                <button
-                  type="button"
-                  class="workflow-chip delivered"
-                  [class.active]="activePedidoEstado() === 'ENTREGADO'"
-                  (click)="cambiarEstadoPedido('ENTREGADO')"
-                  title="Marcar platos como entregados en la mesa"
-                >
-                  <lucide-icon name="check-circle" class="icon-xs"></lucide-icon> Servido
-                </button>
-              </div>
-
-              <!-- Lista de Ítems Enviados -->
-              <div class="sent-items-list scrollbar-custom">
-                <div *ngFor="let item of activeSentItems()" class="sent-item-card">
-                  <div class="sent-item-header">
-                    <div class="sent-item-left">
-                      <span class="qty-label">{{ item.cantidad }}x</span>
-                      <span class="item-name">{{ item.nombre }}</span>
-                    </div>
-                    <span class="status-pill" [ngClass]="item.estado?.toLowerCase() || 'en_preparacion'">
-                      {{ formatEstadoItem(item.estado) }}
-                    </span>
-                  </div>
-
-                  <p class="sent-item-note" *ngIf="item.notas">"{{ item.notas }}"</p>
-
-                  <div class="sent-item-price-row">
-                    <span class="item-price">Bs. {{ (item.precio * item.cantidad) | number:'1.2-2' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <hr class="summary-divider" />
-
-              <!-- Totales -->
-              <div class="totals-breakdown-block">
-                <div class="breakdown-row">
-                  <span>Subtotal</span>
-                  <span>Bs. {{ getComandaTotal() | number:'1.2-2' }}</span>
-                </div>
-                <div class="breakdown-row">
-                  <span>Servicio (0%)</span>
-                  <span>Bs. 0.00</span>
-                </div>
-                <div class="summary-total-row">
-                  <span class="total-label">Total</span>
-                  <span class="total-value-gold">Bs. {{ getComandaTotal() | number:'1.2-2' }}</span>
-                </div>
-              </div>
-
-              <!-- Botones de Acción Principales -->
-              <div class="occupied-actions-row">
-                <button type="button" class="btn-dark-action" (click)="imprimirPrecuenta()" title="Visualizar/imprimir la comanda pre-cuenta para entregar al cliente en mesa">
-                  <lucide-icon name="file-text" class="icon-sm"></lucide-icon> Pre-cuenta
-                </button>
-                <button type="button" class="btn-dark-action" (click)="irAFormularioNuevoItem()" title="Añadir más ítems al pedido de la mesa">
-                  <lucide-icon name="plus" class="icon-sm"></lucide-icon> Añadir más
-                </button>
-              </div>
-
-              <div class="cobrar-mesa-full-row mt-2">
-                <button type="button" class="btn-cobrar-gold-main" (click)="abrirCajaModal()">
-                  <lucide-icon name="credit-card" class="icon-md"></lucide-icon> 💳 COBRAR MESA
-                </button>
-              </div>
-            </section>
+              <p class="cca-desc">{{ llamadaActiva.motivo }}</p>
+            </div>
+            @if (!esSolicitudPago()) {
+              <button
+                type="button"
+                class="cca-atender-btn"
+                (click)="atenderLlamadaDirecta()"
+                title="Marcar solicitud como atendida"
+              >
+                <lucide-icon name="check" [size]="14"></lucide-icon>
+                <span>Atendido</span>
+              </button>
+            }
           </div>
         }
-      </div>
-    }
 
-    @default {
-      <!-- ═══ VISTA 3: FORMULARIO PRINCIPAL DE TOMA DE PEDIDO ═══ -->
-      <!-- Layout Split (Dos Columnas en Desktop) -->
-      <div class="comanda-split-layout">
+        <!-- 1. Sección: COMANDA ACTIVA -->
+        <section class="drawer-section">
+          <div class="section-title-line">
+            <div class="section-title-left">
+              <span class="section-label">COMANDA ACTIVA</span>
+              <span class="section-code" *ngIf="activePedidoId()">#CMD-{{ activePedidoId()!.substring(0, 4) | uppercase }}</span>
+            </div>
 
-        <!-- COLUMNA IZQUIERDA (60%): BUSCADOR, CATEGORÍAS Y CATÁLOGO DE PLATOS CONSOLIDADOS -->
-        <section class="catalog-column scrollbar-custom">
-          
-          <!-- Buscador Rápido -->
-          <div class="search-box-wrapper">
-            <lucide-icon name="search" class="search-icon icon-sm icon-muted"></lucide-icon>
-            <input 
-              type="text" 
-              placeholder="Buscar platos o bebidas..." 
-              [ngModel]="searchQuery()"
-              (ngModelChange)="searchQuery.set($event)"
-              class="search-input"
-            />
+            <!-- Botón de Entrega Rápida: Servir Todo -->
+            <button
+              type="button"
+              class="btn-servir-todo"
+              *ngIf="activeSentItems().length > 0"
+              (click)="servirTodo()"
+              title="Marcar todos los platos como servidos"
+            >
+              <lucide-icon name="check-circle-2" [size]="13"></lucide-icon>
+              <span>Servir Todo</span>
+            </button>
           </div>
 
-          <!-- Chips de Categorías -->
-          <nav class="categories-chips-row scrollbar-custom">
-            <button 
-              class="chip-btn" 
-              [class.active]="selectedCategoryId() === null"
-              (click)="selectedCategoryId.set(null)"
-            >
-              Todos
-            </button>
-            <button 
-              *ngFor="let cat of categories()" 
-              class="chip-btn" 
-              [class.active]="selectedCategoryId() === cat.id"
-              (click)="selectedCategoryId.set(cat.id)"
-            >
-              {{ cat.nombre }}
-            </button>
-          </nav>
+          <div class="active-dishes-list">
+            <!-- LISTA DE PLATOS REALES CON ESTADOS POR ÍTEM -->
+            @for (item of activeSentItems(); track item.id) {
+              <div class="dish-detail-card">
+                <div class="dish-qty-box">
+                  <span>{{ item.cantidad }}x</span>
+                </div>
+                <div class="dish-info-middle">
+                  <strong class="dish-title">{{ item.nombre }}</strong>
+                  
+                  <!-- Selector Interactivo de Estado por Ítem (Senior UX) -->
+                  <div class="item-status-wrapper">
+                    <button
+                      type="button"
+                      class="item-status-selector-btn"
+                      [ngClass]="{
+                        'en-cocina': item.estado === 'PENDIENTE' || item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA',
+                        'listo': item.estado === 'LISTO',
+                        'servido': item.estado === 'ENTREGADO' || item.estado === 'SERVIDO'
+                      }"
+                      (click)="toggleItemMenu(item.id, $event)"
+                      title="Haz clic para cambiar el estado de este plato"
+                    >
+                      <span class="status-indicator-dot"></span>
+                      <span class="status-label-text">
+                        {{ (item.estado === 'ENTREGADO' || item.estado === 'SERVIDO') ? 'Servido' : (item.estado === 'LISTO' ? 'Listo para Servir' : 'En Cocina') }}
+                      </span>
+                      <lucide-icon name="chevron-down" [size]="12" class="status-chevron"></lucide-icon>
+                    </button>
 
-          <!-- Grid de Platos Consolidados -->
-          <div class="dishes-catalog-grid">
-            <article 
-              *ngFor="let plato of filteredPlatos()" 
-              class="dish-catalog-card-consolidated"
-              [class.disabled]="!plato.disponible"
-            >
-              <!-- Dish Header Row -->
-              <div class="dish-header-row" (click)="!plato.tieneVariantes && plato.disponible && agregarPlatoSinVariante(plato, $event)">
-                <div class="dish-thumb-box">
-                  <img 
-                    *ngIf="plato.imagenUrl" 
-                    [src]="plato.imagenUrl" 
-                    [alt]="plato.nombre" 
-                    class="dish-img" 
-                    loading="lazy"
-                  />
-                  <div *ngIf="!plato.imagenUrl" class="dish-no-img">
-                    <lucide-icon name="utensils-crossed" class="icon-sm icon-muted"></lucide-icon>
+                    <!-- Menú Desplegable Flotante de Estados -->
+                    @if (itemMenuAbiertoId() === item.id) {
+                      <div class="item-status-dropdown-menu" (click)="$event.stopPropagation()">
+                        <div class="dropdown-header-title">Cambiar estado del plato:</div>
+                        
+                        <button
+                          type="button"
+                          class="status-option-row"
+                          [class.selected]="item.estado === 'PENDIENTE' || item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"
+                          (click)="cambiarEstadoItemDirecto(item, 'PREPARANDO', $event)"
+                        >
+                          <span class="opt-dot dot-cocina"></span>
+                          <div class="opt-texts">
+                            <strong>En Cocina</strong>
+                            <span>En preparación</span>
+                          </div>
+                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'PENDIENTE' || item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"></lucide-icon>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="status-option-row"
+                          [class.selected]="item.estado === 'LISTO'"
+                          (click)="cambiarEstadoItemDirecto(item, 'LISTO', $event)"
+                        >
+                          <span class="opt-dot dot-listo"></span>
+                          <div class="opt-texts">
+                            <strong>Listo para Servir</strong>
+                            <span>Plato preparado</span>
+                          </div>
+                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'LISTO'"></lucide-icon>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="status-option-row"
+                          [class.selected]="item.estado === 'ENTREGADO' || item.estado === 'SERVIDO'"
+                          (click)="cambiarEstadoItemDirecto(item, 'ENTREGADO', $event)"
+                        >
+                          <span class="opt-dot dot-servido"></span>
+                          <div class="opt-texts">
+                            <strong>Servido</strong>
+                            <span>Entregado en mesa</span>
+                          </div>
+                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'ENTREGADO' || item.estado === 'SERVIDO'"></lucide-icon>
+                        </button>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Nota / Instrucción Especial de Preparación -->
+                  <div class="dish-notes-badge" *ngIf="item.notas">
+                    <lucide-icon name="message-square" [size]="11" class="notes-icon"></lucide-icon>
+                    <span>{{ item.notas }}</span>
                   </div>
                 </div>
-
-                <div class="dish-title-box">
-                  <h4 class="dish-title">{{ plato.nombre }}</h4>
-                  <span class="dish-price-sub" *ngIf="plato.tieneVariantes">
-                    Desde <strong class="gold-text">Bs. {{ (plato.precioDesde || 0) | number:'1.2-2' }}</strong>
-                  </span>
-                  <span class="dish-price-single" *ngIf="!plato.tieneVariantes">
-                    Bs. {{ (plato.precioVenta || 0) | number:'1.2-2' }}
-                  </span>
+                <div class="dish-price-right">
+                  <strong class="dish-subtotal">Bs. {{ (item.precio * item.cantidad) | number:'1.2-2' }}</strong>
+                  <span class="dish-unit-price">Bs. {{ item.precio | number:'1.2-2' }} c/u</span>
                 </div>
+              </div>
+            }
 
-                <div class="dish-action-box">
-                  <span class="opciones-badge" *ngIf="plato.tieneVariantes">OPCIONES</span>
-                  <button 
-                    *ngIf="!plato.tieneVariantes" 
-                    type="button"
-                    class="add-plus-btn" 
-                    [disabled]="!plato.disponible" 
-                    (click)="agregarPlatoSinVariante(plato, $event)"
-                    title="Agregar plato"
-                  >
-                    <lucide-icon name="plus" class="icon-sm"></lucide-icon>
-                  </button>
+            <!-- ESTADO VACÍO CUANDO NO HAY COMANDA REGISTRADA EN LA MESA -->
+            @if (activeSentItems().length === 0) {
+              <div class="empty-comanda-box">
+                <lucide-icon name="utensils" [size]="28" class="empty-icon-gold"></lucide-icon>
+                <strong class="empty-title">Sin comanda activa</strong>
+                <p class="empty-sub">Esta mesa está lista para registrar el primer pedido.</p>
+                <button class="btn-take-order-empty" (click)="abrirCatalogoAgregar()">
+                  <lucide-icon name="plus-circle" [size]="16"></lucide-icon>
+                  <span>Tomar Pedido / Añadir Platos</span>
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- 2. Sección: ACTIVIDAD RECIENTE (TIMELINE DINÁMICO) -->
+        <section class="drawer-section timeline-section">
+          <div class="section-title-line">
+            <span class="section-label">ACTIVIDAD RECIENTE</span>
+          </div>
+
+          <div class="timeline-vertical-flow">
+            @for (ev of mesaTimeline(); track ev.texto; let last = $last) {
+              <div class="timeline-event-row" [class.active-node]="ev.tipo === 'green' || ev.tipo === 'gold'">
+                <div class="node-indicator">
+                  <span
+                    class="node-dot"
+                    [class.green-dot]="ev.tipo === 'green'"
+                    [class.gold-dot]="ev.tipo === 'gold'"
+                    [class.gray-dot]="ev.tipo === 'gray'"
+                  ></span>
+                  <span class="node-line" *ngIf="!last"></span>
+                </div>
+                <div class="node-content">
+                  <span class="node-time">{{ ev.hora }}</span>
+                  <p class="node-text">{{ ev.texto }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ── FOOTER: CONTROL FINANCIERO Y CIERRE DE MESA ── -->
+      <footer class="drawer-financial-footer">
+        <div class="footer-subtotal-row">
+          <span class="subtotal-label">Subtotal</span>
+          <span class="subtotal-val">Bs. {{ getComandaTotal() | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="footer-total-row">
+          <span class="total-title">Total a Cobrar</span>
+          <strong class="total-amount-serif">Bs. {{ getComandaTotal() | number:'1.2-2' }}</strong>
+        </div>
+
+        @if (activeSentItems().length > 0) {
+          <button class="btn-proceder-pago" (click)="abrirCajaModal()">
+            <span>Cerrar Mesa / Cobrar</span>
+            <lucide-icon name="wallet" [size]="18"></lucide-icon>
+          </button>
+        } @else {
+          <button class="btn-proceder-pago" (click)="abrirCatalogoAgregar()">
+            <lucide-icon name="plus" [size]="16"></lucide-icon>
+            <span>Tomar Pedido</span>
+          </button>
+        }
+      </footer>
+
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════
+       VISTA 2: MODAL "AGREGAR PRODUCTO" (2 COLUMNAS MOCKUP)
+       ═══════════════════════════════════════════════════════ -->
+  @if (viewMode() === 'CATALOG') {
+    <div class="modal-agregar-producto-container animate-fade-in">
+      
+      <!-- ── COLUMNA IZQUIERDA: CATÁLOGO DE PLATOS ── -->
+      <section class="modal-catalog-left">
+        
+        <!-- Header: Título y Cerrar -->
+        <div class="modal-left-header">
+          <h2 class="modal-title-serif">Agregar Producto</h2>
+          <button class="modal-close-btn" (click)="volverADetalle()" title="Cerrar y volver">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <!-- Buscador -->
+        <div class="modal-search-field">
+          <lucide-icon name="search" [size]="16" class="search-ico"></lucide-icon>
+          <input
+            type="text"
+            placeholder="Buscar por nombre o código..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            class="search-input-modal"
+          />
+        </div>
+
+        <!-- Chips de Categorías -->
+        <div class="modal-category-chips scrollbar-none">
+          <button
+            class="modal-chip"
+            [class.active]="selectedCategoryId() === null"
+            (click)="selectedCategoryId.set(null)"
+          >
+            Todos
+          </button>
+          <button
+            *ngFor="let cat of categories()"
+            class="modal-chip"
+            [class.active]="selectedCategoryId() === cat.id"
+            (click)="selectedCategoryId.set(cat.id)"
+          >
+            {{ cat.nombre }}
+          </button>
+        </div>
+
+        <!-- Grilla de Tarjetas de Platos (3 Columnas con Alto Consistente) -->
+        <div class="modal-dishes-grid scrollbar-custom">
+          @for (plato of filteredPlatos(); track plato.id) {
+            <article class="modal-dish-card" (click)="abrirPersonalizarPlato(plato, $event)">
+              
+              <!-- Imagen / Thumbnail con Alto Fijo -->
+              <div class="dish-card-thumb">
+                <span class="variant-indicator-tag" *ngIf="plato.tieneVariantes">
+                  <lucide-icon name="sparkles" [size]="11"></lucide-icon>
+                  <span>{{ plato.variantes?.length || 2 }} Tamaños</span>
+                </span>
+                <img *ngIf="plato.imagenUrl" [src]="plato.imagenUrl" [alt]="plato.nombre" loading="lazy" />
+                <div *ngIf="!plato.imagenUrl" class="dish-card-no-img">
+                  <lucide-icon name="utensils" [size]="24" class="no-img-icon"></lucide-icon>
                 </div>
               </div>
 
-              <!-- Selector de Variantes Segmentado (Solo si tiene variantes) -->
-              <div class="variants-segment-grid" *ngIf="plato.tieneVariantes">
-                <button 
-                  *ngFor="let v of plato.variantes" 
-                  type="button"
-                  class="variant-select-btn"
-                  [disabled]="!v.disponible || !plato.disponible"
-                  (click)="agregarPlatoConVariante(plato, v, $event)"
+              <!-- Info del Plato -->
+              <div class="dish-card-text">
+                <strong class="dish-name-heading">{{ plato.nombre }}</strong>
+                <p class="dish-desc-text">{{ plato.descripcion || 'Especialidad tradicional de la casa.' }}</p>
+              </div>
+
+              <!-- Footer de la Tarjeta con Precio y Botón + -->
+              <div class="dish-card-action-bar">
+                <div class="price-container">
+                  <span class="from-label" *ngIf="plato.tieneVariantes">Desde</span>
+                  <strong class="dish-price-gold">
+                    Bs. {{ (plato.precioDesde || plato.precioVenta) | number:'1.2-2' }}
+                  </strong>
+                </div>
+                <button
+                  class="dish-plus-circle-btn"
+                  [class.btn-has-options]="plato.tieneVariantes"
+                  (click)="abrirPersonalizarPlato(plato, $event)"
+                  [title]="plato.tieneVariantes ? 'Elegir opciones' : 'Añadir a la orden'"
                 >
-                  <span class="v-label">{{ v.nombre }}</span>
-                  <span class="v-price">Bs. {{ v.precio }}</span>
+                  <lucide-icon [name]="plato.tieneVariantes ? 'sliders-horizontal' : 'plus'" [size]="15"></lucide-icon>
                 </button>
               </div>
 
             </article>
+          }
+        </div>
 
-            <div *ngIf="filteredPlatos().length === 0" class="empty-catalog-msg">
-              No se encontraron platos en esta categoría.
-            </div>
+      </section>
+
+      <!-- ── COLUMNA DERECHA: NUEVOS ITEMS ── -->
+      <aside class="modal-order-tray-right">
+        
+        <!-- Header de la Bandeja -->
+        <div class="tray-right-header">
+          <div class="tray-title-group">
+            <lucide-icon name="receipt" [size]="18" class="tray-ico-gold"></lucide-icon>
+            <h3 class="tray-main-title">Nuevos Items</h3>
           </div>
-        </section>
+          <span class="tray-mesa-sub">Mesa {{ mesa?.numero?.replace('M', '') || mesa?.numero }} • Salón Principal</span>
+        </div>
 
-        <!-- COLUMNA DERECHA (40%): COMANDA EN CURSO -->
-        <section class="order-summary-column scrollbar-custom">
-          
-          <!-- Summary Header -->
-          <div class="summary-title-row">
-            <h3 class="summary-heading">Comanda en Curso</h3>
-            <button type="button" class="clear-all-btn" (click)="limpiarTodo()" *ngIf="comandaItems().length > 0">
-              <lucide-icon name="trash-2" class="icon-xs icon-danger"></lucide-icon> Limpiar Todo
-            </button>
-          </div>
-
-          <!-- Lista de Ítems Seleccionados -->
-          <div class="selected-items-list scrollbar-custom">
-            <div *ngFor="let item of comandaItems(); let i = index" class="comanda-item-card">
+        <!-- Lista de Ítems en Draft -->
+        <div class="tray-draft-items-list scrollbar-custom">
+          @for (item of comandaItems(); track item.platoId) {
+            <div class="draft-product-card">
               
-              <!-- Cantidad Badge en recuadro -->
-              <div class="item-qty-square">
-                {{ item.cantidad }}
+              <div class="product-top-line">
+                <strong class="product-title">{{ item.nombre }}</strong>
+                <button class="btn-trash-item" (click)="quitarItem(item.platoId, item.varianteId)" title="Eliminar ítem">
+                  <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                </button>
               </div>
 
-              <!-- Info central del ítem -->
-              <div class="item-details-box">
-                <h4 class="item-name">{{ item.nombreBase || item.nombre }}</h4>
-                
-                <div class="item-sub-row">
-                  <span class="variant-gold-badge" *ngIf="item.varianteNombre">
-                    {{ item.varianteNombre | uppercase }}
-                  </span>
-                  <span class="item-note-inline" *ngIf="item.notas">• {{ item.notas }}</span>
-                </div>
+              <span class="product-price-gold">Bs. {{ item.precio | number:'1.2-2' }}</span>
 
-                <input 
-                  type="text" 
-                  placeholder="Añadir nota (ej: Extra mote)..." 
+              <div class="product-stepper-row">
+                <div class="stepper-pill">
+                  <button type="button" class="btn-step" (click)="decrementarCantidad(item)">
+                    <lucide-icon name="minus" [size]="12"></lucide-icon>
+                  </button>
+                  <span class="qty-count">{{ item.cantidad }}</span>
+                  <button type="button" class="btn-step" (click)="incrementarCantidad(item)">
+                    <lucide-icon name="plus" [size]="12"></lucide-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Input de Notas de Cocina -->
+              <div class="product-note-field">
+                <lucide-icon name="pencil" [size]="12" class="note-ico"></lucide-icon>
+                <input
+                  type="text"
+                  placeholder="Nota a cocina (ej: sin picante)"
                   [(ngModel)]="item.notas"
-                  class="item-notes-input"
+                  class="input-note"
                 />
               </div>
 
-              <!-- Precio y Controles -->
-              <div class="item-right-box">
-                <span class="item-price">Bs. {{ (item.precio * item.cantidad) | number:'1.2-2' }}</span>
-                
-                <div class="stepper-controls">
-                  <button type="button" (click)="decrementarCantidad(item)" class="stepper-btn minus" title="Disminuir">
-                    <lucide-icon name="minus" class="icon-xs"></lucide-icon>
-                  </button>
-                  <button type="button" (click)="incrementarCantidad(item)" class="stepper-btn plus" title="Aumentar">
-                    <lucide-icon name="plus" class="icon-xs"></lucide-icon>
-                  </button>
-                </div>
+            </div>
+          }
+
+          @if (comandaItems().length === 0) {
+            <div class="empty-tray-notice">
+              <lucide-icon name="plus-circle" [size]="28" class="empty-tray-ico"></lucide-icon>
+              <span>Selecciona productos del catálogo para armar la comanda.</span>
+            </div>
+          }
+        </div>
+
+        <!-- Footer: Subtotal y Botón Enviar a Cocina -->
+        <footer class="tray-right-footer">
+          <div class="tray-subtotal-row">
+            <span class="lbl-subtotal">Subtotal Nuevos</span>
+            <strong class="val-subtotal">Bs. {{ getDraftSubtotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <button
+            class="btn-confirm-send-kitchen"
+            (click)="submitComanda()"
+            [disabled]="comandaItems().length === 0 || isSubmitting()"
+          >
+            <lucide-icon name="send" [size]="16"></lucide-icon>
+            <span>{{ isSubmitting() ? 'Enviando...' : 'Confirmar y Enviar a Cocina' }}</span>
+          </button>
+        </footer>
+
+      </aside>
+
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════
+       MODAL FLOTANTE DE PERSONALIZACIÓN DE VARIANTE
+       ═══════════════════════════════════════════════════════ -->
+  <div class="customizer-popover-overlay animate-fade-in" *ngIf="platoParaPersonalizar()" (click)="cerrarPersonalizarPlato()">
+    <div class="customizer-modal-card" (click)="$event.stopPropagation()">
+      
+      <header class="customizer-header">
+        <div class="customizer-title-box">
+          <h3 class="customizer-dish-title">{{ platoParaPersonalizar()?.nombre }}</h3>
+          <p class="customizer-dish-desc">{{ platoParaPersonalizar()?.descripcion || 'Selecciona el tamaño y detalles de preparación.' }}</p>
+        </div>
+        <button class="customizer-close-btn" (click)="cerrarPersonalizarPlato()" title="Cerrar">
+          <lucide-icon name="x" [size]="18"></lucide-icon>
+        </button>
+      </header>
+
+      <div class="customizer-body scrollbar-custom">
+        <!-- Opciones de Presentación / Variantes -->
+        <label class="customizer-field-label">SELECCIONA TAMAÑO O PRESENTACIÓN</label>
+        <div class="variant-selection-list">
+          @for (v of platoParaPersonalizar()?.variantes; track v.id) {
+            <div
+              class="variant-option-card"
+              [class.selected]="varianteSeleccionada()?.id === v.id"
+              (click)="seleccionarVariante(v)"
+            >
+              <div class="opt-left">
+                <span class="custom-radio-circle">
+                  <span class="inner-dot" *ngIf="varianteSeleccionada()?.id === v.id"></span>
+                </span>
+                <strong class="variant-opt-name">{{ v.nombre }}</strong>
               </div>
-
+              <strong class="variant-opt-price">Bs. {{ v.precio | number:'1.2-2' }}</strong>
             </div>
+          }
+        </div>
 
-            <!-- Placeholder Drop Zone si la lista está vacía -->
-            <div *ngIf="comandaItems().length === 0" class="empty-drop-zone">
-              <lucide-icon name="utensils-crossed" class="cutlery-icon icon-lg icon-muted"></lucide-icon>
-              <p class="drop-text">Agrega más productos del menú</p>
+        <!-- Cantidad -->
+        <div class="customizer-options-row">
+          <div class="qty-block">
+            <label class="customizer-field-label">CANTIDAD</label>
+            <div class="customizer-stepper">
+              <button type="button" class="btn-step-modal" (click)="decCantidadPersonalizada()">
+                <lucide-icon name="minus" [size]="14"></lucide-icon>
+              </button>
+              <span class="step-num">{{ cantidadPersonalizada() }}</span>
+              <button type="button" class="btn-step-modal" (click)="incCantidadPersonalizada()">
+                <lucide-icon name="plus" [size]="14"></lucide-icon>
+              </button>
             </div>
           </div>
+        </div>
 
-          <hr class="summary-divider" />
-
-          <!-- Indicaciones Generales -->
-          <div class="general-indications-block">
-            <label class="indications-label">Indicaciones Generales:</label>
-            <textarea 
-              [ngModel]="generalNotes()" 
-              (ngModelChange)="generalNotes.set($event)"
-              placeholder="Escribe notas especiales para cocina..."
-              class="indications-textarea"
-            ></textarea>
+        <!-- Nota a Cocina -->
+        <div class="customizer-notes-block">
+          <label class="customizer-field-label">NOTAS PARA COCINA (OPCIONAL)</label>
+          <div class="note-input-wrapper">
+            <lucide-icon name="pencil" [size]="14" class="pencil-ico"></lucide-icon>
+            <input
+              type="text"
+              placeholder="Ej: Poco azúcar, bien caliente, sin llajua..."
+              [ngModel]="notaPersonalizada()"
+              (ngModelChange)="notaPersonalizada.set($event)"
+              class="customizer-input-text"
+            />
           </div>
-
-          <!-- Total Acumulado -->
-          <div class="summary-total-row">
-            <span class="total-label">Monto Total</span>
-            <span class="total-value-gold">Bs. {{ getComandaTotal() | number:'1.2-2' }}</span>
-          </div>
-
-          <!-- Prominent Submit Action Button -->
-          <div class="summary-actions-block">
-            @if (mesa?.estado === 'LIBRE' || mesa?.estado === 'OCUPADA') {
-              <button 
-                type="button" 
-                class="submit-comanda-gold-btn btn-send" 
-                [disabled]="comandaItems().length === 0 || isSubmitting()" 
-                (click)="submitComanda()"
-              >
-                <span *ngIf="!isSubmitting()"><lucide-icon name="send" class="icon-md icon-send"></lucide-icon> ENVIAR COMANDA</span>
-                <span *ngIf="isSubmitting()">ENVIANDO A COCINA...</span>
-              </button>
-            } @else if (mesa?.estado === 'POR_COBRAR') {
-              <button 
-                type="button" 
-                class="submit-comanda-gold-btn cobro" 
-                [disabled]="isSubmitting()" 
-                (click)="abrirCajaModal()"
-              >
-                <lucide-icon name="banknote" class="icon-md"></lucide-icon> REGISTRAR COBRO Y EMITIR RECIBO
-              </button>
-            }
-          </div>
-
-        </section>
+        </div>
 
       </div>
-    }
-  }
-</div>
 
-<!-- ═══ Sub-componentes de Caja y Comprobante ═══ -->
+      <footer class="customizer-footer">
+        <button class="btn-add-customized-dish" (click)="confirmarPlatoPersonalizado()">
+          <lucide-icon name="plus-circle" [size]="18"></lucide-icon>
+          <span>Agregar a la Comanda • Bs. {{ getPrecioPersonalizadoTotal() | number:'1.2-2' }}</span>
+        </button>
+      </footer>
 
+    </div>
+  </div>
+
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL DE CAJA & COMPROBANTE
+     ═══════════════════════════════════════════════════════ -->
 <app-caja-cobro
+  *ngIf="showCajaModal() && pedidoParaCobro()"
   [isOpen]="showCajaModal()"
-  [pedido]="pedidoParaCobro()"
+  [pedido]="pedidoParaCobro()!"
   (close)="onCajaCerrar()"
   (pagado)="onPagoCompletado($event)"
 ></app-caja-cobro>
 
 <app-comprobante
+  *ngIf="showComprobante() && datosRecibo()"
   [isOpen]="showComprobante()"
-  [datos]="datosRecibo()"
+  [datos]="datosRecibo()!"
   (close)="onComprobanteCerrar()"
 ></app-comprobante>
-

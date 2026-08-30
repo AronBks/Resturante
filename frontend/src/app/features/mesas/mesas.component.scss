@@ -1,430 +1,796 @@
-.mesas-page-container {
+.cmd-center-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 8px 4px 40px;
+  gap: 20px;
+  padding: 4px 6px 40px;
   position: relative;
   min-height: 100vh;
-  color: var(--text-warm, #E6DFD5);
+  color: #f3ece1;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
 }
 
-/* ── Header & KPIs ── */
-.salon-header {
-  .header-main-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 16px;
+/* ═══════════════════════════════════════════════════════
+   1. HEADER SUPERIOR DE CONTROL OPERATIVO
+   ═══════════════════════════════════════════════════════ */
+.cmd-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 4px 0 10px;
+}
+
+.header-breadcrumb-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  .cmd-main-title {
+    font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -0.3px;
   }
 
-  .title-block {
-    .page-title {
-      font-family: var(--font-title, 'Playfair Display', Georgia, serif);
-      font-size: 2.2rem;
-      font-weight: 700;
-      color: #F3ECE1;
-      margin: 0 0 6px 0;
-      letter-spacing: -0.5px;
-    }
-
-    .page-subtitle {
-      font-size: 0.92rem;
-      color: var(--text-muted, #9E9484);
-      margin: 0;
-      max-width: 600px;
-      line-height: 1.4;
-    }
+  .breadcrumb-separator {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 1.2rem;
   }
 
-  /* KPIs Row */
-  .kpi-badges-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .kpi-card {
+  .breadcrumb-trail {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: #1A1714;
-    border: 1px solid rgba(200, 149, 108, 0.18);
-    border-radius: 24px;
-    padding: 8px 18px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    transition: all 0.2s ease;
+    gap: 6px;
+    font-size: 0.85rem;
 
-    &:hover {
-      border-color: rgba(229, 193, 88, 0.4);
-      transform: translateY(-1px);
+    .crumb-highlight {
+      color: #9e9484;
     }
 
-    .kpi-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
+    .crumb-arrow {
+      color: #6e665e;
     }
 
-    .kpi-text {
-      font-size: 0.88rem;
+    .crumb-current {
+      color: #f3ece1;
       font-weight: 600;
-      color: #D6CBBA;
-    }
-
-    .kpi-number {
-      font-family: var(--font-title, serif);
-      font-size: 1.15rem;
-      font-weight: 800;
-      margin-left: 2px;
-    }
-
-    &.kpi-libre {
-      .kpi-dot { background: #34D399; box-shadow: 0 0 8px rgba(52, 211, 153, 0.6); }
-      .kpi-number { color: #34D399; }
-    }
-
-    &.kpi-ocupada {
-      .kpi-dot { background: #F87171; box-shadow: 0 0 8px rgba(248, 113, 113, 0.6); }
-      .kpi-number { color: #F87171; }
-    }
-
-    &.kpi-por-cobrar {
-      border-color: rgba(229, 193, 88, 0.4);
-      background: rgba(35, 29, 20, 0.8);
-      .kpi-dot { background: #E5C158; box-shadow: 0 0 8px rgba(229, 193, 88, 0.7); }
-      .kpi-text { color: #F3ECE1; }
-      .kpi-number { color: #E5C158; }
     }
   }
 }
 
-/* ── Zones Sections ── */
-.salon-content {
+.header-right-actions {
   display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-.zone-block {
-  display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 14px;
 }
 
-.zone-tag-header {
-  position: relative;
+/* Pill de Monto Mesas Abiertas */
+.kpi-open-tables-pill {
   display: flex;
   align-items: center;
+  gap: 10px;
+  background: #1c1814;
+  border: 1px solid rgba(229, 193, 88, 0.3);
+  border-radius: 30px;
+  padding: 6px 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
 
-  &::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(200, 149, 108, 0.25) 0%, rgba(200, 149, 108, 0.02) 100%);
-    margin-left: 14px;
-  }
-
-  .zone-pill {
-    font-family: var(--font-title, serif);
-    font-size: 0.7rem;
+  .pill-label {
+    font-size: 0.68rem;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
+    color: #9e9484;
     text-transform: uppercase;
-    color: #E5C158;
-    background: #231E18;
-    border: 1px solid rgba(229, 193, 88, 0.3);
-    border-radius: 6px;
-    padding: 4px 12px;
+  }
+
+  .pill-amount {
+    font-family: var(--font-serif, serif);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #e5c158;
   }
 }
 
-/* ── Tables Grid ── */
-.tables-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+.sys-operative-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e5c158;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  color: #14110e;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(229, 193, 88, 0.35);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #facc15;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(229, 193, 88, 0.5);
+  }
 }
 
-/* ── Mesa Card ── */
-.mesa-card {
-  background: #1B1814;
-  border: 1px solid rgba(200, 149, 108, 0.16);
-  border-radius: 14px;
-  padding: 16px 18px;
+/* ═══════════════════════════════════════════════════════
+   2. BARRA DE FILTROS POR ZONA & LEYENDA
+   ═══════════════════════════════════════════════════════ */
+.cmd-filter-legend-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 6px;
+}
+
+.zone-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.zone-tab {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b5ad9e;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+
+  &.active {
+    background: #25201b;
+    border-color: rgba(229, 193, 88, 0.5);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.status-legend-inline {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9e9484;
+  cursor: pointer;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #ffffff;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+
+    &.dot-ocupada { background: #e5c158; box-shadow: 0 0 6px #e5c158; }
+    &.dot-comanda { background: #60a5fa; box-shadow: 0 0 6px #60a5fa; }
+    &.dot-cobrar { background: #f43f5e; box-shadow: 0 0 6px #f43f5e; }
+    &.dot-libre { background: #9e9484; }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   3. CONTENIDO PRINCIPAL: GRID DE MESAS + LOG EN VIVO
+   ═══════════════════════════════════════════════════════ */
+.cmd-main-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── VIEWPORT DE MESAS ── */
+.cmd-tables-viewport {
+  width: 100%;
+}
+
+.cmd-tables-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+/* ── TARJETA DE MESA INDIVIDUAL (MESA CARD CMD) ── */
+.mesa-card-cmd {
+  position: relative;
+  background: #191512;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 145px;
+  min-height: 240px;
   cursor: pointer;
-  position: relative;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  outline: none;
+  overflow: hidden;
 
   &:hover {
     transform: translateY(-3px);
-    border-color: rgba(200, 149, 108, 0.35);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
   }
 
-  /* Card Top Row */
-  .card-header-row {
+  &.mesa-selected {
+    border-color: #e5c158 !important;
+    box-shadow: 0 0 24px rgba(229, 193, 88, 0.4) !important;
+  }
+
+  /* Cinta de Llamada Superior */
+  .mesa-top-ribbon-alert {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ff776e;
+    color: #14110e;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 12px 3px 10px;
+    border-radius: 0 0 0 12px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-
-    .table-id-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-
-      .table-id {
-        font-family: var(--font-title, 'Playfair Display', serif);
-        font-size: 1.55rem;
-        font-weight: 700;
-        color: #F8F4EC;
-        margin: 0;
-      }
-
-      .barra-icon {
-        font-size: 1.1rem;
-      }
-    }
-
-    .capacity-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.78rem;
-      color: #A39786;
-
-      .cutlery-icon {
-        color: #F87171;
-        font-size: 0.9rem;
-      }
-    }
-  }
-
-  /* Card Body Content */
-  .card-body-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    flex: 1;
-    margin-top: 10px;
-  }
-
-  .state-details {
-    display: flex;
-    flex-direction: column;
     gap: 4px;
-    margin-bottom: 12px;
+    animation: pulse-ribbon 1.4s infinite alternate;
+    z-index: 10;
+  }
 
-    .metric-line {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.82rem;
+  /* Estado Ocupada (Borde Superior Dorado) */
+  &.ocupada {
+    border-color: rgba(229, 193, 88, 0.4);
+    border-top: 3px solid #e5c158;
 
-      .lbl {
-        color: #948877;
-        width: 62px;
-      }
-
-      .val {
-        color: #E6DFD5;
-        font-weight: 600;
-
-        &.gold {
-          color: #E5C158;
-          font-family: var(--font-title, serif);
-          font-weight: 700;
-        }
-      }
+    &:hover {
+      border-color: #e5c158;
     }
   }
 
-  /* Card Footer Row */
-  .card-footer-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
+  /* Estado Por Cobrar (Borde Superior Rosa/Rojo) */
+  &.por-cobrar {
+    border-color: rgba(244, 63, 94, 0.4);
+    border-top: 3px solid #f43f5e;
+    box-shadow: 0 0 16px rgba(244, 63, 94, 0.15);
+
+    &:hover {
+      border-color: #f43f5e;
+      box-shadow: 0 0 24px rgba(244, 63, 94, 0.3);
+    }
   }
 
-  .status-badge {
+  /* Estado Libre */
+  &.libre {
+    background: #161310;
+    border-color: rgba(255, 255, 255, 0.05);
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: #1c1814;
+    }
+  }
+}
+
+@keyframes pulse-ribbon {
+  0% { opacity: 0.85; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.04); }
+}
+
+/* ── Encabezado de la Tarjeta ── */
+.card-cmd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2px;
+
+  .mesa-title-wrap {
+    display: flex;
+    flex-direction: column;
+
+    .mesa-label-text {
+      font-family: var(--font-serif, 'Playfair Display', serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .mesa-big-number {
+      font-family: var(--font-serif, 'Playfair Display', serif);
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+  }
+}
+
+/* Badges de Estado */
+.badge-cmd-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #9e9484;
+
+  &.badge-ocupada {
+    background: rgba(229, 193, 88, 0.15);
+    color: #e5c158;
+    border: 1px solid rgba(229, 193, 88, 0.3);
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #e5c158;
+    }
+  }
+
+  &.badge-por-cobrar {
+    background: rgba(244, 63, 94, 0.15);
+    color: #f43f5e;
+    border: 1px solid rgba(244, 63, 94, 0.3);
+  }
+
+  &.badge-reservada {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+  }
+
+  &.badge-libre {
+    background: rgba(255, 255, 255, 0.06);
+    color: #9e9484;
+  }
+}
+
+/* Subtítulo de Tiempo */
+.card-cmd-subtitle {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #9e9484;
+  margin-bottom: 14px;
+
+  .seated-time, .clean-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+/* ── Métricas: 2 Cajas (Pax & Platos) ── */
+.metrics-two-boxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+
+  .metric-box {
+    background: #201a14;
+    border: 1px solid rgba(229, 193, 88, 0.15);
+    border-radius: 10px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #e5c158;
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-align: center;
+  }
+}
+
+/* ── Desglose de Comanda Activa ── */
+.comanda-activa-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+
+  .comanda-heading {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #9e9484;
+    margin-bottom: 2px;
+  }
+
+  .comanda-lines-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .comanda-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.74rem;
+
+    .dish-name {
+      color: #d6cbba;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+    }
+
+    .dish-subtotal {
+      color: #e5c158;
+      font-weight: 700;
+    }
+  }
+}
+
+/* Barra de Progreso en Cocina */
+.kitchen-progress-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: auto;
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%);
+    border-radius: 6px;
+    box-shadow: 0 0 10px #3b82f6;
+  }
+
+  .progress-percent {
+    position: absolute;
+    right: 0;
+    top: -14px;
     font-size: 0.65rem;
     font-weight: 800;
-    letter-spacing: 0.8px;
-    padding: 4px 10px;
-    border-radius: 12px;
+    color: #60a5fa;
+  }
+}
+
+/* ── Estado Por Cobrar Body ── */
+.por-cobrar-body-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 14px;
+}
+
+.total-cobrar-inner {
+  background: #201718;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .total-cobrar-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #9e9484;
     text-transform: uppercase;
   }
 
-  .badge-disponible {
-    background: rgba(52, 211, 153, 0.12);
-    color: #34D399;
-    border: 1px solid rgba(52, 211, 153, 0.3);
-  }
-
-  .badge-ocupada {
-    background: rgba(248, 113, 113, 0.15);
-    color: #F87171;
-    border: 1px solid rgba(248, 113, 113, 0.35);
-  }
-
-  .badge-por-cobrar {
-    background: rgba(229, 193, 88, 0.18);
-    color: #E5C158;
-    border: 1px solid rgba(229, 193, 88, 0.4);
-  }
-
-  /* Action Buttons */
-  .card-action-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 1px solid rgba(200, 149, 108, 0.25);
-    background: #231E18;
-    color: #E6DFD5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: #E5C158;
-      color: #141210;
-      border-color: #E5C158;
-      transform: scale(1.08);
-      box-shadow: 0 0 12px rgba(229, 193, 88, 0.4);
-    }
-  }
-
-  /* ── Special Card States (Colors & Glows) ── */
-
-  /* OCUPADA STATE CARD */
-  &.ocupada {
-    border-color: rgba(201, 74, 74, 0.45);
-    background: linear-gradient(180deg, #201716 0%, #1A1413 100%);
-
-    &:hover {
-      border-color: rgba(248, 113, 113, 0.7);
-      box-shadow: 0 6px 20px rgba(201, 74, 74, 0.25);
-    }
-  }
-
-  /* POR COBRAR STATE CARD */
-  &.por-cobrar {
-    border: 1.5px solid #E5C158;
-    background: linear-gradient(180deg, #241E15 0%, #1C1710 100%);
-    box-shadow: 0 0 18px rgba(229, 193, 88, 0.25);
-
-    &:hover {
-      box-shadow: 0 0 25px rgba(229, 193, 88, 0.4);
-    }
-
-    .cash-btn {
-      background: #E5C158;
-      color: #141210;
-      border-color: #E5C158;
-    }
+  .total-cobrar-amount {
+    font-family: var(--font-serif, serif);
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #ffffff;
   }
 }
 
-/* ── Floating Action Button (FAB) (+) ── */
-.fab-gold-btn {
-  position: fixed;
-  bottom: 28px;
-  right: 32px;
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #F0CE6E 0%, #E5C158 100%);
-  border: none;
-  color: #141210;
-  font-family: var(--font-title, serif);
-  font-size: 1.9rem;
-  font-weight: 700;
+.btn-procesar-pago {
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1.5px solid rgba(244, 63, 94, 0.6);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(229, 193, 88, 0.45), 0 4px 12px rgba(0, 0, 0, 0.5);
-  z-index: 90;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 
   &:hover {
-    transform: scale(1.1) rotate(90deg);
-    box-shadow: 0 12px 30px rgba(229, 193, 88, 0.65);
-  }
-
-  &:active {
-    transform: scale(0.95);
+    background: #f43f5e;
+    border-color: #f43f5e;
+    box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
+    transform: translateY(-1px);
   }
 }
 
-/* ── SOLICITA MESERO ALERT STYLES ── */
-.mesa-card.solicita-mesero {
-  border: 2px solid #E5C158 !important;
-  background: linear-gradient(180deg, #322814 0%, #20190D 100%) !important;
-  animation: meseroGlowPulse 1.5s infinite alternate !important;
-}
-
-@keyframes meseroGlowPulse {
-  0% {
-    box-shadow: 0 0 10px rgba(229, 193, 88, 0.4), inset 0 0 15px rgba(229, 193, 88, 0.2);
-  }
-  100% {
-    box-shadow: 0 0 25px rgba(229, 193, 88, 0.95), inset 0 0 25px rgba(229, 193, 88, 0.45);
-  }
-}
-
-.mesero-call-alert-banner {
+/* ── Estado Libre Body ── */
+.libre-body-box {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  flex: 1;
+  padding: 20px 0;
+
+  .pax-dashed-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6e665e;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  &:hover .pax-dashed-circle {
+    border-color: #e5c158;
+    color: #e5c158;
+    background: rgba(229, 193, 88, 0.05);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   4. SIDEBAR PANEL: ACCIONES RÁPIDAS & LOG EN VIVO
+   ═══════════════════════════════════════════════════════ */
+.cmd-sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-action-card, .sidebar-log-card {
+  background: #191512;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.card-section-title {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  background: rgba(229, 193, 88, 0.25);
-  border: 1px solid #E5C158;
-  border-radius: 8px;
-  padding: 6px 10px;
-  margin-top: 8px;
-  color: #E5C158;
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
 
-  .atender-btn {
-    padding: 3px 10px;
-    border-radius: 6px;
-    background: #E5C158;
-    color: #12100d;
+  .title-gold-icon {
+    color: #e5c158;
+  }
+}
+
+.log-title-row {
+  justify-content: space-between;
+
+  .title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .online-status-badge {
+    font-size: 0.65rem;
     font-weight: 800;
-    border: none;
-    cursor: pointer;
-    font-size: 0.75rem;
-    transition: all 0.2s ease;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 12px;
+    padding: 2px 8px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+}
 
-    &:hover {
-      background: #ffffff;
-      transform: scale(1.05);
+/* Acciones Rápidas Buttons Grid */
+.quick-action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quick-act-btn {
+  background: #201a14;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #f3ece1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon {
+    color: #e5c158;
+  }
+
+  &:hover {
+    background: rgba(229, 193, 88, 0.12);
+    border-color: #e5c158;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(229, 193, 88, 0.2);
+  }
+}
+
+/* Lista de Eventos en Vivo */
+.live-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.log-event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #201a14;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba(229, 193, 88, 0.25);
+    background: #241d16;
+  }
+
+  .event-icon-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Modificadores de tipo de evento */
+  &.alerta {
+    border-left: 3px solid #f43f5e;
+    .event-icon-circle {
+      background: rgba(244, 63, 94, 0.15);
+      color: #f43f5e;
+    }
+  }
+
+  &.comanda {
+    border-left: 3px solid #60a5fa;
+    .event-icon-circle {
+      background: rgba(96, 165, 250, 0.15);
+      color: #60a5fa;
+    }
+  }
+
+  &.cuenta {
+    border-left: 3px solid #e5c158;
+    .event-icon-circle {
+      background: rgba(229, 193, 88, 0.15);
+      color: #e5c158;
+    }
+  }
+
+  &.apertura {
+    border-left: 3px solid #9e9484;
+    .event-icon-circle {
+      background: rgba(255, 255, 255, 0.08);
+      color: #9e9484;
+    }
+  }
+
+  .event-text-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+
+    .event-title {
+      font-size: 0.8rem;
+      color: #ffffff;
+    }
+
+    .event-desc {
+      font-size: 0.74rem;
+      color: #9e9484;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .event-time-ago {
+      font-size: 0.68rem;
+      color: #6e665e;
+      margin-top: 3px;
     }
   }
 }
 
-.alert-bar-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(90deg, #E5C158 0%, #C8956C 100%);
-  color: #12100d;
-  padding: 10px 18px;
+.empty-activity-card {
+  padding: 24px 16px;
+  background: #181410;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  font-weight: 800;
-  font-size: 0.9rem;
-  box-shadow: 0 4px 16px rgba(229, 193, 88, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+
+  .empty-activity-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .empty-act-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .empty-act-sub {
+    font-size: 0.72rem;
+    color: #9e9484;
+    line-height: 1.35;
+    margin: 0;
+  }
+}
+
+.animate-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1100px) {
+  .cmd-main-layout-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 
