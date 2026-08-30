@@ -52,14 +52,9 @@ export class PedidosService {
         throw new BadRequestException('La mesa seleccionada no existe o no está activa');
       }
 
-      // Si la mesa está OCUPADA y es un pedido IA, agregar items al pedido activo
-      if (mesa.estado === EstadoMesa.OCUPADA && esIA) {
+      // Si la mesa está OCUPADA, agregar items al pedido activo (soporte multi-ronda para admin y para IA)
+      if (mesa.estado === EstadoMesa.OCUPADA) {
         return this.agregarItemsAPedidoActivo(tx, mesaId, meseroId, items, notas);
-      }
-
-      // Para pedidos manuales, la mesa debe estar LIBRE
-      if (mesa.estado !== EstadoMesa.LIBRE && !esIA) {
-        throw new BadRequestException(`La mesa ${mesa.numero} no está disponible (Estado actual: ${mesa.estado})`);
       }
 
       // Si la mesa está POR_COBRAR, no se puede agregar nada
@@ -465,6 +460,18 @@ export class PedidosService {
     }
 
     return itemActualizado;
+  }
+
+  /**
+   * Marca todos los items de un pedido como ENTREGADO (Servir Todo)
+   */
+  async servirTodosLosItems(pedidoId: string) {
+    await this.prisma.detallePedido.updateMany({
+      where: { pedidoId, estadoItem: { not: EstadoItemPedido.CANCELADO } },
+      data: { estadoItem: EstadoItemPedido.ENTREGADO },
+    });
+
+    return this.actualizarEstadoPedido(pedidoId, EstadoPedido.ENTREGADO);
   }
 
   /**

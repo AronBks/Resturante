@@ -139,10 +139,7 @@ export class PedidosController {
 
   @Get('llamadas-mesero')
   obtenerLlamadasMesero() {
-    return {
-      success: true,
-      data: this.pedidosService.obtenerLlamadasMeseroPendientes(),
-    };
+    return this.pedidosService.obtenerLlamadasMeseroPendientes();
   }
 
   /**
@@ -198,6 +195,13 @@ export class PedidosController {
       itemId,
       dto.estado as EstadoItemPedido,
     );
+  }
+
+  @Post(':id/servir-todos')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'CHEF', 'MESERO')
+  servirTodos(@Param('id') id: string) {
+    return this.pedidosService.servirTodosLosItems(id);
   }
 
   @Patch(':id/estado')

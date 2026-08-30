@@ -15,13 +15,30 @@ export class MesasService {
       where: { activa: true },
       include: {
         pedidos: {
-          where: { estado: { in: ['ABIERTO', 'EN_COCINA', 'LISTO'] } },
+          where: { estado: { in: ['ABIERTO', 'EN_COCINA', 'LISTO', 'ENTREGADO'] } },
           select: {
             id: true,
             estado: true,
             total: true,
+            subtotal: true,
             mesero: { select: { id: true, nombre: true } },
             createdAt: true,
+            detalles: {
+              select: {
+                id: true,
+                cantidad: true,
+                precioUnitario: true,
+                notas: true,
+                estadoItem: true,
+                plato: {
+                  select: {
+                    id: true,
+                    nombre: true,
+                    categoria: { select: { id: true, nombre: true } },
+                  },
+                },
+              },
+            },
           },
           take: 1,
           orderBy: { createdAt: 'desc' },
