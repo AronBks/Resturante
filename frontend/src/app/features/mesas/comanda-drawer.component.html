@@ -333,15 +333,17 @@
             <article class="modal-dish-card" (click)="abrirPersonalizarPlato(plato, $event)">
               
               <!-- Imagen / Thumbnail con Alto Fijo -->
-              <div class="dish-card-thumb">
+              <div class="dish-card-thumb" [class.dish-card-thumb--beverage]="esBebida(plato)">
                 <span class="variant-indicator-tag" *ngIf="plato.tieneVariantes">
                   <lucide-icon name="sparkles" [size]="11"></lucide-icon>
                   <span>{{ plato.variantes?.length || 2 }} Tamaños</span>
                 </span>
-                <img *ngIf="plato.imagenUrl" [src]="plato.imagenUrl" [alt]="plato.nombre" loading="lazy" />
-                <div *ngIf="!plato.imagenUrl" class="dish-card-no-img">
-                  <lucide-icon name="utensils" [size]="24" class="no-img-icon"></lucide-icon>
-                </div>
+                <img 
+                  [src]="getPlatoImageUrl(plato)" 
+                  [alt]="plato.nombre" 
+                  [class.img-beverage]="esBebida(plato)"
+                  loading="lazy" 
+                />
               </div>
 
               <!-- Info del Plato -->

@@ -132,18 +132,13 @@ interface Categoria {
                           <div class="micro-spinner"></div>
                           <span class="upload-percent">{{ uploadProgress() }}%</span>
                         </div>
-                      } @else if (plato.imagenUrl) {
+                      } @else {
                         <img 
-                          [src]="plato.imagenUrl" 
+                          [src]="getPlatoImageUrl(plato)" 
                           [alt]="plato.nombre" 
                           class="plato-cover-img"
                           (error)="handleImageError(plato)"
                         />
-                      } @else {
-                        <div class="camera-fallback">
-                          <lucide-icon name="camera" class="camera-icon"></lucide-icon>
-                          <span>Sin fotografía</span>
-                        </div>
                       }
 
                       <!-- Agotado Top Badge -->
@@ -2144,6 +2139,67 @@ export class CartaComponent implements OnInit, OnDestroy {
     }
     return count;
   });
+
+  readonly CLOUDINARY_DISHES_MAP: Record<string, string> = {
+    pique: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788149317/imagen_2026-08-31_000836078_qsx36z.png',
+    charque: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148006/imagen_2026-08-30_234644832_rzmnlb.png',
+    planchita: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584019/128-image_web_q0hfc9.jpg',
+    lapping: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148549/imagen_2026-08-30_235546907_jepqxy.png',
+    pampa: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1768345718/pampaku_xq0ery.jpg',
+    picante: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148920/imagen_2026-08-31_000159494_wohszo.png',
+    caldocola: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788186581/imagen_2026-08-31_102937931_hekruk.png',
+    chankapollo: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788186618/imagen_2026-08-31_103016359_tbagpm.png',
+    kawi: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187077/imagen_2026-08-31_103754357_j15tvd.png',
+    mixto: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187431/imagen_2026-08-31_104348629_eqnlgx.png',
+    pulpitos: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187649/imagen_2026-08-31_104727437_va831n.png',
+    rinon: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187778/imagen_2026-08-31_104910253_zyn75s.png',
+    rinonperol: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188359/imagen_2026-08-31_105916523_vnltvb.png',
+    cascada: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188707/imagen_2026-08-31_110504501_aes1qs.png',
+    cocacola: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188744/imagen_2026-08-31_110542466_ie0rbm.png',
+    fanta: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189726/imagen_2026-08-31_112203919_ektxjf.png',
+    simba: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188831/imagen_2026-08-31_110659388_zhhqsl.png',
+    sprite: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188853/imagen_2026-08-31_110712193_czeqsb.png',
+    acuarius: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189793/imagen_2026-08-31_112311316_p1ak1c.png',
+    delvalle: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188966/imagen_2026-08-31_110918796_umt3wg.png',
+    puravida: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188998/imagen_2026-08-31_110954488_cx756s.png',
+    hervido: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189390/imagen_2026-08-31_111617464_glk2sd.png',
+    huari: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189407/imagen_2026-08-31_111645781_hubsxx.png',
+    pacena: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189457/imagen_2026-08-31_111735504_vdr4d4.png',
+  };
+
+  getPlatoImageUrl(plato: any): string {
+    const raw = plato?.nombre || '';
+    const n = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['`’\s-]/g, '');
+
+    if (n.includes('coca')) return this.CLOUDINARY_DISHES_MAP['cocacola'];
+    if (n.includes('cascada')) return this.CLOUDINARY_DISHES_MAP['cascada'];
+    if (n.includes('fanta')) return this.CLOUDINARY_DISHES_MAP['fanta'];
+    if (n.includes('simba')) return this.CLOUDINARY_DISHES_MAP['simba'];
+    if (n.includes('sprite')) return this.CLOUDINARY_DISHES_MAP['sprite'];
+    if (n.includes('acuari') || n.includes('aquari')) return this.CLOUDINARY_DISHES_MAP['acuarius'];
+    if (n.includes('valle')) return this.CLOUDINARY_DISHES_MAP['delvalle'];
+    if (n.includes('puravida')) return this.CLOUDINARY_DISHES_MAP['puravida'];
+    if (n.includes('hervido')) return this.CLOUDINARY_DISHES_MAP['hervido'];
+    if (n.includes('huari')) return this.CLOUDINARY_DISHES_MAP['huari'];
+    if (n.includes('pacen')) return this.CLOUDINARY_DISHES_MAP['pacena'];
+
+    if (n.includes('perol')) return this.CLOUDINARY_DISHES_MAP['rinonperol'];
+    if (n.includes('rinon')) return this.CLOUDINARY_DISHES_MAP['rinon'];
+    if (n.includes('cola')) return this.CLOUDINARY_DISHES_MAP['caldocola'];
+    if (n.includes('chanka')) return this.CLOUDINARY_DISHES_MAP['chankapollo'];
+    if (n.includes('kawi')) return this.CLOUDINARY_DISHES_MAP['kawi'];
+    if (n.includes('pulpito')) return this.CLOUDINARY_DISHES_MAP['pulpitos'];
+
+    if (n.includes('pique')) return this.CLOUDINARY_DISHES_MAP['pique'];
+    if (n.includes('charque')) return this.CLOUDINARY_DISHES_MAP['charque'];
+    if (n.includes('planch')) return this.CLOUDINARY_DISHES_MAP['planchita'];
+    if (n.includes('lapp')) return this.CLOUDINARY_DISHES_MAP['lapping'];
+    if (n.includes('pamp')) return this.CLOUDINARY_DISHES_MAP['pampa'];
+    if (n.includes('picant')) return this.CLOUDINARY_DISHES_MAP['picante'];
+    if (n.includes('mixto')) return this.CLOUDINARY_DISHES_MAP['mixto'];
+
+    return plato?.imagenUrl || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80';
+  }
 
   ultimaActualizacion = signal<string>('HOY ' + new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' }));
 
