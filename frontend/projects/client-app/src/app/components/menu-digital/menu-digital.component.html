@@ -238,11 +238,15 @@
                   [id]="'plato-' + plato.id"
                 >
                   <!-- Visual / Imagen Expansiva de Alta Calidad -->
-                  <div class="editorial-card__visual">
+                  <div 
+                    class="editorial-card__visual"
+                    [class.editorial-card__visual--beverage]="esBebida(plato)"
+                  >
                     <img
-                      [src]="plato.imagenUrl || getFoodImageFallback(plato.nombre)"
+                      [src]="getPlatoImageUrl(plato)"
                       [alt]="plato.nombre"
                       class="editorial-card__img"
+                      [class.editorial-card__img--beverage]="esBebida(plato)"
                       loading="lazy"
                       (error)="onImgError($event, plato.nombre)"
                     />
