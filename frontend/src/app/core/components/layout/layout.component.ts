@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
 import { RolUsuario } from '@sggi/shared';
@@ -21,7 +21,18 @@ interface SidebarItem {
 })
 export class LayoutComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
   user = this.authService.currentUserSignal;
+
+  tituloSeccion = computed(() => {
+    const url = this.router.url;
+    if (url.includes('/usuarios')) return 'Equipo de Trabajo';
+    if (url.includes('/mesas')) return 'Salón & Mesas';
+    if (url.includes('/control-caja')) return 'Control de Caja';
+    if (url.includes('/carta')) return 'Nuestra Carta';
+    if (url.includes('/overview')) return 'Panel de Hoy';
+    return 'Panel de Control';
+  });
 
   // Menú lateral con nomenclatura adaptada a Peña Tukuypaj
   menuItems = computed<SidebarItem[]>(() => {
