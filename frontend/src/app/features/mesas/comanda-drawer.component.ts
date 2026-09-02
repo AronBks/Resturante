@@ -139,10 +139,19 @@ export class ComandaDrawerComponent implements OnChanges {
   datosRecibo = signal<DatosRecibo | null>(null);
 
   esSolicitudPago(): boolean {
+    if (this.mesa?.estado === 'POR_COBRAR') return true;
     const l = this.llamadaActiva;
     if (!l) return false;
     const m = (l.motivo || '').toLowerCase();
     return m.includes('pago') || m.includes('cuenta') || m.includes('efectivo') || m.includes('qr');
+  }
+
+  getMetodoPagoSolicitado(): string {
+    const l = this.llamadaActiva;
+    if (!l?.motivo) return 'EFECTIVO';
+    const m = l.motivo.toLowerCase();
+    if (m.includes('qr')) return 'QR';
+    return 'EFECTIVO';
   }
 
   atenderLlamadaDirecta() {
@@ -669,14 +678,21 @@ export class ComandaDrawerComponent implements OnChanges {
     this.errorMessage.set('');
 
     const payload = {
-      mesaId: this.mesa.id,
-      notas: this.generalNotes(),
-      items: this.comandaItems().map((i) => ({
-        platoId: i.platoId,
-        varianteId: i.varianteId || undefined,
-        cantidad: i.cantidad,
-        notas: i.notas,
-      })),
+      mesaId: Number(this.mesa.id),
+      notas: this.generalNotes()?.trim() || undefined,
+      items: this.comandaItems().map((i) => {
+        const itemObj: any = {
+          platoId: i.platoId,
+          cantidad: Number(i.cantidad),
+        };
+        if (i.varianteId && typeof i.varianteId === 'string' && i.varianteId.trim() !== '') {
+          itemObj.varianteId = i.varianteId.trim();
+        }
+        if (i.notas && typeof i.notas === 'string' && i.notas.trim() !== '') {
+          itemObj.notas = i.notas.trim();
+        }
+        return itemObj;
+      }),
     };
 
     const now = new Date();
@@ -698,7 +714,10 @@ export class ComandaDrawerComponent implements OnChanges {
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.errorMessage.set(err.error?.message || 'Error al guardar la comanda.');
+        const serverMsg = Array.isArray(err.error?.message)
+          ? err.error.message.join('. ')
+          : err.error?.message || err.message || 'Error al guardar la comanda.';
+        this.errorMessage.set(serverMsg);
       },
     });
   }
@@ -721,7 +740,7 @@ export class ComandaDrawerComponent implements OnChanges {
   llamarMesero() {
     if (!this.mesa) return;
     this.http
-      .post(`${this.baseUrl}/pedidos/solicitar-mesero`, {
+      .post(`${this.baseUrl}/pedidos/llamar-mesero`, {
         mesaNumero: this.mesa.numero,
         motivo: 'Solicitud desde el Centro de Mando',
       })

@@ -111,8 +111,8 @@ export class PedidosController {
     const mesa = await this.iaPedidosService.resolverMesa(dto.mesaNumero);
     const motivoTexto = dto.motivo || 'Atención presencial solicitada en mesa';
 
-    // Persistir llamada pendiente en memoria del backend
-    this.pedidosService.registrarLlamadaMesero(mesa.numero, motivoTexto);
+    // Persistir llamada pendiente en memoria del backend y actualizar estado a POR_COBRAR si aplica
+    await this.pedidosService.registrarLlamadaMesero(mesa.numero, motivoTexto, mesa.id);
 
     // Emitir alerta a todos los administradores y garzones
     this.gateway.broadcastLlamarMesero(mesa.numero, motivoTexto);
@@ -160,12 +160,12 @@ export class PedidosController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN', 'MESERO')
+  @Roles('ADMIN', 'MESERO', 'CAJERO')
   crear(
     @CurrentUser('id') userId: string,
     @Body() dto: CrearPedidoDto,
   ) {
-    return this.pedidosService.crearPedido(userId, dto);
+    return this.pedidosService.crearPedido(userId, dto, false, true);
   }
 
   @Get('activos')

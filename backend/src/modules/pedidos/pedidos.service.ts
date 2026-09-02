@@ -21,12 +21,36 @@ export class PedidosService {
 
   private llamadasMeseroPendientes = new Map<string, { mesaNumero: string; motivo: string; timestamp: string }>();
 
-  registrarLlamadaMesero(mesaNumero: string, motivo: string) {
+  async registrarLlamadaMesero(mesaNumero: string, motivo: string, mesaId?: number) {
     this.llamadasMeseroPendientes.set(mesaNumero, {
       mesaNumero,
       motivo,
       timestamp: new Date().toISOString(),
     });
+
+    const esCobro =
+      motivo.toLowerCase().includes('pago') ||
+      motivo.toLowerCase().includes('cuenta') ||
+      motivo.toLowerCase().includes('efectivo') ||
+      motivo.toLowerCase().includes('qr');
+
+    if (esCobro) {
+      try {
+        const mesa = mesaId
+          ? await this.prisma.mesa.findUnique({ where: { id: mesaId } })
+          : await this.prisma.mesa.findUnique({ where: { numero: mesaNumero } });
+
+        if (mesa && mesa.estado !== EstadoMesa.POR_COBRAR) {
+          await this.prisma.mesa.update({
+            where: { id: mesa.id },
+            data: { estado: EstadoMesa.POR_COBRAR },
+          });
+          this.gateway.broadcastMesaEstado(mesa.id, EstadoMesa.POR_COBRAR);
+        }
+      } catch (e) {
+        // En caso de error en actualización de mesa, la llamada aún se registró
+      }
+    }
   }
 
   removerLlamadaMesero(mesaNumero: string) {
@@ -40,9 +64,9 @@ export class PedidosService {
   /**
    * Crea un nuevo pedido para una mesa libre y cambia su estado a ocupada.
    * Si la mesa ya está OCUPADA, agrega los items al pedido activo existente
-   * (soporte multi-ronda para pedidos autónomos por IA).
+   * (soporte multi-ronda para pedidos autónomos por IA y pedidos POS).
    */
-  async crearPedido(meseroId: string, dto: CrearPedidoDto, esIA = false) {
+  async crearPedido(meseroId: string, dto: CrearPedidoDto, esIA = false, esAdmin = false) {
     const { mesaId, items, notas } = dto;
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -54,7 +78,7 @@ export class PedidosService {
 
       // Si la mesa está OCUPADA, agregar items al pedido activo (soporte multi-ronda para admin y para IA)
       if (mesa.estado === EstadoMesa.OCUPADA) {
-        return this.agregarItemsAPedidoActivo(tx, mesaId, meseroId, items, notas);
+        return this.agregarItemsAPedidoActivo(tx, mesaId, meseroId, items, notas, esAdmin);
       }
 
       // Si la mesa está POR_COBRAR, no se puede agregar nada
@@ -87,7 +111,10 @@ export class PedidosService {
         }
 
         // Validación estricta de horario (ej. Caldos 09:00 - 13:00 / Platos 12:00 - 17:00)
-        this.validarHorarioPlato(plato);
+        // Solo aplica a pedidos móviles de clientes por QR / IA. En POS de administración se autoriza al personal.
+        if (!esAdmin) {
+          this.validarHorarioPlato(plato);
+        }
 
         let precioVenta = Number(plato.precioVenta);
         let varianteNombreSnapshot: string | null = null;
@@ -187,6 +214,7 @@ export class PedidosService {
     meseroId: string,
     items: { platoId: string; varianteId?: string; cantidad: number; notas?: string }[],
     notas?: string,
+    esAdmin = false,
   ) {
     // Buscar pedido activo de esta mesa
     const pedidoActivo = await tx.pedido.findFirst({
@@ -216,8 +244,10 @@ export class PedidosService {
         throw new BadRequestException(`El plato "${plato.nombre}" no está disponible`);
       }
 
-      // Validación estricta de horario
-      this.validarHorarioPlato(plato);
+      // Validación estricta de horario solo para pedidos de clientes móviles por QR/IA
+      if (!esAdmin) {
+        this.validarHorarioPlato(plato);
+      }
 
       let precio = Number(plato.precioVenta);
       let varianteNombreSnapshot: string | null = null;

@@ -13,8 +13,8 @@
         <div class="header-main-row">
           <div class="mesa-title-group">
             <h2 class="mesa-title-serif">Mesa {{ mesa?.numero?.replace('M', '') || mesa?.numero }}</h2>
-            <span class="status-pill-cmd" [ngClass]="mesa?.estado?.toLowerCase() || 'ocupada'">
-              {{ mesa?.estado === 'POR_COBRAR' ? 'POR COBRAR' : (mesa?.estado || 'LIBRE') }}
+            <span class="status-pill-cmd" [ngClass]="(mesa?.estado === 'POR_COBRAR' || esSolicitudPago()) ? 'por-cobrar' : (mesa?.estado?.toLowerCase() || 'ocupada')">
+              {{ (mesa?.estado === 'POR_COBRAR' || esSolicitudPago()) ? 'POR COBRAR' : (mesa?.estado || 'LIBRE') }}
             </span>
           </div>
 
@@ -39,6 +39,35 @@
           </div>
         </div>
       </header>
+
+      <!-- ── ALERTA EN TIEMPO REAL: SOLICITUD DE CUENTA / PAGO EN EFECTIVO O QR ── -->
+      @if (llamadaActiva || mesa?.estado === 'POR_COBRAR' || esSolicitudPago()) {
+        <section class="solicitud-pago-banner animate-fade-in">
+          <div class="sp-icon-col">
+            <div class="sp-bell-pulse">
+              <lucide-icon [name]="getMetodoPagoSolicitado() === 'QR' ? 'qr-code' : 'banknote'" [size]="20"></lucide-icon>
+            </div>
+          </div>
+          <div class="sp-text-col">
+            <div class="sp-badge-row">
+              <span class="sp-pill-cuenta">SOLICITUD DE CUENTA</span>
+              <span class="sp-pill-metodo">{{ getMetodoPagoSolicitado() }}</span>
+            </div>
+            <strong class="sp-headline">
+              {{ llamadaActiva?.motivo || 'El comensal ha solicitado la cuenta de la mesa en efectivo' }}
+            </strong>
+            <p class="sp-sub">
+              Mesa pendiente de cobro • Acércate a la mesa con la cuenta o procesa el cobro en caja.
+            </p>
+          </div>
+          <div class="sp-action-col">
+            <button class="btn-cobrar-directo-banner" (click)="abrirCajaModal()" title="Abrir terminal de cobro">
+              <lucide-icon name="credit-card" [size]="14"></lucide-icon>
+              <span>Cobrar</span>
+            </button>
+          </div>
+        </section>
+      }
 
       <!-- ── 4 BOTONES DE ACCIONES RÁPIDAS ── -->
       <section class="quick-actions-bar">
@@ -264,7 +293,11 @@
         </div>
 
         @if (activeSentItems().length > 0) {
-          <button class="btn-proceder-pago" (click)="abrirCajaModal()">
+          <button
+            class="btn-proceder-pago"
+            [class.pulse-cobro]="mesa?.estado === 'POR_COBRAR' || esSolicitudPago()"
+            (click)="abrirCajaModal()"
+          >
             <span>Cerrar Mesa / Cobrar</span>
             <lucide-icon name="wallet" [size]="18"></lucide-icon>
           </button>
@@ -442,6 +475,14 @@
             <span class="lbl-subtotal">Subtotal Nuevos</span>
             <strong class="val-subtotal">Bs. {{ getDraftSubtotal() | number:'1.2-2' }}</strong>
           </div>
+
+          @if (errorMessage()) {
+            <div class="comanda-error-banner animate-fade-in">
+              <lucide-icon name="alert-circle" [size]="14"></lucide-icon>
+              <span>{{ errorMessage() }}</span>
+              <button type="button" class="btn-dismiss-err" (click)="errorMessage.set('')">×</button>
+            </div>
+          }
 
           <button
             class="btn-confirm-send-kitchen"

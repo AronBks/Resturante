@@ -120,6 +120,9 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
       .to(`role:${RolUsuario.ADMIN}`)
       .to(`role:${RolUsuario.CAJERO}`)
       .emit('mesa:estado-actualizado', { mesaId, estado });
+
+    // Emitir globalmente a todos los sockets conectados del panel
+    this.server.emit('mesa:estado-actualizado', { mesaId, estado });
   }
 
   /**

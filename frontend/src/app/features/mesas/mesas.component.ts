@@ -73,6 +73,7 @@ export class MesasComponent implements OnInit, OnDestroy {
   // ── Señales en Tiempo Real y Temporizadores ──
   flashingMesas = signal<Record<number, boolean>>({});
   mesasLlamando = signal<Set<string>>(new Set());
+  llamadasDetalle = signal<Record<string, { motivo: string; timestamp: string }>>({});
   elapsedTimes = signal<Record<number, string>>({});
   autoOpenCobro = signal<boolean>(false);
 
@@ -209,13 +210,6 @@ export class MesasComponent implements OnInit, OnDestroy {
     }
   }
 
-  llamadasDetalle = signal<Record<string, { motivo: string; timestamp: string }>>({});
-
-  getLlamadaMesa(mesa: Mesa | null): { motivo: string; timestamp: string } | null {
-    if (!mesa || !mesa.numero) return null;
-    return this.llamadasDetalle()[mesa.numero] || null;
-  }
-
   cargarLlamadasMesero() {
     this.http.get<any>(`${this.baseUrl}/pedidos/llamadas-mesero`).subscribe({
       next: (res) => {
@@ -264,6 +258,15 @@ export class MesasComponent implements OnInit, OnDestroy {
         setTimeout(() => {
           this.flashingMesas.update((fm) => ({ ...fm, [data.mesaId]: false }));
         }, 1500);
+
+        // Actualización inmediata en memoria de la mesa y del drawer abierto si coincide
+        this.mesas.update((list) =>
+          list.map((m) => (m.id === data.mesaId ? { ...m, estado: data.estado } : m))
+        );
+        if (this.selectedMesa()?.id === data.mesaId) {
+          this.selectedMesa.update((m) => (m ? { ...m, estado: data.estado } : null));
+        }
+
         this.cargarMesas();
       });
 
@@ -291,19 +294,47 @@ export class MesasComponent implements OnInit, OnDestroy {
       });
 
     const subMeseroLlamado = this.socketService
-      .onEvent<{ mesaNumero: string; motivo: string }>('mesero:llamado')
+      .onEvent<{ mesaNumero: string; motivo: string; timestamp?: string }>('mesero:llamado')
       .subscribe((data) => {
         const mesaNum = data?.mesaNumero || 'M01';
+        const motivo = data?.motivo || 'El comensal solicita la presencia de un garzón.';
+        const timestamp = data?.timestamp || new Date().toISOString();
+
         this.mesasLlamando.update((prev) => {
           const next = new Set(prev);
           next.add(mesaNum);
           return next;
         });
+
+        this.llamadasDetalle.update((prev) => ({
+          ...prev,
+          [mesaNum]: { motivo, timestamp },
+        }));
+
         this.agregarEvento({
           tipo: 'ALERTA',
           titulo: `Mesa ${mesaNum}: Asistencia requerida`,
-          descripcion: data?.motivo || 'El comensal solicita la presencia de un garzón.',
+          descripcion: motivo,
         });
+
+        // Si es pago en efectivo o QR, la mesa pasa de inmediato a POR_COBRAR en UI
+        const motLower = motivo.toLowerCase();
+        const esCobro =
+          motLower.includes('pago') ||
+          motLower.includes('cuenta') ||
+          motLower.includes('efectivo') ||
+          motLower.includes('qr');
+
+        if (esCobro) {
+          this.mesas.update((list) =>
+            list.map((m) => (m.numero === mesaNum ? { ...m, estado: 'POR_COBRAR' } : m))
+          );
+          if (this.selectedMesa()?.numero === mesaNum) {
+            this.selectedMesa.update((m) => (m ? { ...m, estado: 'POR_COBRAR' } : null));
+          }
+        }
+
+        this.cargarMesas();
       });
 
     const subPagoConf = this.socketService
@@ -405,6 +436,16 @@ export class MesasComponent implements OnInit, OnDestroy {
       next.delete(mesaNumero);
       return next;
     });
+    this.llamadasDetalle.update((prev) => {
+      const next = { ...prev };
+      delete next[mesaNumero];
+      return next;
+    });
+  }
+
+  getLlamadaMesa(mesa: Mesa | null): { motivo: string; timestamp: string } | null {
+    if (!mesa) return null;
+    return this.llamadasDetalle()[mesa.numero] || null;
   }
 
   closeDrawer() {

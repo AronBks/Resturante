@@ -70,7 +70,12 @@ import {
   SlidersHorizontal,
   ConciergeBell,
   MessageSquare,
-  MessageSquareText
+  MessageSquareText,
+  Phone,
+  Key,
+  ShieldCheck,
+  ChevronDown,
+  History,
 } from 'lucide-angular';
 
 export const appIcons = {
@@ -112,6 +117,8 @@ export const appIcons = {
   LayoutGrid,
   Flame,
   ChevronRight,
+  ChevronDown,
+  History,
   Utensils,
   MoreVertical,
   FolderPlus,
@@ -138,7 +145,10 @@ export const appIcons = {
   SlidersHorizontal,
   ConciergeBell,
   MessageSquare,
-  MessageSquareText
+  MessageSquareText,
+  Phone,
+  Key,
+  ShieldCheck
 };
 
 export const appConfig: ApplicationConfig = {
