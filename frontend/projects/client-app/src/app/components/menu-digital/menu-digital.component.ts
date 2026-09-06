@@ -206,6 +206,7 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   readonly CLOUDINARY_DISHES: Record<string, string> = {
     pique: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788149317/imagen_2026-08-31_000836078_qsx36z.png',
     charque: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148006/imagen_2026-08-30_234644832_rzmnlb.png',
+    matambre: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788727966/imagen_2026-09-06_165244510_bcowih.png',
     planchita: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584019/128-image_web_q0hfc9.jpg',
     lapping: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148549/imagen_2026-08-30_235546907_jepqxy.png',
     pampa: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1768345718/pampaku_xq0ery.jpg',
@@ -261,6 +262,7 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
     // 3. Platos Tradicionales
     if (n.includes('pique')) return this.CLOUDINARY_DISHES['pique'];
     if (n.includes('charque')) return this.CLOUDINARY_DISHES['charque'];
+    if (n.includes('matambre')) return this.CLOUDINARY_DISHES['matambre'];
     if (n.includes('planch')) return this.CLOUDINARY_DISHES['planchita'];
     if (n.includes('lapp')) return this.CLOUDINARY_DISHES['lapping'];
     if (n.includes('pamp')) return this.CLOUDINARY_DISHES['pampa'];
@@ -297,6 +299,7 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
 
     if (n.includes('pique')) return this.CLOUDINARY_DISHES['pique'];
     if (n.includes('charque')) return this.CLOUDINARY_DISHES['charque'];
+    if (n.includes('matambre')) return this.CLOUDINARY_DISHES['matambre'];
     if (n.includes('planch')) return this.CLOUDINARY_DISHES['planchita'];
     if (n.includes('lapp')) return this.CLOUDINARY_DISHES['lapping'];
     if (n.includes('pamp')) return this.CLOUDINARY_DISHES['pampa'];

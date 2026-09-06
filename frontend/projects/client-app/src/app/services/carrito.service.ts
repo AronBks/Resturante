@@ -28,6 +28,7 @@ export interface ResumenPedidoConfirmado {
 const CLOUDINARY_DISHES_MAP: Record<string, string> = {
   pique: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788149317/imagen_2026-08-31_000836078_qsx36z.png',
   charque: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148006/imagen_2026-08-30_234644832_rzmnlb.png',
+  matambre: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788727966/imagen_2026-09-06_165244510_bcowih.png',
   planchita: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584019/128-image_web_q0hfc9.jpg',
   lapping: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148549/imagen_2026-08-30_235546907_jepqxy.png',
   pampa: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1768345718/pampaku_xq0ery.jpg',
@@ -79,6 +80,7 @@ function resolverFotoPlato(nombre: string, imagenOriginal?: string): string | un
   // 3. Platos Tradicionales
   if (n.includes('pique')) return CLOUDINARY_DISHES_MAP['pique'];
   if (n.includes('charque')) return CLOUDINARY_DISHES_MAP['charque'];
+  if (n.includes('matambre')) return CLOUDINARY_DISHES_MAP['matambre'];
   if (n.includes('planch')) return CLOUDINARY_DISHES_MAP['planchita'];
   if (n.includes('lapp')) return CLOUDINARY_DISHES_MAP['lapping'];
   if (n.includes('pamp')) return CLOUDINARY_DISHES_MAP['pampa'];
