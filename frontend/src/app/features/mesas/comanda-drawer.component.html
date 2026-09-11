@@ -41,7 +41,7 @@
       </header>
 
       <!-- ── ALERTA EN TIEMPO REAL: SOLICITUD DE CUENTA / PAGO EN EFECTIVO O QR ── -->
-      @if (llamadaActiva || mesa?.estado === 'POR_COBRAR' || esSolicitudPago()) {
+      @if (llamadaActiva || (mesa?.estado === 'POR_COBRAR' && esSolicitudPago())) {
         <section class="solicitud-pago-banner animate-fade-in">
           <div class="sp-icon-col">
             <div class="sp-bell-pulse">
@@ -50,14 +50,14 @@
           </div>
           <div class="sp-text-col">
             <div class="sp-badge-row">
-              <span class="sp-pill-cuenta">SOLICITUD DE CUENTA</span>
-              <span class="sp-pill-metodo">{{ getMetodoPagoSolicitado() }}</span>
+              <span class="sp-pill-cuenta">{{ llamadaActiva ? 'SOLICITUD DE CUENTA' : 'PRE-CUENTA EMITIDA' }}</span>
+              <span class="sp-pill-metodo">{{ llamadaActiva ? getMetodoPagoSolicitado() : 'CAJA' }}</span>
             </div>
             <strong class="sp-headline">
-              {{ llamadaActiva?.motivo || 'El comensal ha solicitado la cuenta de la mesa en efectivo' }}
+              {{ llamadaActiva?.motivo || 'Mesa pendiente de cobro en caja' }}
             </strong>
             <p class="sp-sub">
-              Mesa pendiente de cobro • Acércate a la mesa con la cuenta o procesa el cobro en caja.
+              {{ llamadaActiva ? 'El comensal ha solicitado la cuenta desde el menú digital • Acércate a la mesa o procesa en caja.' : 'Mesa pendiente de cobro • Acércate a la mesa con la cuenta o procesa el cobro en caja.' }}
             </p>
           </div>
           <div class="sp-action-col">
@@ -159,7 +159,8 @@
                       type="button"
                       class="item-status-selector-btn"
                       [ngClass]="{
-                        'en-cocina': item.estado === 'PENDIENTE' || item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA',
+                        'por-servir': item.estado === 'PENDIENTE',
+                        'en-cocina': item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA',
                         'listo': item.estado === 'LISTO',
                         'servido': item.estado === 'ENTREGADO' || item.estado === 'SERVIDO'
                       }"
@@ -168,7 +169,7 @@
                     >
                       <span class="status-indicator-dot"></span>
                       <span class="status-label-text">
-                        {{ (item.estado === 'ENTREGADO' || item.estado === 'SERVIDO') ? 'Servido' : (item.estado === 'LISTO' ? 'Listo para Servir' : 'En Cocina') }}
+                        {{ (item.estado === 'ENTREGADO' || item.estado === 'SERVIDO') ? 'Servido' : (item.estado === 'LISTO' ? 'Listo para Servir' : (item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA' ? 'En Cocina' : 'Por Servir')) }}
                       </span>
                       <lucide-icon name="chevron-down" [size]="12" class="status-chevron"></lucide-icon>
                     </button>
@@ -181,15 +182,29 @@
                         <button
                           type="button"
                           class="status-option-row"
-                          [class.selected]="item.estado === 'PENDIENTE' || item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"
+                          [class.selected]="item.estado === 'PENDIENTE'"
+                          (click)="cambiarEstadoItemDirecto(item, 'PENDIENTE', $event)"
+                        >
+                          <span class="opt-dot dot-pendiente"></span>
+                          <div class="opt-texts">
+                            <strong>Por Servir</strong>
+                            <span>En espera de preparación</span>
+                          </div>
+                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'PENDIENTE'"></lucide-icon>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="status-option-row"
+                          [class.selected]="item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"
                           (click)="cambiarEstadoItemDirecto(item, 'PREPARANDO', $event)"
                         >
                           <span class="opt-dot dot-cocina"></span>
                           <div class="opt-texts">
                             <strong>En Cocina</strong>
-                            <span>En preparación</span>
+                            <span>En preparación activa</span>
                           </div>
-                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'PENDIENTE' || item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"></lucide-icon>
+                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"></lucide-icon>
                         </button>
 
                         <button
@@ -201,7 +216,7 @@
                           <span class="opt-dot dot-listo"></span>
                           <div class="opt-texts">
                             <strong>Listo para Servir</strong>
-                            <span>Plato preparado</span>
+                            <span>Plato preparado en cocina</span>
                           </div>
                           <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'LISTO'"></lucide-icon>
                         </button>

@@ -569,6 +569,7 @@ _"ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAÍS, EL USO ILÍCITO DE ÉSTA SER�
     this.carritoService.limpiarCarrito();
     try {
       localStorage.removeItem(`tukuypaj_pedido_activo_${this.mesaNumero()}`);
+      sessionStorage.removeItem(`tukuypaj_chat_sesion_${this.mesaNumero()}`);
     } catch (e) {}
     this.pantallaActual.set('completado');
 

@@ -536,6 +536,22 @@
         }
 
         /* Variantes de Estado */
+        &.por-servir {
+          background: rgba(255, 255, 255, 0.05);
+          color: #a89f91;
+          border-color: rgba(255, 255, 255, 0.1);
+
+          .status-indicator-dot {
+            background: #736b5e;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.09);
+            border-color: rgba(229, 193, 88, 0.35);
+            color: #ffffff;
+          }
+        }
+
         &.en-cocina {
           background: #251f18;
           color: #d1c7b7;
@@ -639,6 +655,9 @@
             border-radius: 50%;
             flex-shrink: 0;
 
+            &.dot-pendiente {
+              background: #736b5e;
+            }
             &.dot-cocina {
               background: #9e9484;
             }
