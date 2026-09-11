@@ -577,10 +577,28 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
    * Resuelve el mesaId numérico a partir del número visible (ej: "M03" → 3)
    */
   async resolverMesa(mesaNumero: string): Promise<{ id: number; numero: string; estado: string }> {
-    const mesa = await this.prisma.mesa.findUnique({
+    let mesa = await this.prisma.mesa.findUnique({
       where: { numero: mesaNumero },
       select: { id: true, numero: true, estado: true, activa: true },
     });
+
+    if (!mesa) {
+      const match = mesaNumero.match(/\d+/);
+      if (match) {
+        const num = String(parseInt(match[0], 10)).padStart(2, '0');
+        mesa = await this.prisma.mesa.findFirst({
+          where: {
+            OR: [
+              { numero: `M${num}` },
+              { numero: match[0] },
+              { numero: `Mesa ${match[0]}` },
+              { numero: `Mesa ${num}` },
+            ],
+          },
+          select: { id: true, numero: true, estado: true, activa: true },
+        });
+      }
+    }
 
     if (!mesa || !mesa.activa) {
       throw new BadRequestException(`La mesa "${mesaNumero}" no existe o no está activa.`);

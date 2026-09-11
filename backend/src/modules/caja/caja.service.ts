@@ -190,6 +190,7 @@ export class CajaService {
     this.gateway.broadcastEstadoPedido(pedidoId, EstadoPedido.ENTREGADO);
     this.gateway.broadcastTransaccionCreada(result);
     this.cartaGateway.broadcastPagoConfirmadoPublico(result.mesa.numero, result);
+    this.cartaGateway.broadcastEstadoPedidoPublico(pedidoId, result.mesa.numero, 'PAGADO');
     this.pedidosService.removerLlamadaMesero(result.mesa.numero);
 
     this.logger.log(

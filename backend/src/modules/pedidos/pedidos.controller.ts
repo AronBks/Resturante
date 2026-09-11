@@ -97,9 +97,13 @@ export class PedidosController {
     // Emitir evento especial para toast de IA en el admin
     this.gateway.broadcastPedidoIA(pedido, mesa.numero);
 
-    this.logger.log(`✅ Pedido IA confirmado para Mesa ${dto.mesaNumero} — ID: ${pedido.id}`);
+    const codigoCmd = `CMD-${pedido.id.substring(0, 4).toUpperCase()}`;
 
-    return pedido;
+    return {
+      ...pedido,
+      codigo: codigoCmd,
+      mesaNumero: mesa.numero,
+    };
   }
 
   /**
@@ -184,7 +188,7 @@ export class PedidosController {
 
   @Patch(':id/items/:itemId/estado')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN', 'CHEF')
+  @Roles('ADMIN', 'CHEF', 'MESERO')
   actualizarEstadoItem(
     @Param('id') id: string,
     @Param('itemId') itemId: string,

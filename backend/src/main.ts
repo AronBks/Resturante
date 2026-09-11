@@ -6,7 +6,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const logger = new Logger('Bootstrap');
+  const logger = new Logger('SGGI-Bootstrap');
 
   // Prefijo global para la API
   app.setGlobalPrefix('api');
