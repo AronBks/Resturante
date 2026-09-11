@@ -1,12 +1,11 @@
-<!-- ==========================================================================
-     CIERRE DE CUENTA — Pago, QR Inmersivo, Recibo Digital & Feedback
-     Peña Restaurant Tukuypaj — Cochabamba, Bolivia
+﻿<!-- ==========================================================================
+     CIERRE DE CUENTA — Peña Restaurant Tukuypaj — Cochabamba, Bolivia
      ========================================================================== -->
 
 <div class="cierre-layout">
 
   <!-- ═══════════════════════════════════════════
-       PANTALLA 1: CIERRE DE CUENTA Y PAGO
+       PANTALLA 1: RESUMEN Y SOLICITUD DE PAGO
        ═══════════════════════════════════════════ -->
   @if (pantallaActual() === 'pago') {
 
@@ -27,7 +26,7 @@
       <!-- Título Principal -->
       <section class="cierre-title-section">
         <h2 class="cierre-heading">Cierre de Cuenta</h2>
-        <p class="cierre-subheading">Revisa tu pedido y completa el pago.</p>
+        <p class="cierre-subheading">Revisa tu pedido y elige cómo pagar.</p>
       </section>
 
       <!-- Resumen del Pedido -->
@@ -76,14 +75,14 @@
 
       <!-- Selector de Propina -->
       <section class="propina-section">
-        <h4 class="section-label">PROPINA</h4>
+        <h4 class="section-label">PROPINA (VOLUNTARIA)</h4>
         <div class="propina-chips">
           <button
             class="propina-chip"
             [class.active]="propinaPorcentaje() === 0"
             (click)="seleccionarPropina(0)"
             id="propina-0"
-          >0%</button>
+          >Sin propina</button>
           <button
             class="propina-chip"
             [class.active]="propinaPorcentaje() === 5"
@@ -102,57 +101,6 @@
         <div class="total-pagar-row">
           <span class="total-pagar-label">Total a Pagar</span>
           <strong class="total-pagar-amount">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
-        </div>
-      </section>
-
-      <!-- Datos de Facturación -->
-      <section class="facturacion-card">
-        <div class="facturacion-header-row">
-          <h4 class="facturacion-title">DATOS DE FACTURACIÓN</h4>
-          <span class="facturacion-badge">OFICIAL</span>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">NIT / CI</label>
-          <input
-            type="text"
-            class="form-input"
-            placeholder="Ej. 10293848 (o 0 para sin NIT)"
-            [value]="nit()"
-            (input)="actualizarNit($event)"
-            id="input-nit"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">RAZÓN SOCIAL / NOMBRE</label>
-          <input
-            type="text"
-            class="form-input"
-            placeholder="Nombre completo o Empresa"
-            [value]="razonSocial()"
-            (input)="actualizarRazonSocial($event)"
-            id="input-razon-social"
-          />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">
-            <span>CELULAR (PARA ENVIAR FACTURA A WHATSAPP)</span>
-            <span class="whatsapp-tag">🟢 WhatsApp</span>
-          </label>
-          <div class="phone-input-group">
-            <span class="phone-prefix">+591</span>
-            <input
-              type="tel"
-              class="form-input phone-input"
-              placeholder="Ej. 77912345"
-              [value]="telefono()"
-              (input)="actualizarTelefono($event)"
-              id="input-telefono"
-            />
-          </div>
-          <span class="form-hint">Te enviaremos el comprobante y factura oficial directamente a tu WhatsApp.</span>
         </div>
       </section>
 
@@ -184,7 +132,7 @@
 
     </div>
 
-    <!-- Pie: Botón Confirmar Pago -->
+    <!-- Pie: Botón Llamar Garzón -->
     <footer class="cierre-footer">
       @if (errorPago()) {
         <div class="error-banner">
@@ -201,10 +149,10 @@
       >
         @if (confirmandoPago()) {
           <span class="loader-spinner"></span>
-          <span>PROCESANDO...</span>
+          <span>NOTIFICANDO A CAJA...</span>
         } @else {
-          <span>CONFIRMAR PAGO</span>
-          <lucide-icon name="check-circle-2" [size]="20"></lucide-icon>
+          <lucide-icon name="bell-ring" [size]="20"></lucide-icon>
+          <span>LLAMAR AL GARZÓN</span>
         }
       </button>
     </footer>
@@ -212,246 +160,16 @@
   }
 
   <!-- ═══════════════════════════════════════════
-       PANTALLA 2: PAGO CON CÓDIGO QR Y SUBIDA DE COMPROBANTE
-       ═══════════════════════════════════════════ -->
-  @if (pantallaActual() === 'escaneo-qr') {
-
-    <div class="qr-scanner-screen animate-in">
-
-      <!-- Header -->
-      <header class="cierre-header transparent-header">
-        <button class="header-back" (click)="cancelarQR()" id="btn-qr-back">
-          <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
-        </button>
-        <div class="header-brand">
-          <h1>Tukuypaj</h1>
-        </div>
-        <div class="header-spacer"></div>
-      </header>
-
-      <!-- Contenido Principal con Scroll -->
-      <div class="qr-body">
-        
-        <div class="qr-title-box">
-          <h2 class="qr-heading">Pago con Código QR</h2>
-          <p class="qr-subheading">Escanea o guarda el QR de la tienda con tu app bancaria y sube tu comprobante para verificar</p>
-        </div>
-
-        <!-- Tarjeta del Código QR Oficial de la Tienda -->
-        <div class="qr-card">
-          <div class="qr-card-header">
-            <div class="qr-brand-badge">
-              <lucide-icon name="qr-code" [size]="18"></lucide-icon>
-              <span>SIMPLE QR BANCARIO</span>
-            </div>
-            <div class="qr-total-badge">
-              <span>Total a Transferir</span>
-              <strong>Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
-            </div>
-          </div>
-
-          <!-- Visualizador de QR con Marco Dorado -->
-          <div class="qr-aura-container">
-            <div class="golden-aura-glow"></div>
-            
-            <div class="qr-display-box">
-              <div class="qr-code-graphic">
-                <svg viewBox="0 0 200 200" width="100%" height="100%" class="qr-svg">
-                  <!-- QR Background -->
-                  <rect x="0" y="0" width="200" height="200" fill="#ffffff" rx="16" />
-                  
-                  <!-- Esquinas QR (Finder Patterns) -->
-                  <g fill="#14110e">
-                    <!-- Top Left -->
-                    <rect x="15" y="15" width="45" height="45" rx="8" />
-                    <rect x="22" y="22" width="31" height="31" fill="#ffffff" rx="4" />
-                    <rect x="28" y="28" width="19" height="19" fill="#d4af37" rx="3" />
-
-                    <!-- Top Right -->
-                    <rect x="140" y="15" width="45" height="45" rx="8" />
-                    <rect x="147" y="22" width="31" height="31" fill="#ffffff" rx="4" />
-                    <rect x="153" y="28" width="19" height="19" fill="#d4af37" rx="3" />
-
-                    <!-- Bottom Left -->
-                    <rect x="15" y="140" width="45" height="45" rx="8" />
-                    <rect x="22" y="147" width="31" height="31" fill="#ffffff" rx="4" />
-                    <rect x="28" y="153" width="19" height="19" fill="#d4af37" rx="3" />
-
-                    <!-- Data Grid Elements -->
-                    <rect x="70" y="18" width="12" height="12" rx="2" />
-                    <rect x="90" y="18" width="12" height="12" rx="2" />
-                    <rect x="115" y="18" width="12" height="12" rx="2" />
-                    
-                    <rect x="70" y="38" width="12" height="12" rx="2" fill="#d4af37" />
-                    <rect x="100" y="38" width="24" height="12" rx="2" />
-                    
-                    <rect x="18" y="70" width="12" height="24" rx="2" />
-                    <rect x="38" y="70" width="24" height="12" rx="2" />
-                    <rect x="70" y="70" width="12" height="12" rx="2" fill="#d4af37" />
-                    <rect x="90" y="70" width="20" height="20" rx="3" />
-                    <rect x="120" y="70" width="12" height="12" rx="2" />
-                    <rect x="140" y="70" width="24" height="12" rx="2" />
-                    <rect x="170" y="70" width="12" height="24" rx="2" />
-
-                    <rect x="18" y="100" width="24" height="12" rx="2" />
-                    <rect x="50" y="100" width="12" height="12" rx="2" fill="#d4af37" />
-                    <rect x="135" y="100" width="12" height="24" rx="2" />
-                    <rect x="160" y="100" width="22" height="12" rx="2" />
-
-                    <rect x="70" y="125" width="24" height="12" rx="2" />
-                    <rect x="105" y="125" width="12" height="12" rx="2" fill="#d4af37" />
-                    <rect x="125" y="125" width="24" height="12" rx="2" />
-                    <rect x="160" y="125" width="22" height="22" rx="3" />
-
-                    <rect x="70" y="150" width="12" height="32" rx="2" />
-                    <rect x="90" y="165" width="24" height="12" rx="2" />
-                    <rect x="120" y="150" width="12" height="12" rx="2" fill="#d4af37" />
-                    <rect x="140" y="165" width="12" height="18" rx="2" />
-                  </g>
-
-                  <!-- Central Logo Badge -->
-                  <rect x="76" y="76" width="48" height="48" rx="10" fill="#14110e" stroke="#d4af37" stroke-width="2" />
-                  <text x="100" y="105" font-family="'Playfair Display', serif" font-weight="bold" font-size="20" fill="#e5c158" text-anchor="middle">T</text>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Pasos para pagar -->
-          <div class="qr-steps-banner">
-            <div class="qr-step-item">
-              <span class="step-num">1</span>
-              <span>Guarda la imagen del QR en tu celular</span>
-            </div>
-            <div class="qr-step-item">
-              <span class="step-num">2</span>
-              <span>Abre tu App Bancaria (Simple QR) y transfiere</span>
-            </div>
-            <div class="qr-step-item">
-              <span class="step-num">3</span>
-              <span>Sube el comprobante abajo para confirmar</span>
-            </div>
-          </div>
-
-          <!-- Botón Principal: Guardar QR -->
-          <button class="guardar-qr-primary-btn" (click)="descargarQRImage()" id="btn-guardar-qr">
-            <lucide-icon name="download" [size]="20"></lucide-icon>
-            <span>DESCARGAR / GUARDAR CÓDIGO QR</span>
-          </button>
-        </div>
-
-        <!-- Seccion: Subir Comprobante de Pago -->
-        <div class="comprobante-card">
-          <div class="comprobante-card-header">
-            <h3 class="comprobante-title">
-              <lucide-icon name="upload" [size]="18" class="gold-icon"></lucide-icon>
-              <span>Subir Comprobante de Pago</span>
-            </h3>
-            <p class="comprobante-desc">Adjunta la captura de pantalla o foto del comprobante de transferencia</p>
-          </div>
-
-          <input
-            type="file"
-            #fileInput
-            (change)="onComprobanteSelected($event)"
-            accept="image/*"
-            class="hidden-file-input"
-            id="file-input-comprobante"
-          />
-
-          @if (!comprobantePreviewUrl()) {
-            <!-- Dropzone interactivo -->
-            <div class="upload-dropzone" (click)="fileInput.click()" id="dropzone-comprobante">
-              <div class="upload-icon-circle">
-                <lucide-icon name="image" [size]="28" class="gold-icon"></lucide-icon>
-              </div>
-              <span class="upload-primary-text">Seleccionar foto del comprobante</span>
-              <span class="upload-subtext">Toca aquí para elegir desde tu galería o cámara</span>
-              <span class="upload-formats">JPG, PNG o WEBP (Máx. 5MB)</span>
-            </div>
-          } @else {
-            <!-- Vista Previa del Comprobante -->
-            <div class="preview-box">
-              <div class="preview-img-container">
-                <img [src]="comprobantePreviewUrl()" alt="Comprobante de Pago" class="comprobante-img" />
-                <button class="remove-img-btn" (click)="quitarComprobante($event)" title="Quitar imagen" id="btn-quitar-comprobante">
-                  <lucide-icon name="x" [size]="16"></lucide-icon>
-                </button>
-              </div>
-              <div class="preview-meta">
-                <div class="preview-status">
-                  <lucide-icon name="check-circle-2" [size]="16" class="check-green"></lucide-icon>
-                  <span>Comprobante listo para verificar</span>
-                </div>
-                <span class="preview-filename">{{ comprobanteFile()?.name }}</span>
-              </div>
-            </div>
-          }
-
-          <!-- Nro de Referencia / Comprobante (Opcional) -->
-          <div class="form-group margin-top-12">
-            <label class="form-label">NRO. DE TRANSACCIÓN / REFERENCIA (OPCIONAL)</label>
-            <input
-              type="text"
-              class="form-input"
-              placeholder="Ej: 84920194"
-              [value]="nroTransaccion()"
-              (input)="nroTransaccion.set($any($event.target).value)"
-              id="input-nro-transaccion"
-            />
-          </div>
-
-          @if (errorComprobante()) {
-            <div class="error-banner">
-              <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
-              <span>{{ errorComprobante() }}</span>
-            </div>
-          }
-        </div>
-
-      </div>
-
-      <!-- Pie de Pantalla QR -->
-      <footer class="qr-footer">
-        <button class="qr-cancel-btn" (click)="cancelarQR()" id="btn-qr-cancelar">
-          CANCELAR
-        </button>
-
-        <button
-          class="qr-simulate-btn"
-          [disabled]="verificandoPago()"
-          (click)="verificarYConfirmarPago()"
-          id="btn-qr-simular"
-        >
-          @if (verificandoPago()) {
-            <span class="loader-spinner"></span>
-            <span>VERIFICANDO COMPROBANTE...</span>
-          } @else {
-            <span>{{ comprobantePreviewUrl() ? 'ENVIAR COMPROBANTE Y VERIFICAR' : 'CONFIRMAR PAGO REALIZADO' }}</span>
-            <lucide-icon name="check-circle-2" [size]="20"></lucide-icon>
-          }
-        </button>
-      </footer>
-
-    </div>
-
-  }
-
-  <!-- ═══════════════════════════════════════════
-       PANTALLA INTERMEDIA: NOTIFICACIÓN DE COBRO EN EFECTIVO / QR ENVIADA
+       PANTALLA 2: ESPERANDO CONFIRMACIÓN DE CAJA
        ═══════════════════════════════════════════ -->
   @if (pantallaActual() === 'notificacion-efectivo') {
     <div class="notif-efectivo-screen animate-in">
-      
+
       <!-- Header -->
       <header class="cierre-header transparent-header">
-        <button class="header-back" (click)="volver()" id="btn-cierre-back">
-          <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
-        </button>
         <div class="header-brand">
           <h1>Tukuypaj</h1>
         </div>
-        <div class="header-spacer"></div>
       </header>
 
       <!-- Cuerpo Notificación -->
@@ -460,144 +178,114 @@
           <div class="notif-icon-halo">
             <lucide-icon name="bell-ring" [size]="44" class="notif-gold-icon"></lucide-icon>
           </div>
-          
-          <h2 class="notif-title">¡Notificación Enviada a Caja y Garzón!</h2>
+
+          <h2 class="notif-title">¡Garzón Notificado!</h2>
           <p class="notif-subtext">
-            @if (metodoPago() === 'efectivo') {
-              Hemos avisado al panel de administración de Tukuypaj. Un garzón se dirige a tu mesa para cobrar tu cuenta en efectivo.
-            } @else {
-              Tu comprobante de pago fue enviado al panel de caja para su verificación inmediata.
-            }
+            Hemos avisado a nuestro equipo. Un garzón se dirige a tu mesa para atender tu cuenta.
           </p>
 
           <div class="notif-status-badge">
             <span class="pulse-dot"></span>
-            <span>GARZÓN NOTIFICADO — EN CAMINO 🏃‍♂️</span>
+            <span>GARZÓN EN CAMINO 🏃‍♂️</span>
           </div>
 
           <div class="notif-details-box">
             <div class="detail-row">
-              <span class="detail-label">Mesa / Referencia:</span>
+              <span class="detail-label">Mesa:</span>
               <span class="detail-val">Mesa {{ mesaNumero() }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Método de Pago:</span>
+              <span class="detail-label">Método:</span>
               <span class="detail-val">{{ (metodoPago() || 'Efectivo') | uppercase }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Total a Cancelar:</span>
+              <span class="detail-label">Total:</span>
               <span class="detail-val gold">Bs. {{ totalConPropina() | number:'1.2-2' }}</span>
             </div>
           </div>
 
-          <div class="notif-tip-box security-tip">
-            <p>🔒 <strong>Seguridad Tributaria:</strong> Por normativa fiscal, tu Factura Digital Oficial y código de control se desbloquearán automáticamente en esta pantalla en cuanto el garzón registre tu cobro en caja.</p>
+          <div class="notif-tip-box">
+            <p>🔒 Tu sesión permanece activa hasta que el pago sea confirmado por caja.</p>
           </div>
         </div>
       </div>
 
-      <!-- Pie con Estado de Espera en Vivo -->
+      <!-- Pie de espera en vivo -->
       <footer class="qr-footer">
         <div class="waiting-payment-box">
           <span class="loader-spinner gold"></span>
-          <span>ESPERANDO CONFIRMACIÓN DE PAGO EN CAJA...</span>
+          <span>ESPERANDO CONFIRMACIÓN DE CAJA...</span>
         </div>
       </footer>
     </div>
   }
 
   <!-- ═══════════════════════════════════════════
-       PANTALLA 3: RECIBO DIGITAL PREMIUM
+       PANTALLA 3: PAGO CONFIRMADO — TICKET SIMPLE
        ═══════════════════════════════════════════ -->
   @if (pantallaActual() === 'recibo-digital') {
 
     <div class="recibo-screen animate-in">
 
-      <!-- Header del Recibo -->
+      <!-- Cabecera -->
       <header class="recibo-header">
-        <button class="recibo-close-box" (click)="finalizarDirecto()" aria-label="Cerrar">
-          <lucide-icon name="x" [size]="20"></lucide-icon>
-        </button>
-        <h2 class="recibo-title">Recibo Digital Oficial</h2>
-        <div class="drawer-header-spacer"></div>
+        <h2 class="recibo-title">Cuenta Cancelada</h2>
       </header>
 
-      <!-- Contenedor del Recibo Digital Ticket -->
+      <!-- Contenido central -->
       <div class="recibo-body">
-
         <article class="ticket-card">
 
-          <!-- Cabecera del Ticket: Checkmark y Agradecimiento -->
+          <!-- Icono y mensaje principal -->
           <div class="ticket-top-section">
             <div class="check-gold-box">
-              <lucide-icon name="check-circle-2" [size]="32" class="check-gold-icon"></lucide-icon>
+              <lucide-icon name="check-circle-2" [size]="52" class="check-gold-icon"></lucide-icon>
             </div>
             <h3 class="ticket-thanks-heading">¡Pago Confirmado!</h3>
-            <p class="ticket-thanks-sub">Factura electrónica emitida exitosamente.</p>
-            <div class="ticket-fiscal-badge">
-              <span class="pulse-dot-green"></span>
-              <strong>{{ facturaEmitida()?.nroFactura || 'FAC-2026-0042' }}</strong>
-            </div>
-            <span class="ticket-brand-tag">PEÑA RESTAURANT TUKUYPAJ S.R.L.</span>
+            <p class="ticket-thanks-sub">Gracias por su visita. Esperamos verle pronto.</p>
+            <span class="ticket-brand-tag">PEÑA RESTAURANT TUKUYPAJ</span>
           </div>
 
-          <!-- Muescas Lateral Estilo Ticket -->
+          <!-- Separador estilo ticket -->
           <div class="ticket-notches-row">
             <div class="notch left"></div>
             <div class="dashed-ticket-line"></div>
             <div class="notch right"></div>
           </div>
 
-          <!-- Cuerpo con Detalle de Comanda y Facturación -->
+          <!-- Detalle del consumo -->
           <div class="ticket-middle-section">
-            <!-- Metadatos de la Factura -->
             <div class="ticket-meta-box">
               <div class="ticket-meta-row">
                 <span class="table-label">Mesa {{ mesaNumero() }}</span>
                 <span class="date-label">{{ fechaHoraActual() }}</span>
               </div>
               <div class="ticket-client-row">
-                <span class="client-label">Razón Social:</span>
-                <strong class="client-val">{{ razonSocial() || facturaEmitida()?.razonSocialCliente || 'Cliente Final' }}</strong>
-              </div>
-              <div class="ticket-client-row">
-                <span class="client-label">NIT / CI:</span>
-                <strong class="client-val">{{ nit() || facturaEmitida()?.nitCliente || '0' }}</strong>
-              </div>
-              <div class="ticket-client-row">
                 <span class="client-label">Método:</span>
-                <span class="client-val payment-tag">{{ (metodoPago() || 'QR').toUpperCase() }}</span>
+                <span class="client-val payment-tag">{{ (metodoPago() || 'EFECTIVO').toUpperCase() }}</span>
               </div>
             </div>
 
             <div class="ticket-inner-dashed"></div>
 
-            <!-- Desglose de Ítems del Pedido -->
+            <!-- Ítems del pedido -->
             <div class="ticket-items-list">
-              @if (facturaEmitida(); as fac) {
-                @for (item of fac.items; track $index) {
+              @if (pedido(); as p) {
+                @for (item of p.items; track $index) {
                   <div class="ticket-item-row">
                     <div class="item-name-qty">
                       <span class="name">{{ item.nombre }}</span>
                       <span class="qty">x{{ item.cantidad }}</span>
                     </div>
-                    <span class="price">Bs. {{ item.subtotal | number:'1.2-2' }}</span>
+                    <span class="price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
                   </div>
                 }
-              } @else {
-                <div class="ticket-item-row">
-                  <div class="item-name-qty">
-                    <span class="name">Charque Tradicional</span>
-                    <span class="qty">x1</span>
-                  </div>
-                  <span class="price">Bs. {{ subtotal() | number:'1.2-2' }}</span>
-                </div>
               }
             </div>
 
             <div class="ticket-inner-dashed"></div>
 
-            <!-- Resumen Financiero Formal -->
+            <!-- Totales -->
             <div class="ticket-totals-box">
               <div class="ticket-calc-row">
                 <span>SUBTOTAL</span>
@@ -605,7 +293,7 @@
               </div>
               @if (propinaMonto() > 0) {
                 <div class="ticket-calc-row tip">
-                  <span>PROPINA (VOLUNTARIA)</span>
+                  <span>PROPINA VOLUNTARIA</span>
                   <span>Bs. {{ propinaMonto() | number:'1.2-2' }}</span>
                 </div>
               }
@@ -617,7 +305,7 @@
 
             <div class="ticket-inner-dashed"></div>
 
-            <!-- Cita / Don Roberto -->
+            <!-- Cita de Don Roberto -->
             <div class="ticket-quote-section">
               <div class="award-gold-box">
                 <lucide-icon name="award" [size]="24" class="award-icon"></lucide-icon>
@@ -627,35 +315,21 @@
             </div>
           </div>
 
-          <!-- Acciones de Descarga y WhatsApp -->
-          <div class="ticket-actions-section">
-            <button class="whatsapp-share-btn" (click)="enviarFacturaWhatsApp()" id="btn-factura-whatsapp">
-              <lucide-icon name="send" [size]="18"></lucide-icon>
-              <span>ENVIAR POR WHATSAPP</span>
-            </button>
-
-            <button class="pdf-download-btn" (click)="descargarFacturaPDF()" id="btn-factura-pdf">
-              <lucide-icon name="download" [size]="18"></lucide-icon>
-              <span>DESCARGAR FACTURA PDF</span>
-            </button>
-          </div>
-
         </article>
-
       </div>
 
-      <!-- Pie con Opciones de Finalización / Evaluación Opcional -->
+      <!-- Pie con opciones -->
       <footer class="recibo-footer">
         <div class="evaluation-prompt-card">
-          <h4 class="prompt-title">¿Deseas evaluar tu experiencia en Tukuypaj?</h4>
-          <p class="prompt-sub">Tu opinión nos ayuda a mantener nuestra tradición culinaria.</p>
+          <h4 class="prompt-title">¿Deseas calificar tu experiencia?</h4>
+          <p class="prompt-sub">Tu opinión nos ayuda a mejorar cada día.</p>
           <div class="prompt-actions-row">
-            <button class="prompt-btn-rate" (click)="irAFeedback()">
+            <button class="prompt-btn-rate" (click)="irAFeedback()" id="btn-ir-feedback">
               <lucide-icon name="star" [size]="18"></lucide-icon>
-              <span>Calificar Atención</span>
+              <span>Calificar</span>
             </button>
-            <button class="prompt-btn-finish" (click)="finalizarDirecto()">
-              <span>Finalizar y Salir</span>
+            <button class="prompt-btn-finish" (click)="finalizarDirecto()" id="btn-finalizar-directo">
+              <span>Volver a la Carta</span>
               <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
             </button>
           </div>
@@ -673,7 +347,7 @@
 
     <div class="feedback-screen animate-in">
 
-      <!-- Ícono Premium de Tenedores -->
+      <!-- Ícono Premium -->
       <div class="feedback-hero-icon">
         <lucide-icon name="utensils-crossed" [size]="42"></lucide-icon>
       </div>
@@ -707,7 +381,7 @@
         </div>
       </section>
 
-      <!-- Su Mesero -->
+      <!-- Su Asistente -->
       <section class="mesero-section">
         <div class="mesero-avatar-box">
           <div class="mesero-avatar-circle">
@@ -715,12 +389,12 @@
           </div>
         </div>
         <div class="mesero-info">
-          <span class="mesero-label">SU MESERO</span>
+          <span class="mesero-label">SU ASISTENTE IA</span>
           <span class="mesero-nombre">Don Beto</span>
         </div>
       </section>
 
-      <!-- Evaluación Rápida (Excelente / Regular / A Mejorar) -->
+      <!-- Evaluación Rápida -->
       <section class="eval-rapida-grid">
         <button
           class="eval-btn"
@@ -770,7 +444,7 @@
         </button>
 
         <button class="omitir-feedback-btn" (click)="finalizarDirecto()" type="button" id="btn-omitir-feedback">
-          Omitir y Finalizar
+          Omitir y Volver a la Carta
         </button>
       </footer>
 
@@ -791,66 +465,9 @@
       <p class="completado-desc">
         Tu cuenta ha sido cerrada exitosamente. Gracias por elegir <strong>Peña Restaurant Tukuypaj</strong>.
       </p>
-      <p class="completado-redirect">Redirigiendo a la carta...</p>
+      <p class="completado-redirect">Volviendo a la carta...</p>
     </div>
 
-  }
-
-  <!-- ═══════════════════════════════════════════
-       MODAL DE NÚMERO DE WHATSAPP (VALIDACIÓN)
-       ═══════════════════════════════════════════ -->
-  @if (mostrarModalWhatsApp()) {
-    <div class="whatsapp-modal-overlay animate-in" (click)="cerrarModalWhatsApp()">
-      <div class="whatsapp-modal-card" (click)="$event.stopPropagation()">
-        
-        <div class="modal-header-row">
-          <div class="modal-icon-wa">
-            <lucide-icon name="send" [size]="20"></lucide-icon>
-          </div>
-          <button class="modal-close-btn" (click)="cerrarModalWhatsApp()" type="button" aria-label="Cerrar modal">
-            <lucide-icon name="x" [size]="18"></lucide-icon>
-          </button>
-        </div>
-
-        <h3 class="modal-wa-title">Enviar Factura a tu WhatsApp</h3>
-        <p class="modal-wa-sub">
-          Ingresa tu número de celular boliviano (8 dígitos) para enviarte la factura digital y tu comprobante oficial de Mesa {{ mesaNumero() }}.
-        </p>
-
-        <div class="modal-phone-group">
-          <span class="modal-prefix">+591</span>
-          <input
-            type="tel"
-            class="modal-phone-input"
-            placeholder="Ej: 71234567"
-            maxlength="8"
-            [value]="telefonoWhatsAppInput()"
-            (input)="actualizarTelefonoModal($event)"
-            (keydown.enter)="confirmarModalWhatsApp()"
-            autofocus
-            id="input-wa-modal"
-          />
-        </div>
-
-        @if (errorWhatsApp()) {
-          <div class="modal-wa-error">
-            <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
-            <span>{{ errorWhatsApp() }}</span>
-          </div>
-        }
-
-        <div class="modal-wa-actions">
-          <button class="modal-wa-cancel" (click)="cerrarModalWhatsApp()" type="button">
-            Cancelar
-          </button>
-          <button class="modal-wa-send" (click)="confirmarModalWhatsApp()" type="button" id="btn-confirmar-wa">
-            <span>Abrir en WhatsApp</span>
-            <lucide-icon name="send" [size]="16"></lucide-icon>
-          </button>
-        </div>
-
-      </div>
-    </div>
   }
 
 </div>

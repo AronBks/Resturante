@@ -1,28 +1,28 @@
-# 🍽️ SGGI — Sistema de Gestión Gastronómica Inteligente
+﻿# 🍽️ SGGI — Sistema de Gestión Gastronómica Inteligente
 
-> **Peña Restaurant Tukuypaj** — Cochabamba, Bolivia  
-> Plataforma omnicanal de alta fidelidad para la digitalización operativa integral: carta digital interactiva, asistente IA, comanda en sala, monitor de cocina, facturación electrónica y control de caja en tiempo real.
+> **Peña Restaurant Tukuypaj** — Cochabamba, Bolivia
+> Plataforma omnicanal de alta fidelidad para la digitalización operativa integral: carta digital interactiva, asistente IA, comanda en sala, monitor de cocina y control de caja en tiempo real.
 
 ---
 
 ## 📑 Tabla de Contenidos
 
 - [Descripción General](#-descripción-general)
-- [Arquitectura del Sistema](#-arquitectura-del-sistema)
-- [Stack Tecnológico](#-stack-tecnológico)
+- [Arquitectura del Sistema](#️-arquitectura-del-monorepo)
+- [Stack Tecnológico](#️-stack-tecnológico)
 - [Mapa de Puertos y Servicios](#-mapa-de-puertos-y-servicios)
 - [Ecosistema de Módulos](#-ecosistema-de-módulos)
-  - [1. App del Cliente (Carta Digital & Auto-atención)](#1-app-del-cliente-carta-digital--auto-atención)
-  - [2. Panel Administrativo & POS de Salón](#2-panel-administrativo--pos-de-salón)
+  - [1. App del Cliente — Carta Digital y Don Beto IA](#1-app-del-cliente--carta-digital-y-don-beto-ia)
+  - [2. Panel Administrativo y POS de Salón](#2-panel-administrativo-y-pos-de-salón)
   - [3. Display de Cocina en Tiempo Real](#3-display-de-cocina-en-tiempo-real)
-  - [4. Módulo de Facturación & Control de Caja](#4-módulo-de-facturación--control-de-caja)
+  - [4. Control de Caja](#4-control-de-caja)
 - [Lógica de Negocio: Horarios y Turnos](#-lógica-de-negocio-horarios-y-turnos)
 - [Eventos WebSocket en Tiempo Real](#-eventos-websocket-en-tiempo-real)
 - [Diseño y Experiencia Visual](#-diseño-y-experiencia-visual)
 - [Guía de Instalación y Despliegue](#-guía-de-instalación-y-despliegue)
 - [Scripts del Monorepo](#-scripts-del-monorepo)
 - [Variables de Entorno](#-variables-de-entorno)
-- [Estructura del Repositorio](#-estructura-del-repositorio)
+- [Estructura del Repositorio](#️-estructura-del-repositorio)
 - [Licencia](#-licencia)
 
 ---
@@ -32,10 +32,11 @@
 **SGGI** (Sistema de Gestión Gastronómica Inteligente) es una solución integral full-stack concebida para modernizar y optimizar la experiencia culinaria y operativa de la **Peña Restaurant Tukuypaj**.
 
 El sistema sincroniza en milisegundos a todos los actores del restaurante:
-1. **Comensales**: Exploran la carta desde sus dispositivos móviles mediante códigos QR en las mesas, interactúan con el asistente inteligente "Don Beto", ordenan platos y bebidas, solicitan atención del garzón y efectúan el pago vía QR o efectivo.
-2. **Garzones / Meseros**: Monitorean el salón en un plano interactivo interactivo, reciben alertas en vivo de llamadas a mesero, despachan platos y gestionan comandas desde tablets o terminales.
-3. **Cocina (Chefs)**: Visualizan comandas organizadas por orden de llegada con tiempos transcurridos, gestionando el ciclo de vida de cada plato (`PENDIENTE` ➔ `EN_PREPARACION` ➔ `LISTO` ➔ `SERVIDO`).
-4. **Caja y Administración**: Controlan aperturas y arqueos de caja, procesan pagos, emiten facturas PDF con QR tributario oficial, envían recibos por WhatsApp y analizan KPIs de ventas del día.
+
+1. **Comensales**: Exploran la carta desde sus dispositivos móviles mediante códigos QR en las mesas, interactúan con el asistente inteligente **"Don Beto"** en lenguaje natural, ordenan platos y bebidas, solicitan atención del garzón y confirman el pago vía QR o efectivo.
+2. **Garzones / Meseros**: Monitorean el salón en un plano interactivo, reciben alertas en vivo de llamadas, despachan platos y gestionan comandas desde tablets o terminales.
+3. **Cocina (Chefs)**: Visualizan comandas organizadas por orden de llegada con tiempos transcurridos y gestionan el ciclo de vida de cada plato (`PENDIENTE` ➔ `EN_PREPARACION` ➔ `LISTO` ➔ `SERVIDO`).
+4. **Caja y Administración**: Controlan aperturas y arqueos de turno, confirman pagos de mesa, gestionan la disponibilidad del menú y analizan KPIs de ventas del día.
 
 ---
 
@@ -74,7 +75,6 @@ Restaurante/
 | **Frontend Core** | Angular 19 (Standalone) | Componentes autónomos, reactividad con Angular Signals y Zoneless-ready |
 | **Diseño & UI** | Vanilla SCSS + Lucide | Sistema de diseño obsidian-gold de lujo, glassmorphism e iconos vectoriales |
 | **Multimedia CDN** | Cloudinary CDN | Entrega de imágenes optimizadas en alta definición para platos y bebidas |
-| **Documentos & Facturas** | jsPDF + QRCode | Generación de facturas electrónicas PDF y códigos QR tributarios |
 | **Contenedores** | Docker & Docker Compose | Aprovisionamiento local reproducible de base de datos y herramientas |
 
 ---
@@ -85,41 +85,53 @@ Cuando ejecutas el entorno de desarrollo completo, los servicios quedan disponib
 
 | Servicio | Puerto Local | URL | Descripción |
 |---|:---:|---|---|
-| 📱 **Carta Digital (Cliente)** | `4201` | [http://localhost:4201](http://localhost:4201) | Menú móvil interactivo, carrito, asistente Don Beto y cobro |
+| 📱 **Carta Digital (Cliente)** | `4201` | [http://localhost:4201](http://localhost:4201) | Menú móvil interactivo, carrito y asistente Don Beto |
 | 🖥️ **Panel Administrativo (POS)** | `4200` | [http://localhost:4200](http://localhost:4200) | Dashboard de control, plano de mesas, cocina y caja |
 | 🔧 **API REST & WebSockets** | `3000` | [http://localhost:3000/api](http://localhost:3000/api) | Servidor NestJS y gateway de sockets |
 | 🗄️ **pgAdmin 4** | `5050` | [http://localhost:5050](http://localhost:5050) | Administrador visual de base de datos PostgreSQL |
-| 🐘 **PostgreSQL (Local Docker)** | `5432` / `5433` | `localhost:5432` | Base de datos relacional (o puerto 6543 en Supabase) |
+| 🐘 **PostgreSQL (Local Docker)** | `5432` | `localhost:5432` | Base de datos relacional |
 | ⚡ **Redis Cache** | `6379` | `localhost:6379` | Servidor Redis para pub/sub y caché |
 
 ---
 
 ## ✨ Ecosistema de Módulos
 
-### 1. App del Cliente (Carta Digital & Auto-atención)
+### 1. App del Cliente — Carta Digital y Don Beto IA
 
 *Acceso desde dispositivo móvil vía QR de mesa (`http://localhost:4201/?mesa=1`)*
 
 - **Landing Hero de Bienvenida**: Diseño "Lujo Nocturno" con detección y persistencia de mesa asignada en `localStorage`.
+
 - **Menú Digital Reactivo**:
   - Catálogo categorizado con imágenes culinarias HD alojadas en Cloudinary.
-  - Formato de pedestal y silueta transparente sin recuadros toscos para bebidas embotelladas.
-  - Indicadores de estado en tiempo real (badges verdes "Disponible ahora" o naranjas con el horario programado).
+  - Formato de pedestal y silueta transparente para bebidas embotelladas.
+  - Indicadores de disponibilidad en tiempo real (badge verde "Disponible ahora" o naranja con horario programado).
   - Selector de variantes de platos (Entero, Medio, Especial) con recálculo dinámico de precios.
-- **Asistente Culinario IA ("Don Beto")**:
-  - Desarrollado sobre Google Gemini.
-  - Toma pedidos en lenguaje natural conversacional, clarifica preferencias, confirma cantidades y envía la comanda automáticamente al sistema.
+
+- **Asistente Culinario IA "Don Beto"** *(la pieza central del sistema)*:
+  - Desarrollado sobre **Google Gemini API** con contexto gastronómico completo del restaurante.
+  - El comensal habla en lenguaje natural: *"quiero un chicharrón sin locoto y dos singanis"*.
+  - Don Beto interpreta el pedido, desambigúa nombres similares (ej. Caldo de Cola vs. Coca Cola), clarifica preferencias, acumula ítems durante la conversación y los envía automáticamente a cocina cuando el cliente confirma.
+  - **Auto-marcado a cocina**: Al detectar intención de confirmar el pedido (frases como "eso sería todo", "mándalo"), Don Beto dispara la comanda directamente al backend sin necesitar intervención del garzón.
+  - Reinicio de sesión controlado: Al confirmarse el pago de la mesa, la sesión de chat se limpia automáticamente para el siguiente comensal.
+
 - **Carrito de Compras**:
-  - Control de notas personalizadas por ítem (e.g. *"sin locoto"*, *"bien cocido"*).
-  - Agrupación inteligente y desglose del total.
+  - Notas personalizadas por ítem (*"sin locoto"*, *"bien cocido"*, *"con papa"*).
+  - Agrupación inteligente y desglose del total acumulado.
+  - Sincronización bidireccional entre el carrito manual y el carrito de Don Beto.
+
 - **Llamar al Garzón en Tiempo Real**:
   - Botón flotante accesible en todo momento para pedir asistencia.
   - Selección de motivo predeterminado (Atención general, servilletas, cubiertos, etc.).
   - Banner de confirmación en pantalla: *"¡Garzón en camino a tu mesa!"* una vez que el mesero pulsa "Atender".
-- **Cierre de Cuenta & Métodos de Pago**:
-  - **Pago Simple QR / BNB**: Muestra el código QR bancario oficial con descarga inmediata y opción para adjuntar comprobante.
-  - **Pago en Efectivo**: Notifica al instante a caja y al garzón para cobrar en mesa.
-  - **Recibo Digital en Vivo**: Visualización cinematográfica del detalle consumido, desglose de impuestos/propina y estado de confirmación.
+
+- **Cierre de Cuenta Simplificado**:
+  - Resumen visual del pedido con desglose por ítem y totales.
+  - Propina voluntaria (0%, 5%, 10%) con cálculo automático.
+  - Selección de método de pago: **Efectivo** o **QR**.
+  - Botón **"Llamar al Garzón"** que notifica en tiempo real al panel administrativo.
+  - Pantalla de espera con indicador en vivo hasta recibir la confirmación de caja vía WebSocket.
+  - Al confirmar el pago: pantalla de **Cuenta Cancelada** con detalle del consumo, opciones de calificar la experiencia o volver directamente a la carta.
 
 ---
 
@@ -130,45 +142,46 @@ Cuando ejecutas el entorno de desarrollo completo, los servicios quedan disponib
 - **Plano Interactivo del Salón**:
   - Representación gráfica de todas las mesas del restaurante.
   - Estados sincronizados en tiempo real: `LIBRE`, `OCUPADA`, `POR_COBRAR`.
-  - Alerta visual dorada parpadeante cuando una mesa solicita la cuenta en efectivo.
-  - Indicador de campana de llamado activo con botón directo **"Atender Mesero"**.
+  - Alerta visual dorada parpadeante cuando una mesa solicita atención o la cuenta.
+  - Botón de confirmación **"Atender"** que notifica al comensal en su dispositivo.
+
 - **Comanda Drawer Avanzado**:
   - Apertura lateral táctil al seleccionar cualquier mesa.
   - Búsqueda instantánea de platos con imágenes oficiales.
-  - Edición flexible de comandas en sala (inclusión de platos fuera de horario de cocina regular con autorización de mesero).
+  - Edición flexible de comandas en sala.
   - Tiempos reales transcurridos desde la emisión de cada orden.
   - Botón de cobro rápido integrado al módulo de caja.
+
 - **Gestión de la Carta**:
   - Administración de platos, categorías, precios de venta y variantes.
   - Configuración de franjas horarias de servicio por plato.
   - Toggle de disponibilidad inmediata (agotado / activo).
-- **Gestión del Equipo de Trabajo (Usuarios & RBAC)**:
-  - Creación y edición de personal con roles estrictos: `ADMIN`, `MESERO`, `CHEF`, `CAJERO`.
-  - Validaciones de integridad: protección contra auto-eliminación o degradación de la cuenta con la que se inició sesión.
+
+- **Gestión del Equipo (Usuarios & RBAC)**:
+  - Creación y edición de personal con roles: `ADMIN`, `MESERO`, `CHEF`, `CAJERO`.
+  - Validaciones de integridad: protección contra auto-eliminación o degradación de cuenta propia.
 
 ---
 
 ### 3. Display de Cocina en Tiempo Real
 
 - Vista de alta visibilidad para pantallas táctiles en la zona de cocina.
-- Monitor de comandas en orden cronológico (FIFO).
-- Control granular por plato: de `PENDIENTE` a `EN_PREPARACION` y `LISTO`.
+- Monitor de comandas en orden cronológico (FIFO) con tiempos transcurridos.
+- Control granular por plato: `PENDIENTE` → `EN_PREPARACION` → `LISTO`.
 - Acción masiva **"Servir todos los ítems"** para agilizar la entrega de mesas completas.
-- Alertas sonoras y visuales automáticas al ingresar nuevas comandas desde clientes o meseros.
+- Alertas sonoras y visuales automáticas al ingresar nuevas comandas.
 
 ---
 
-### 4. Módulo de Facturación & Control de Caja
+### 4. Control de Caja
 
-- **Gestión de Turnos de Caja**:
-  - Apertura con monto inicial, control continuo y arqueo ciego al cierre.
-  - Sincronización de eventos de caja vía WebSockets (`caja:cerrada`, `transaccion:creada`).
-- **Cobro Seguro & Emisión de Comprobantes**:
-  - Desbloqueo en vivo del recibo del cliente al procesar el pago en caja.
-  - Modal interactivo con cálculo automático de cambio según el efectivo recibido.
-- **Facturación Digital Tributaria**:
-  - Generación en cliente de **Factura PDF oficial** con código QR normativo y código de control.
-  - Botón directo para compartir el comprobante / factura a través de la API de **WhatsApp Web** (`wa.me`) con mensaje personalizado al cliente.
+- **Gestión de Turnos**:
+  - Apertura con monto inicial, control continuo y arqueo al cierre de turno.
+  - Sincronización de eventos vía WebSockets (`caja:cerrada`, `transaccion:creada`).
+- **Cobro y Confirmación de Pago**:
+  - Al procesar el pago de una mesa, el evento `pagoConfirmado` se emite vía WebSocket al dispositivo del comensal.
+  - El cliente ve en tiempo real la confirmación de su cuenta cancelada.
+  - Modal de cobro con cálculo automático de cambio para pagos en efectivo.
 
 ---
 
@@ -192,8 +205,9 @@ Bebidas: ├──────────────────────�
          │ Refrescos, Jugos, Cervezas, Aguas...                    │
 ```
 
-- **En la App del Cliente**: Si un plato está fuera de horario, se muestra un badge naranja informativo y se deshabilita la adición directa para evitar fricción en cocina.
-- **En el POS Administrativo**: El garzón o cajero dispone de la flexibilidad de registrar cualquier ítem ante solicitudes especiales autorizadas.
+- **En la App del Cliente**: Si un plato está fuera de horario, se muestra un badge naranja informativo y se deshabilita la adición directa.
+- **En el POS Administrativo**: El garzón puede registrar cualquier ítem ante solicitudes especiales autorizadas.
+- **Don Beto IA**: Conoce los horarios del menú y avisa proactivamente al comensal si pide algo fuera de temporada.
 
 ---
 
@@ -205,13 +219,13 @@ El sistema utiliza un Gateway WebSocket en NestJS con salas y eventos tipados co
 |---|---|---|---|
 | `pedido:creado` | App Cliente / Admin | Salón, Cocina, Caja | Ingresa comanda a cola de cocina |
 | `pedido:ia-creado` | Asistente Don Beto | Salón, Cocina, Caja | Notifica comanda completada por IA |
-| `pedido:estado-actualizado`| Cocina / Mesero | Salón, App Cliente | Actualiza progreso de plato/mesa |
-| `mesa:estado-actualizado`  | Backend / Mesero | Salón, Caja | Cambia estado visual (Libre / Ocupada / Cobro) |
-| `mesero:llamado`           | App Cliente | Panel Meseros / Admin | Dispara alerta sonora y visual en plano de salón |
-| `mesero:atendido`          | Mesero (Panel) | App Cliente | Muestra banner flotante: *"Garzón en camino"* |
-| `pago:solicitado`          | App Cliente | Panel Meseros / Caja | Marca mesa en estado `POR_COBRAR` (alerta dorada) |
-| `transaccion:creada`       | Caja | Dashboard, Salón | Registra cobro y libera la mesa |
-| `menu:actualizado`         | Admin Carta | App Cliente, Salón | Refresca catálogo y disponibilidad al instante |
+| `pedido:estado-actualizado` | Cocina / Mesero | Salón, App Cliente | Actualiza progreso de plato/mesa |
+| `mesa:estado-actualizado` | Backend / Mesero | Salón, Caja | Cambia estado visual (Libre / Ocupada / Por Cobrar) |
+| `mesero:llamado` | App Cliente | Panel Meseros / Admin | Dispara alerta sonora y visual en plano de salón |
+| `mesero:atendido` | Mesero (Panel) | App Cliente | Muestra banner flotante: *"Garzón en camino"* |
+| `pago:solicitado` | App Cliente | Panel Meseros / Caja | Marca mesa en estado `POR_COBRAR` (alerta dorada) |
+| `transaccion:creada` | Caja | App Cliente, Salón | Confirma el pago y libera la mesa al cliente |
+| `menu:actualizado` | Admin Carta | App Cliente, Salón | Refresca catálogo y disponibilidad al instante |
 
 ---
 
@@ -255,7 +269,7 @@ cp .env.example .env
 ```
 
 > [!NOTE]
-> Revisa el archivo `.env` para verificar tu conexión a base de datos (PostgreSQL en Docker local o conexión a Supabase Pooler).
+> Revisa el archivo `.env` para verificar tu conexión a base de datos (PostgreSQL en Docker local o conexión a Supabase Pooler) y tu clave de la API de Google Gemini para el asistente Don Beto.
 
 ---
 
@@ -338,7 +352,7 @@ El script de seed (`npm run db:seed`) inicializa los siguientes perfiles de prue
 | **ADMIN** | `admin@tukuypaj.com` | `admin123` | Acceso irrestricto a todo el sistema y configuración |
 | **MESERO** | `mesero@tukuypaj.com` | `mesero123` | Mapa de salón, apertura y despacho de comandas |
 | **CHEF** | `cocina@tukuypaj.com` | `cocina123` | Visualizador de pedidos y cambio de estados en cocina |
-| **CAJERO** | `caja@tukuypaj.com` | `caja123` | Control de caja, transacciones y facturación |
+| **CAJERO** | `caja@tukuypaj.com` | `caja123` | Control de caja y confirmación de pagos |
 
 ---
 
@@ -357,7 +371,7 @@ Restaurante/
 │       │   ├── mesas/           # Gestión de mesas y estados del salón
 │       │   ├── carta/           # CRUD de platos, filtros de horarios y Cloudinary
 │       │   ├── pedidos/         # Gateway de comandas y asistente IA Gemini
-│       │   ├── caja/            # Arqueo de turnos, pagos y facturas
+│       │   ├── caja/            # Arqueo de turnos y confirmación de pagos
 │       │   └── analitica/       # Métricas de ventas y reportes diarios
 │       └── main.ts              # Punto de entrada NestJS y configuración CORS
 │
@@ -367,16 +381,16 @@ Restaurante/
 │   │   ├── mesas/               # Plano interactivo, comanda drawer y alertas de salón
 │   │   ├── cocina/              # Pantalla KDS (Kitchen Display System)
 │   │   ├── carta/               # Administración visual del menú y precios
-│   │   ├── control-caja/        # Caja registradora, cobros y arqueos
+│   │   ├── control-caja/        # Caja registradora, cobros y arqueos de turno
 │   │   └── usuarios/            # Administración del equipo con protección de cuentas
 │   └── projects/client-app/     # App del Cliente (Móvil / QR)
 │       └── src/app/components/
 │           ├── landing-hero/    # Bienvenida con persistencia de mesa
 │           ├── menu-digital/    # Carta digital HD con badges de horario
-│           ├── ia-comanda/      # Asistente conversacional "Don Beto"
+│           ├── ia-comanda/      # Asistente conversacional "Don Beto" (Gemini AI)
 │           ├── chat-mesero/     # Alertas y llamada al garzón
 │           ├── carrito-drawer/  # Resumen de pedido y notas de preparación
-│           └── cierre-cuenta/   # Flujo de pago QR/Efectivo y factura PDF
+│           └── cierre-cuenta/   # Flujo de cierre: resumen → método de pago → confirmación en vivo
 │
 └── packages/shared/             # Código compartido entre Backend y Frontend
     └── src/
@@ -388,5 +402,5 @@ Restaurante/
 
 ## 📄 Licencia
 
-Este proyecto es propiedad privada y confidencial desarrollada para **Peña Restaurant Tukuypaj** © 2026.  
+Este proyecto es propiedad privada y confidencial desarrollada para **Peña Restaurant Tukuypaj** © 2026.
 Todos los derechos reservados.
