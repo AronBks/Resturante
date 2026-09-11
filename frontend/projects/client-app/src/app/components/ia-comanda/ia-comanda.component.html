@@ -1,196 +1,735 @@
 <!-- ============================================================
-     ASISTENTE VIRTUAL — Chat de Pedidos por IA
+     DON BETO — Asistente Culinario Virtual Integrado
      Peña Restaurant Tukuypaj — Cochabamba, Bolivia
      ============================================================ -->
 
-<!-- ── Header ── -->
-<header class="ia-header">
-  <a routerLink="/carta" [queryParams]="{ mesa: mesaNumero() }" class="ia-header__back" id="btn-back-carta">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
-    </svg>
-  </a>
-  <div class="ia-header__brand">
-    <div class="ia-header__avatar">🤖</div>
-    <div class="ia-header__info">
-      <h1>Asistente Tukuypaj</h1>
-      <p>Mesa {{ mesaNumero() }} · Pedido por IA</p>
-    </div>
-  </div>
-  <div class="ia-header__status" [class.processing]="iaService.loading()">
-    <span class="status-dot"></span>
-    <span class="status-text">{{ iaService.loading() ? 'Procesando...' : 'En línea' }}</span>
-  </div>
-</header>
+<div class="chat-layout-wrapper">
+  <!-- ── Top Header Navigation Bar ── -->
+  <header class="chat-header">
+    <div class="header-left">
+      <a routerLink="/carta" [queryParams]="{ mesa: mesaDisplay() }" class="btn-back" id="btn-back-carta" aria-label="Volver a la carta">
+        <lucide-icon name="arrow-left" [size]="18"></lucide-icon>
+      </a>
 
-<!-- ── Chat Messages Area ── -->
-<div class="chat-container" #chatContainer>
-
-  <!-- Mensajes -->
-  @for (msg of mensajes(); track trackByIndex($index)) {
-
-    <!-- Mensaje del Usuario -->
-    @if (msg.tipo === 'usuario') {
-      <div class="chat-bubble user animate-bubble">
-        <p>{{ msg.texto }}</p>
-        <span class="bubble-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+      <div class="avatar-container">
+        <div class="avatar-circle">
+          <lucide-icon name="chef-hat" [size]="20" class="gold-icon"></lucide-icon>
+          <span class="status-dot" [class.status-busy]="cargando() || marchando()"></span>
+        </div>
       </div>
-    }
 
-    <!-- Mensaje del Asistente -->
-    @if (msg.tipo === 'asistente') {
-      <div class="chat-bubble assistant animate-bubble">
-        <div class="assistant-avatar">🤖</div>
-        <div class="bubble-content">
-          <p class="bubble-text" [innerHTML]="msg.texto | slice:0:500"></p>
+      <div class="header-info">
+        <h1 class="mesero-name">
+          Don Beto
+          <span class="badge-role">Mesero IA</span>
+        </h1>
+        <p class="mesero-status">
+          @if (cargando()) {
+            <span class="status-typing">Anotando pedido...</span>
+          } @else if (marchando()) {
+            <span class="status-typing">Marchando a cocina...</span>
+          } @else {
+            <span>En línea • Mesa {{ mesaDisplay() }}</span>
+          }
+        </p>
+      </div>
+    </div>
 
-          <!-- Items interpretados (si los hay) -->
-          @if (msg.items && msg.items.length > 0) {
-            <div class="items-preview">
-              @for (item of msg.items; track item.platoId + (item.varianteId || '')) {
-                <div class="item-card">
-                  <span class="item-emoji">{{ getFoodEmoji(item.nombre) }}</span>
-                  <div class="item-details">
-                    <span class="item-name">{{ item.nombre }}</span>
-                    @if (item.notas) {
-                      <span class="item-notes">📝 {{ item.notas }}</span>
-                    }
+    <div class="header-right">
+      <button class="btn-carta-toggle" (click)="toggleDrawerCarta()" id="btn-ver-carta" title="Ver Carta del Restaurante">
+        <lucide-icon name="book-open" [size]="14"></lucide-icon>
+        <span class="t-text">Carta</span>
+      </button>
 
-                    <!-- Variant Selection Chip Buttons -->
-                    @if (item.variantes && item.variantes.length > 0) {
-                      <div class="item-variants-chips">
-                        @for (v of item.variantes; track v.id) {
-                          <button
-                            class="ia-variant-chip"
-                            [class.active]="item.varianteId === v.id"
-                            (click)="seleccionarVarianteIA(msg, item, v)"
-                          >
-                            {{ v.nombre }} (Bs. {{ v.precio.toFixed(2) }})
-                          </button>
-                        }
-                      </div>
-                    }
-                  </div>
-                  <div class="item-meta">
-                    <!-- Stepper -->
-                    <div class="ia-qty-stepper">
-                      <button (click)="cambiarCantidadIA(msg, item, -1)" class="ia-stepper-btn">-</button>
-                      <span class="item-qty-val">{{ item.cantidad }}</span>
-                      <button (click)="cambiarCantidadIA(msg, item, 1)" class="ia-stepper-btn">+</button>
+      <button class="btn-ticket-toggle" (click)="toggleDrawerComanda()" id="btn-ver-comanda">
+        <lucide-icon name="receipt" [size]="14"></lucide-icon>
+        <span class="t-text">Comanda</span>
+        @if (cantidadItemsActivos() > 0) {
+          <span class="t-badge">{{ cantidadItemsActivos() }}</span>
+        }
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Main Chat Stream ── -->
+  <main class="chat-stream-section">
+    <div class="chat-messages-scroll" #chatContainer id="chat-container">
+
+      @for (msg of mensajes(); track msg.id || $index) {
+        @if (msg.emisor === 'don-beto') {
+          <!-- Mensaje de Don Beto -->
+          <div class="msg-row assistant-row animate-fade-in">
+            <div class="msg-avatar">
+              <lucide-icon name="chef-hat" [size]="15"></lucide-icon>
+            </div>
+            <div class="msg-bubble assistant-bubble">
+              <div class="msg-author">
+                <lucide-icon name="sparkles" [size]="12"></lucide-icon>
+                <span>Don Beto</span>
+              </div>
+              <div class="msg-text" [innerHTML]="formatearTexto(msg.texto)"></div>
+
+              <!-- Acciones tras confirmación de pago: Opciones claras para el comensal a su propio ritmo -->
+              @if (msg.id?.startsWith('pago-') || msg.texto.includes('ha sido cancelada con éxito')) {
+                <div class="inline-recibo-card animate-slide-up">
+                  <div class="rc-header">
+                    <div class="rc-tag">
+                      <lucide-icon name="check-circle" [size]="14"></lucide-icon>
+                      <span>Cuenta Cancelada</span>
                     </div>
-                    <span class="item-price">Bs. {{ (item.precioUnitario * item.cantidad).toFixed(2) }}</span>
+                    <span class="rc-mesa">Mesa {{ mesaDisplay() }}</span>
+                  </div>
+
+                  <p class="rc-desc">
+                    Su comprobante oficial ha sido emitido. Puede acceder al recibo digital para descargarlo en PDF, enviarlo a su WhatsApp, calificar el servicio o volver a la carta cuando guste.
+                  </p>
+
+                  <div class="rc-actions">
+                    <button class="btn-rc-recibo" (click)="irAPagar()" id="btn-ver-recibo-oficial">
+                      <lucide-icon name="receipt" [size]="15"></lucide-icon>
+                      <span>Ver Recibo / Descargar PDF / WhatsApp</span>
+                    </button>
+                    <a routerLink="/carta" [queryParams]="{ mesa: mesaDisplay() }" class="btn-rc-carta" id="btn-volver-carta-salida">
+                      <lucide-icon name="book-open" [size]="15"></lucide-icon>
+                      <span>Volver a la Carta Digital</span>
+                    </a>
                   </div>
                 </div>
               }
 
-              <!-- Total -->
-              <div class="items-total">
-                <span>Total Estimado</span>
-                <strong>Bs. {{ msg.totalEstimado?.toFixed(2) }}</strong>
+              <!-- Tarjeta Interactiva de Confirmación si Don Beto ya marchó el pedido -->
+              @if (msg.esConfirmacion && comandaItems().length > 0 && !pedidoConfirmadoExitoso()) {
+                <div class="inline-comanda-card animate-slide-up">
+                  <div class="inline-card-header">
+                    <div class="card-tag">
+                      <lucide-icon name="receipt" [size]="14"></lucide-icon>
+                      <span>Comanda en Preparación</span>
+                    </div>
+                    <span class="card-mesa">Mesa {{ mesaDisplay() }}</span>
+                  </div>
+
+                  <div class="inline-items-list">
+                    @for (item of comandaItems(); track item.platoId + (item.varianteId || '')) {
+                      <div class="inline-item-row">
+                        <span class="qty-badge">{{ item.cantidad }}×</span>
+                        <div class="i-detail">
+                          <div class="i-name-group">
+                            <span class="i-name">{{ item.nombre }}</span>
+                            @if (item.notas) {
+                              <span class="i-nota-tag">
+                                <lucide-icon name="pencil" [size]="10"></lucide-icon>
+                                <span>{{ item.notas }}</span>
+                              </span>
+                            }
+                          </div>
+                          <span class="i-price">Bs. {{ (item.precioUnitario * item.cantidad).toFixed(2) }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="inline-total-row">
+                    <span>Total a marchar:</span>
+                    <strong>Bs. {{ totalComanda().toFixed(2) }}</strong>
+                  </div>
+
+                  <button
+                    class="btn-marchar-directo"
+                    (click)="marcharPedidoACocina()"
+                    [disabled]="marchando()"
+                    id="btn-confirmar-directo"
+                  >
+                    @if (marchando()) {
+                      <div class="spinner-marchar"></div>
+                      <span>Marchando a cocina...</span>
+                    } @else {
+                      <lucide-icon name="send" [size]="15"></lucide-icon>
+                      <span>Confirmar y Enviar a Cocina</span>
+                    }
+                  </button>
+                </div>
+              }
+
+              @if (msg.timestamp) {
+                <span class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+              }
+            </div>
+          </div>
+        } @else if (msg.emisor === 'cliente') {
+          <!-- Mensaje del Cliente -->
+          <div class="msg-row user-row animate-fade-in">
+            <div class="msg-bubble user-bubble">
+              <div class="msg-text">{{ msg.texto }}</div>
+              @if (msg.timestamp) {
+                <span class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Indicador de Escritura de n8n -->
+      @if (cargando()) {
+        <div class="msg-row assistant-row thinking-row animate-fade-in">
+          <div class="msg-avatar">
+            <lucide-icon name="chef-hat" [size]="15"></lucide-icon>
+          </div>
+          <div class="msg-bubble assistant-bubble thinking-bubble">
+            <div class="typing-label">Don Beto está anotando...</div>
+            <div class="typing-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── Banner Interactivo de la Carta en Vivo ── -->
+    @if (!pedidoConfirmadoExitoso()) {
+      <div class="carta-banner-card animate-fade-in" (click)="toggleDrawerCarta()">
+        <div class="banner-badge">
+          <lucide-icon name="sparkles" [size]="11"></lucide-icon>
+          <span>CARTA DIGITAL DISPONIBLE</span>
+        </div>
+        <div class="banner-body">
+          <div class="banner-icon-box">
+            <lucide-icon name="utensils-crossed" [size]="20"></lucide-icon>
+          </div>
+          <div class="banner-info">
+            <strong>Carta y Especialidades Tukuypaj</strong>
+            <p>Explora platos tradicionales, caldos y bebidas con fotos y precios</p>
+          </div>
+          <button type="button" class="btn-banner-ver">
+            <span>Ver Carta</span>
+            <lucide-icon name="arrow-right" [size]="13"></lucide-icon>
+          </button>
+        </div>
+      </div>
+    }
+
+
+    <!-- ── Floating Comanda Bar (Aparece cuando hay items anotados y no confirmados) ── -->
+    @if (comandaItems().length > 0 && !pedidoConfirmadoExitoso()) {
+      <div class="floating-comanda-bar animate-slide-up">
+        <div class="comanda-info" (click)="toggleDrawerComanda()">
+          <div class="comanda-icon-box">
+            <lucide-icon name="shopping-bag" [size]="18"></lucide-icon>
+          </div>
+          <div class="comanda-summary">
+            <span class="c-title">{{ comandaItems().length }} {{ comandaItems().length === 1 ? 'producto anotado' : 'productos anotados' }}</span>
+            <span class="c-total">Ronda actual: Bs. {{ totalComanda().toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <button
+          class="btn-marchar-floating"
+          (click)="marcharPedidoACocina()"
+          [disabled]="marchando()"
+          id="btn-marchar-floating"
+        >
+          @if (marchando()) {
+            <div class="spinner-marchar-mini"></div>
+            <span>Marchando...</span>
+          } @else {
+            <lucide-icon name="send" [size]="14"></lucide-icon>
+            <span>Marchar a Cocina</span>
+          }
+        </button>
+      </div>
+    }
+
+    <!-- ── Bottom Banner de Pedido Confirmado con Enlace a Pago ── -->
+    @if (pedidoConfirmadoExitoso()) {
+      <div class="confirmed-bottom-banner animate-slide-up">
+        <div class="confirmed-info">
+          <div class="check-icon-box">
+            <lucide-icon name="check-circle" [size]="22"></lucide-icon>
+          </div>
+          <div class="confirmed-text-group">
+            <div class="confirmed-title-row">
+              <strong>¡Comanda #{{ codigoPedidoExitoso() }} en Cocina!</strong>
+              @if (pedidoActivoBackend()?.estado) {
+                <span class="status-chip-live">{{ formatEstado(pedidoActivoBackend().estado) }}</span>
+              }
+            </div>
+            <p>Mesa {{ mesaDisplay() }} • Total: Bs. {{ totalMostrar().toFixed(2) }}</p>
+          </div>
+        </div>
+        <button class="btn-pagar-cta" (click)="irAPagar()" id="btn-ir-a-pagar">
+          <lucide-icon name="credit-card" [size]="16"></lucide-icon>
+          <span>Pagar Cuenta (QR / Efectivo)</span>
+        </button>
+      </div>
+    }
+
+    <!-- ── Input Bar (Siempre disponible para consultas o nuevas rondas) ── -->
+    <footer class="chat-input-bar">
+      <div class="input-container">
+        <input
+          #inputRef
+          type="text"
+          class="input-chat"
+          id="input-don-beto"
+          placeholder="Escribe tu pedido o consulta..."
+          [ngModel]="inputTexto()"
+          (ngModelChange)="inputTexto.set($event)"
+          (keydown.enter)="enviarMensaje()"
+          [disabled]="cargando() || marchando()"
+          autocomplete="off"
+        />
+
+        <button
+          type="button"
+          class="btn-send"
+          id="btn-enviar-mensaje"
+          (click)="enviarMensaje()"
+          [disabled]="!inputTexto().trim() || cargando() || marchando()"
+          aria-label="Enviar mensaje"
+        >
+          @if (cargando()) {
+            <div class="spinner-send"></div>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          }
+        </button>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ── Drawer Lateral de Comanda (Modal de detalle) ── -->
+  @if (drawerComandaAbierto()) {
+    <div class="drawer-backdrop" (click)="toggleDrawerComanda()">
+      <div class="drawer-content animate-slide-up" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
+          <div class="drawer-title">
+            <lucide-icon name="receipt" [size]="18" class="gold-icon"></lucide-icon>
+            <span>Comanda para Cocina</span>
+            <span class="mesa-badge-gold">Mesa {{ mesaDisplay() }}</span>
+          </div>
+          <button class="btn-close-drawer" (click)="toggleDrawerComanda()" aria-label="Cerrar comanda">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <!-- Bloque A: Platos Activos en Cocina (PostgreSQL) -->
+          @if (pedidoActivoBackend(); as pActivo) {
+            <div class="comanda-cocina-section">
+              <div class="section-badge-header">
+                <div class="status-indicator-live">
+                  <span class="live-dot"></span>
+                  <strong>Comanda Activa #{{ pActivo.codigo }}</strong>
+                </div>
+                <span class="status-pill-gold">{{ formatEstado(pActivo.estado) }}</span>
               </div>
 
-              <!-- Motor IA usado -->
-              <div class="motor-badge">
-                <span class="motor-icon">{{ msg.motor === 'gemini' ? '✨' : '🔧' }}</span>
-                Interpretado por {{ msg.motor === 'gemini' ? 'Gemini AI' : 'Motor Local' }}
+              <div class="drawer-items">
+                @for (item of pActivo.items; track item.id || (item.platoId + (item.varianteId || ''))) {
+                  <div class="drawer-item-row item-en-cocina">
+                    <div class="item-left">
+                      <span class="qty-badge-active">{{ item.cantidad }}×</span>
+                      <div class="item-meta">
+                        <div class="name-and-pill">
+                          <span class="item-name">{{ item.nombre }}</span>
+                          @if (item.varianteNombre) {
+                            <span class="item-variant">({{ item.varianteNombre }})</span>
+                          }
+                          <span class="item-kitchen-status">{{ formatEstadoItem(item.estadoItem) }}</span>
+                        </div>
+                        @if (item.notas) {
+                          <span class="item-nota-tag">
+                            <lucide-icon name="pencil" [size]="10"></lucide-icon>
+                            <span>{{ item.notas }}</span>
+                          </span>
+                        }
+                        <span class="item-unit-price">Bs. {{ item.precioUnitario.toFixed(2) }} c/u</span>
+                      </div>
+                    </div>
+                    <div class="item-right">
+                      <span class="item-subtotal">Bs. {{ (item.precioUnitario * item.cantidad).toFixed(2) }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="subtotal-cocina-row">
+                <span>Subtotal en cocina:</span>
+                <strong>Bs. {{ (pActivo.total || 0).toFixed(2) }}</strong>
               </div>
             </div>
           }
 
-          <span class="bubble-time">{{ msg.timestamp | date:'HH:mm' }}</span>
-        </div>
-      </div>
-    }
+          <!-- Bloque B: Nueva Ronda para Añadir -->
+          @if (comandaItems().length > 0) {
+            <div class="comanda-nueva-ronda-section">
+              <div class="ronda-divider">
+                <span>Nueva Ronda a Añadir</span>
+              </div>
+              <div class="drawer-items">
+                @for (item of comandaItems(); track item.platoId + (item.varianteId || '')) {
+                  <div class="drawer-item-row">
+                    <div class="item-left">
+                      <span class="qty-badge">{{ item.cantidad }}×</span>
+                      <div class="item-meta">
+                        <span class="item-name">{{ item.nombre }}</span>
+                        @if (item.notas) {
+                          <span class="item-nota-tag">
+                            <lucide-icon name="pencil" [size]="10"></lucide-icon>
+                            <span>{{ item.notas }}</span>
+                          </span>
+                        }
+                        <span class="item-unit-price">Bs. {{ item.precioUnitario.toFixed(2) }} c/u</span>
+                      </div>
+                    </div>
 
-    <!-- Indicador de "escribiendo..." -->
-    @if (msg.tipo === 'sistema' && msg.texto === 'thinking') {
-      <div class="chat-bubble assistant animate-bubble">
-        <div class="assistant-avatar">🤖</div>
-        <div class="bubble-content">
-          <div class="typing-indicator">
-            <span></span><span></span><span></span>
+                    <div class="item-right">
+                      <div class="stepper-controls">
+                        <button (click)="modificarCantidad(item, -1)" class="btn-step" aria-label="Reducir">
+                          <lucide-icon name="minus" [size]="11"></lucide-icon>
+                        </button>
+                        <span class="qty-num">{{ item.cantidad }}</span>
+                        <button (click)="modificarCantidad(item, 1)" class="btn-step" aria-label="Aumentar">
+                          <lucide-icon name="plus" [size]="11"></lucide-icon>
+                        </button>
+                      </div>
+                      <span class="item-subtotal">Bs. {{ (item.precioUnitario * item.cantidad).toFixed(2) }}</span>
+                      <button class="btn-del" (click)="eliminarItem(item)" aria-label="Eliminar plato">
+                        <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (!pedidoActivoBackend() && comandaItems().length === 0) {
+            <div class="empty-drawer">
+              <lucide-icon name="shopping-bag" [size]="36" class="empty-icon-lucide"></lucide-icon>
+              <p>Tu comanda está vacía</p>
+              <small>Dile a Don Beto o explora la carta para agregar platos.</small>
+            </div>
+          }
+        </div>
+
+        @if (pedidoActivoBackend() || comandaItems().length > 0) {
+          <div class="drawer-footer">
+            <div class="total-row">
+              <span>Total Mesa {{ mesaDisplay() }}:</span>
+              <span class="total-val">Bs. {{ ((pedidoActivoBackend()?.total || 0) + totalComanda()).toFixed(2) }}</span>
+            </div>
+
+            @if (comandaItems().length > 0) {
+              <button
+                class="btn-marchar-drawer"
+                (click)="marcharPedidoACocina()"
+                [disabled]="marchando()"
+              >
+                @if (marchando()) {
+                  <div class="spinner-marchar"></div>
+                  <span>Marchando a cocina...</span>
+                } @else {
+                  <lucide-icon name="send" [size]="16"></lucide-icon>
+                  <span>Marchar Ronda (Bs. {{ totalComanda().toFixed(2) }})</span>
+                }
+              </button>
+            }
+
+            @if (pedidoActivoBackend()) {
+              <button class="btn-pagar-drawer" (click)="irAPagar()" id="btn-pagar-drawer-cta">
+                <lucide-icon name="credit-card" [size]="16"></lucide-icon>
+                <span>Pagar Cuenta (QR / Efectivo)</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── Toast Flotante de Notificación Rápida ── -->
+  @if (toastMensaje()) {
+    <div class="floating-toast animate-slide-up">
+      <lucide-icon name="check-circle-2" [size]="15"></lucide-icon>
+      <span>{{ toastMensaje() }}</span>
+    </div>
+  }
+
+  <!-- ── Drawer Modal de la Carta Completa ── -->
+  @if (drawerCartaAbierto()) {
+    <div class="drawer-backdrop" (click)="toggleDrawerCarta()">
+      <div class="drawer-content carta-drawer-content animate-slide-up" (click)="$event.stopPropagation()">
+        <!-- Header del Drawer de Carta -->
+        <div class="drawer-header">
+          <div class="drawer-title">
+            <lucide-icon name="book-open" [size]="18" class="gold-icon"></lucide-icon>
+            <span>Carta y Especialidades</span>
+            <span class="mesa-badge-gold">Mesa {{ mesaDisplay() }}</span>
+          </div>
+          <button class="btn-close-drawer" (click)="toggleDrawerCarta()" aria-label="Cerrar carta">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <!-- Buscador y Filtros -->
+        <div class="carta-filter-bar">
+          <div class="search-input-box">
+            <lucide-icon name="search" [size]="15" class="search-icon-lucide"></lucide-icon>
+            <input
+              type="text"
+              class="carta-search-input"
+              placeholder="Buscar plato, hervido, refresco..."
+              [ngModel]="busquedaCarta()"
+              (ngModelChange)="busquedaCarta.set($event)"
+            />
+            @if (busquedaCarta()) {
+              <button class="btn-clear-search" (click)="busquedaCarta.set('')" aria-label="Limpiar búsqueda">
+                <lucide-icon name="x" [size]="13"></lucide-icon>
+              </button>
+            }
+          </div>
+
+          <!-- Categorías Horizontales -->
+          <div class="categories-scroll-row">
+            <button
+              type="button"
+              class="cat-chip"
+              [class.active]="categoriaCartaSeleccionada() === null"
+              (click)="categoriaCartaSeleccionada.set(null)"
+            >
+              Todos
+            </button>
+            @for (cat of cartaService.categorias(); track cat.id) {
+              <button
+                type="button"
+                class="cat-chip"
+                [class.active]="categoriaCartaSeleccionada() === cat.id"
+                (click)="categoriaCartaSeleccionada.set(cat.id)"
+              >
+                {{ cat.nombre }} ({{ cat.platos.length }})
+              </button>
+            }
           </div>
         </div>
+
+        <!-- Lista de Platos -->
+        <div class="drawer-body carta-drawer-body">
+          @if (platosFiltradosCarta().length === 0) {
+            <div class="empty-drawer">
+              <lucide-icon name="search" [size]="32" class="empty-icon-lucide"></lucide-icon>
+              <p>No se encontraron platos o bebidas.</p>
+              <small>Prueba buscando con otro término o selecciona otra categoría.</small>
+            </div>
+          } @else {
+            <div class="carta-cards-grid">
+              @for (item of platosFiltradosCarta(); track item.plato.id) {
+                <div class="plato-card-compact animate-fade-in" [class.has-in-comanda]="getCantidadEnComanda(item.plato) > 0">
+                  <!-- Lado Izquierdo: Info, porción y consulta IA -->
+                  <div class="card-info-side">
+                    <div class="card-meta-line">
+                      <span class="plato-cat-pill">{{ item.categoriaNombre }}</span>
+                      @if (getCantidadEnComanda(item.plato) > 0) {
+                        <span class="in-comanda-badge">
+                          {{ getCantidadEnComanda(item.plato) }} en comanda
+                        </span>
+                      }
+                    </div>
+
+                    <h4 class="plato-title">{{ item.plato.nombre }}</h4>
+
+                    @if (item.plato.descripcion) {
+                      <p class="plato-desc">{{ item.plato.descripcion }}</p>
+                    }
+
+                    <!-- Selector de Porciones si existen -->
+                    @if (getVariantesPlato(item.plato).length > 0) {
+                      <div class="variantes-selector-inline">
+                        <div class="var-pills">
+                          @for (v of getVariantesPlato(item.plato); track v.id) {
+                            <button
+                              type="button"
+                              class="var-pill"
+                              [class.selected]="getVarianteActual(item.plato)?.id === v.id"
+                              (click)="seleccionarVariante(item.plato.id, v, $event)"
+                            >
+                              {{ v.nombre }} <span class="var-price">Bs. {{ v.precio }}</span>
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Fila inferior: Precio y Botón de Dudas con IA -->
+                    <div class="card-action-line">
+                      <span class="plato-price">Bs. {{ getPrecioPlato(item.plato).toFixed(2) }}</span>
+
+                      <button
+                        type="button"
+                        class="btn-duda-ia"
+                        (click)="abrirConsultarDuda(item.plato, $event)"
+                        title="Preguntar a Don Beto sobre este plato"
+                      >
+                        <lucide-icon name="message-square" [size]="12"></lucide-icon>
+                        <span>Dudas / Consultar</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Lado Derecho: Foto + Acción Rápida de Pedir -->
+                  <div class="card-visual-side">
+                    <div class="plato-thumb-box">
+                      @if (getPlatoImageUrl(item.plato)) {
+                        <img [src]="getPlatoImageUrl(item.plato)" [alt]="item.plato.nombre" class="plato-thumb" loading="lazy" />
+                      } @else {
+                        <div class="plato-thumb-fallback">
+                          <lucide-icon name="utensils" [size]="24" class="gold-fallback-icon"></lucide-icon>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Botón Rápido o Stepper -->
+                    <div class="dish-cta-wrap">
+                      @if (getCantidadEnComanda(item.plato) === 0) {
+                        <button
+                          type="button"
+                          class="btn-pedir-directo"
+                          (click)="agregarDirectoAComanda(item.plato, $event)"
+                          title="Añadir a la comanda"
+                        >
+                          <lucide-icon name="plus" [size]="14"></lucide-icon>
+                          <span>Pedir</span>
+                        </button>
+                      } @else {
+                        <div class="dish-stepper-box">
+                          <button
+                            type="button"
+                            class="btn-stepper-act"
+                            (click)="cambiarCantidadDesdeCarta(item.plato, -1, $event)"
+                            aria-label="Disminuir"
+                          >
+                            <lucide-icon name="minus" [size]="11"></lucide-icon>
+                          </button>
+                          <span class="stepper-val">{{ getCantidadEnComanda(item.plato) }}</span>
+                          <button
+                            type="button"
+                            class="btn-stepper-act"
+                            (click)="cambiarCantidadDesdeCarta(item.plato, 1, $event)"
+                            aria-label="Aumentar"
+                          >
+                            <lucide-icon name="plus" [size]="11"></lucide-icon>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Footer del Drawer de Carta -->
+        <div class="drawer-footer carta-drawer-footer">
+          <div class="comanda-counter-hint" (click)="toggleDrawerCarta(); toggleDrawerComanda()">
+            <div class="c-hint-left">
+              <lucide-icon name="shopping-bag" [size]="15"></lucide-icon>
+              <span>Comanda actual: <strong>{{ comandaItems().length }} platos (Bs. {{ totalComanda().toFixed(2) }})</strong></span>
+            </div>
+            <span class="link-ver-comanda">Ver comanda ➔</span>
+          </div>
+          <button class="btn-listo-volver" (click)="toggleDrawerCarta()">
+            <lucide-icon name="arrow-left" [size]="15"></lucide-icon>
+            <span>Volver al Chat con Don Beto</span>
+          </button>
+        </div>
       </div>
-    }
+    </div>
+  }
+
+  <!-- ── Modal de Preguntas Frecuentes / Dudas con Don Beto ── -->
+  @if (platoConsultaDuda()) {
+    <div class="duda-backdrop animate-fade-in" (click)="cerrarConsultarDuda()">
+      <div class="duda-sheet animate-slide-up" (click)="$event.stopPropagation()">
+        <div class="duda-sheet-header">
+          <div class="duda-title-group">
+            <lucide-icon name="sparkles" [size]="16" class="gold-icon"></lucide-icon>
+            <div>
+              <span class="duda-kicker">CONSULTA A DON BETO</span>
+              <h4>{{ platoConsultaDuda()?.nombre }}</h4>
+            </div>
+          </div>
+          <button class="btn-close-duda" (click)="cerrarConsultarDuda()" aria-label="Cerrar">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <p class="duda-sheet-subtitle">Selecciona una duda común o escribe una indicación especial:</p>
+
+        <div class="duda-sheet-actions">
+          <button
+            type="button"
+            class="duda-sheet-btn"
+            (click)="enviarConsultaDonBeto('¿Para cuántas personas rinde o alcanza este plato?')"
+          >
+            <div class="duda-btn-icon"><lucide-icon name="users" [size]="15"></lucide-icon></div>
+            <div class="duda-btn-text">
+              <strong>¿Para cuántas personas alcanza?</strong>
+              <small>Consulta el rendimiento y porción</small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="duda-sheet-btn"
+            (click)="enviarConsultaDonBeto('¿Qué ingredientes o guarniciones exactas trae?')"
+          >
+            <div class="duda-btn-icon"><lucide-icon name="utensils" [size]="15"></lucide-icon></div>
+            <div class="duda-btn-text">
+              <strong>¿Qué guarniciones trae?</strong>
+              <small>Conoce los acompañamientos del plato</small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="duda-sheet-btn"
+            (click)="enviarConsultaDonBeto('¿Es picante o lleva locoto en la preparación?')"
+          >
+            <div class="duda-btn-icon"><lucide-icon name="flame" [size]="15"></lucide-icon></div>
+            <div class="duda-btn-text">
+              <strong>¿Tiene picante o locoto?</strong>
+              <small>Verifica el nivel de picante</small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="duda-sheet-btn"
+            (click)="enviarConsultaDonBeto('Quiero pedirlo pero con una nota especial: ', false)"
+          >
+            <div class="duda-btn-icon"><lucide-icon name="pencil" [size]="15"></lucide-icon></div>
+            <div class="duda-btn-text">
+              <strong>Pedir con nota especial</strong>
+              <small>Ej: sin cebolla, bien cocido, sin hielo</small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="duda-sheet-btn custom-chat-btn"
+            (click)="enviarConsultaDonBeto('', false)"
+          >
+            <div class="duda-btn-icon"><lucide-icon name="message-square" [size]="15"></lucide-icon></div>
+            <div class="duda-btn-text">
+              <strong>Escribir otra pregunta en el chat</strong>
+              <small>Chatea libremente con Don Beto</small>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
   }
 </div>
-
-<!-- ── Sugerencias Rápidas (solo si no hay resultado pendiente) ── -->
-@if (!hayItemsPendientes() && !iaService.pedidoConfirmado() && mensajes().length <= 2) {
-  <div class="suggestions-bar">
-    <p class="suggestions-label">Sugerencias rápidas:</p>
-    <div class="suggestions-scroll">
-      @for (sug of sugerenciasRapidas; track sug) {
-        <button class="suggestion-chip" (click)="usarSugerencia(sug)" id="chip-sugerencia">
-          {{ sug }}
-        </button>
-      }
-    </div>
-  </div>
-}
-
-<!-- ── Botón de Confirmación (cuando hay items interpretados) ── -->
-@if (hayItemsPendientes()) {
-  <div class="confirm-bar animate-slide-up">
-    <button
-      class="confirm-btn"
-      (click)="confirmarPedido()"
-      [disabled]="iaService.confirmando()"
-      id="btn-confirmar-ia"
-    >
-      @if (iaService.confirmando()) {
-        <span class="confirm-spinner"></span>
-        Enviando a cocina...
-      } @else {
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="confirm-icon">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-        Confirmar y Enviar a Cocina
-      }
-    </button>
-  </div>
-}
-
-<!-- ── Pantalla de Éxito + Botón Nueva Ronda ── -->
-@if (iaService.pedidoConfirmado()) {
-  <div class="success-bar animate-slide-up">
-    <div class="success-content">
-      <span class="success-check">✅</span>
-      <span>¡Pedido enviado!</span>
-    </div>
-    <button class="new-order-btn" (click)="nuevoPedido()" id="btn-nuevo-pedido">
-      ➕ Agregar más platos
-    </button>
-  </div>
-}
-
-<!-- ── Input Area (sticky bottom) ── -->
-@if (!iaService.pedidoConfirmado()) {
-  <div class="input-bar">
-    <div class="input-wrapper">
-      <input
-        #inputRef
-        type="text"
-        placeholder="Escribe tu pedido aquí..."
-        [ngModel]="inputTexto()"
-        (ngModelChange)="inputTexto.set($event)"
-        (keydown.enter)="enviarMensaje()"
-        [disabled]="iaService.loading()"
-        class="chat-input"
-        id="input-pedido-ia"
-        autocomplete="off"
-      />
-      <button
-        class="send-btn"
-        (click)="enviarMensaje()"
-        [disabled]="!inputTexto().trim() || iaService.loading()"
-        id="btn-enviar-ia"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-}

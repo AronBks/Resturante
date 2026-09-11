@@ -18,15 +18,15 @@ export const routes: Routes = [
   {
     path: 'pedido-ia',
     loadComponent: () =>
-      import('./components/chat-mesero/chat-mesero.component').then(
-        (m) => m.ChatMeseroComponent,
+      import('./components/ia-comanda/ia-comanda.component').then(
+        (m) => m.IaComandaComponent,
       ),
   },
   {
     path: 'chat-mesero',
     loadComponent: () =>
-      import('./components/chat-mesero/chat-mesero.component').then(
-        (m) => m.ChatMeseroComponent,
+      import('./components/ia-comanda/ia-comanda.component').then(
+        (m) => m.IaComandaComponent,
       ),
   },
   {

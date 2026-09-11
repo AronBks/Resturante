@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { PlatoPublico, VariantePublica } from './carta-publica.service';
 import { Observable } from 'rxjs';
+import { formatearMesaParaBackend } from './don-beto.service';
 
 export interface ItemCarrito {
   platoId: string;
@@ -120,21 +121,28 @@ export class CarritoService {
 
     this.socketPublico.onEstadoPedidoActualizado().subscribe((evento) => {
       const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01';
-      if (evento.mesaNumero === currentMesa) {
-        this.ultimoPedido.update((p) => {
-          if (!p) return p;
-          const updated = {
-            ...p,
-            estado: evento.estado,
-          };
-          try {
-            localStorage.setItem(
-              `tukuypaj_pedido_activo_${evento.mesaNumero}`,
-              JSON.stringify(updated)
-            );
-          } catch (e) {}
-          return updated;
-        });
+      const mesaNormEvent = formatearMesaParaBackend(evento.mesaNumero);
+      const mesaNormCurrent = formatearMesaParaBackend(currentMesa);
+
+      if (mesaNormEvent === mesaNormCurrent) {
+        // Re-consultar pedido completo para sincronizar estados de platos, totales e ítems en tiempo real
+        this.consultarPedidoActivoMesa(mesaNormCurrent).subscribe();
+      }
+    });
+
+    this.socketPublico.onPagoConfirmado().subscribe((evento) => {
+      const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01';
+      const mesaNormEvent = formatearMesaParaBackend(evento.mesaNumero);
+      const mesaNormCurrent = formatearMesaParaBackend(currentMesa);
+
+      if (mesaNormEvent === mesaNormCurrent) {
+        this.limpiarCarrito();
+        this.ultimoPedido.set(null);
+        this.pedidoConfirmado.set(false);
+        try {
+          localStorage.removeItem(`tukuypaj_pedido_activo_${mesaNormCurrent}`);
+          localStorage.removeItem(`tukuypaj_pedido_activo_${evento.mesaNumero}`);
+        } catch (e) {}
       }
     });
   }
@@ -334,9 +342,16 @@ export class CarritoService {
    * incluso después de recargar la página (F5) o cerrar el navegador.
    */
   consultarPedidoActivoMesa(mesaNumero: string): Observable<any> {
+    const mesaBackend = formatearMesaParaBackend(mesaNumero);
+    try {
+      localStorage.setItem('tukuypaj_mesa_asignada', mesaBackend);
+    } catch (e) {}
+
     return new Observable((subscriber) => {
       // 1. Cargar cache local de inmediato para evitar pantalla en blanco
-      const cached = localStorage.getItem(`tukuypaj_pedido_activo_${mesaNumero}`);
+      const cached =
+        localStorage.getItem(`tukuypaj_pedido_activo_${mesaBackend}`) ||
+        localStorage.getItem(`tukuypaj_pedido_activo_${mesaNumero}`);
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
@@ -346,7 +361,7 @@ export class CarritoService {
       }
 
       // 2. Sincronizar en vivo con el backend
-      this.http.get<any>(`${this.apiUrl}/publica/mesa/${mesaNumero}/activo`).subscribe({
+      this.http.get<any>(`${this.apiUrl}/publica/mesa/${mesaBackend}/activo`).subscribe({
         next: (res) => {
           const pedidoActivo = res?.data?.pedidoActivo ?? res?.pedidoActivo ?? (res?.id ? res : null);
           if (pedidoActivo) {
@@ -354,17 +369,16 @@ export class CarritoService {
             this.pedidoConfirmado.set(true);
             try {
               localStorage.setItem(
-                `tukuypaj_pedido_activo_${mesaNumero}`,
+                `tukuypaj_pedido_activo_${mesaBackend}`,
                 JSON.stringify(pedidoActivo)
               );
             } catch (e) {}
           } else {
             // Mesa ya no tiene pedido activo (cuenta pagada o liberada)
-            if (!this.items().length) {
-              this.ultimoPedido.set(null);
-              this.pedidoConfirmado.set(false);
-            }
+            this.ultimoPedido.set(null);
+            this.pedidoConfirmado.set(false);
             try {
+              localStorage.removeItem(`tukuypaj_pedido_activo_${mesaBackend}`);
               localStorage.removeItem(`tukuypaj_pedido_activo_${mesaNumero}`);
             } catch (e) {}
           }
