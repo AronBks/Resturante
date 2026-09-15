@@ -81,17 +81,19 @@ export class PedidosController {
     this.logger.log(`🤖 Confirmando pedido IA para Mesa ${dto.mesaNumero}`);
 
     const mesa = await this.iaPedidosService.resolverMesa(dto.mesaNumero);
-    const meseroIaId = await this.iaPedidosService.obtenerUsuarioIA();
+    const meseroResponsableId = await this.iaPedidosService.resolverMeseroResponsable(mesa);
 
-    // Reutilizar el flujo transaccional existente con flag esIA=true
+    // Reutilizar el flujo transaccional existente con flag esIA=true y canalOrigen IA_DON_BETO
     const pedido = await this.pedidosService.crearPedido(
-      meseroIaId,
+      meseroResponsableId,
       {
         mesaId: mesa.id,
         items: dto.items,
         notas: `Pedido autónomo vía Asistente IA — Mesa ${dto.mesaNumero}`,
       },
       true, // esIA: habilita multi-ronda
+      false, // esAdmin
+      'IA_DON_BETO', // canalOrigen explícito
     );
 
     // Emitir evento especial para toast de IA en el admin
@@ -129,9 +131,9 @@ export class PedidosController {
   }
 
   @Post('atender-mesero')
-  async atenderMesero(@Body() dto: { mesaNumero: string }) {
+  async atenderMesero(@Body() dto: { mesaNumero: string; meseroNombre?: string }) {
     this.logger.log(`🏃‍♂️ Garzón en camino a la Mesa ${dto.mesaNumero}`);
-    this.pedidosService.removerLlamadaMesero(dto.mesaNumero);
+    await this.pedidosService.removerLlamadaMesero(dto.mesaNumero, dto.meseroNombre);
     this.gateway.broadcastMeseroAtendido(dto.mesaNumero);
     this.cartaGateway.broadcastMeseroAtendido(dto.mesaNumero);
     return {

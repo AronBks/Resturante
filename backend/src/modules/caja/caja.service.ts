@@ -16,6 +16,7 @@ import {
 } from '@prisma/client';
 import { CartaGateway } from '../carta/carta.gateway';
 import { PedidosService } from '../pedidos/pedidos.service';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 
 @Injectable()
 export class CajaService {
@@ -26,6 +27,7 @@ export class CajaService {
     private readonly gateway: PedidosGateway,
     private readonly cartaGateway: CartaGateway,
     private readonly pedidosService: PedidosService,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   /**
@@ -166,6 +168,7 @@ export class CajaService {
         mesa: { numero: pedido.mesa.numero, id: pedido.mesa.id },
         mesero: { nombre: pedido.mesero.nombre },
         cajero: { nombre: cajero?.nombre || 'Operador' },
+        canalOrigen: (pedido as any).canalOrigen || 'MESERO_POS',
         items: pedido.detalles.map((d) => ({
           nombre: d.plato.nombre,
           cantidad: d.cantidad,
@@ -185,16 +188,38 @@ export class CajaService {
       };
     });
 
+    // ── Registrar en Auditoría Inmutable ──
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'COBRO_CAJA',
+      mesaId: result.mesa.id,
+      mesaNumero: result.mesa.numero,
+      usuarioId: cajeroId,
+      usuarioNombre: result.cajero.nombre,
+      rolUsuario: 'CAJERO',
+      meseroResponsableNombre: result.mesero.nombre,
+      canalOrigen: result.canalOrigen as any,
+      descripcion: `Cobro finalizado en Caja para Mesa ${result.mesa.numero} — Recibo ${result.nroRecibo} por Bs. ${result.total} (${result.metodoPago}). Mesero responsable: ${result.mesero.nombre}`,
+      metadata: {
+        transaccionId: result.transaccionId,
+        nroRecibo: result.nroRecibo,
+        total: result.total,
+        metodoPago: result.metodoPago,
+        canalOrigen: result.canalOrigen,
+        cajero: result.cajero.nombre,
+        mesero: result.mesero.nombre,
+      },
+    });
+
     // ── Emitir eventos WebSocket (fuera de la transacción) ──
     this.gateway.broadcastMesaEstado(result.mesa.id, EstadoMesa.LIBRE);
     this.gateway.broadcastEstadoPedido(pedidoId, EstadoPedido.ENTREGADO);
     this.gateway.broadcastTransaccionCreada(result);
     this.cartaGateway.broadcastPagoConfirmadoPublico(result.mesa.numero, result);
     this.cartaGateway.broadcastEstadoPedidoPublico(pedidoId, result.mesa.numero, 'PAGADO');
-    this.pedidosService.removerLlamadaMesero(result.mesa.numero);
+    this.pedidosService.removerLlamadaMesero(result.mesa.numero, result.mesero.nombre);
 
     this.logger.log(
-      `✅ Pago registrado: ${result.nroRecibo} | Mesa ${result.mesa.numero} | Bs. ${result.total} | ${result.metodoPago}`,
+      `✅ Pago registrado: ${result.nroRecibo} | Mesa ${result.mesa.numero} | Bs. ${result.total} | ${result.metodoPago} | Mesero: ${result.mesero.nombre}`,
     );
 
     return result;

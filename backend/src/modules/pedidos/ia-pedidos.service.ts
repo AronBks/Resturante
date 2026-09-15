@@ -576,10 +576,10 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
   /**
    * Resuelve el mesaId numérico a partir del número visible (ej: "M03" → 3)
    */
-  async resolverMesa(mesaNumero: string): Promise<{ id: number; numero: string; estado: string }> {
+  async resolverMesa(mesaNumero: string): Promise<{ id: number; numero: string; estado: string; meseroAsignadoId?: string | null }> {
     let mesa = await this.prisma.mesa.findUnique({
       where: { numero: mesaNumero },
-      select: { id: true, numero: true, estado: true, activa: true },
+      select: { id: true, numero: true, estado: true, activa: true, meseroAsignadoId: true },
     });
 
     if (!mesa) {
@@ -595,7 +595,7 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
               { numero: `Mesa ${num}` },
             ],
           },
-          select: { id: true, numero: true, estado: true, activa: true },
+          select: { id: true, numero: true, estado: true, activa: true, meseroAsignadoId: true },
         });
       }
     }
@@ -605,6 +605,29 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
     }
 
     return mesa;
+  }
+
+  /**
+   * Obtiene el ID del mesero humano responsable de la mesa.
+   * Si la mesa no tiene asignado, recurre al mesero físico de turno para asegurar
+   * responsabilidad operativa física en la auditoría y recibos.
+   */
+  async resolverMeseroResponsable(mesa: { meseroAsignadoId?: string | null }): Promise<string> {
+    if (mesa.meseroAsignadoId) {
+      return mesa.meseroAsignadoId;
+    }
+
+    const meseroHumano = await this.prisma.usuario.findFirst({
+      where: { rol: 'MESERO', activo: true },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+
+    if (meseroHumano) {
+      return meseroHumano.id;
+    }
+
+    return this.obtenerUsuarioIA();
   }
 
   /**

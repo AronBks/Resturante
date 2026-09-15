@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException, Inject, forwardRef 
 import { PrismaService } from '../../prisma/prisma.service';
 import { PedidosGateway } from './pedidos.gateway';
 import { CartaGateway } from '../carta/carta.gateway';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 import { CrearPedidoDto } from './dto/crear-pedido.dto';
 import {
   EstadoMesa,
@@ -15,6 +16,7 @@ export class PedidosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: PedidosGateway,
+    private readonly auditoriaService: AuditoriaService,
     @Inject(forwardRef(() => CartaGateway))
     private readonly cartaGateway: CartaGateway,
   ) {}
@@ -51,10 +53,30 @@ export class PedidosService {
         // En caso de error en actualización de mesa, la llamada aún se registró
       }
     }
+
+    // Registrar en auditoría
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'LLAMADA_MESERO',
+      mesaId,
+      mesaNumero,
+      canalOrigen: 'CLIENTE_DIGITAL',
+      descripcion: `Comensal en Mesa ${mesaNumero} solicitó asistencia: "${motivo}"`,
+      metadata: { motivo, esCobro },
+    });
   }
 
-  removerLlamadaMesero(mesaNumero: string) {
+  async removerLlamadaMesero(mesaNumero: string, meseroNombre?: string) {
     this.llamadasMeseroPendientes.delete(mesaNumero);
+
+    // Registrar atención en auditoría
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'MESERO_ATENDIO',
+      mesaNumero,
+      usuarioNombre: meseroNombre || 'Garzón de Turno',
+      meseroResponsableNombre: meseroNombre || 'Garzón de Turno',
+      descripcion: `Garzón ${meseroNombre || 'de turno'} acudió a atender la Mesa ${mesaNumero}`,
+      metadata: { mesaNumero, atendidoPor: meseroNombre },
+    });
   }
 
   obtenerLlamadasMeseroPendientes() {
@@ -66,19 +88,29 @@ export class PedidosService {
    * Si la mesa ya está OCUPADA, agrega los items al pedido activo existente
    * (soporte multi-ronda para pedidos autónomos por IA y pedidos POS).
    */
-  async crearPedido(meseroId: string, dto: CrearPedidoDto, esIA = false, esAdmin = false) {
+  async crearPedido(
+    meseroId: string,
+    dto: CrearPedidoDto,
+    esIA = false,
+    esAdmin = false,
+    canalOrigen?: 'MESERO_POS' | 'IA_DON_BETO' | 'CLIENTE_DIGITAL',
+  ) {
     const { mesaId, items, notas } = dto;
+    const origenFinal = canalOrigen || (esIA ? 'IA_DON_BETO' : 'MESERO_POS');
 
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. Verificar existencia y estado de la mesa
-      const mesa = await tx.mesa.findUnique({ where: { id: mesaId } });
+      const mesa = await tx.mesa.findUnique({
+        where: { id: mesaId },
+        include: { meseroAsignado: true },
+      });
       if (!mesa || !mesa.activa) {
         throw new BadRequestException('La mesa seleccionada no existe o no está activa');
       }
 
       // Si la mesa está OCUPADA, agregar items al pedido activo (soporte multi-ronda para admin y para IA)
       if (mesa.estado === EstadoMesa.OCUPADA) {
-        return this.agregarItemsAPedidoActivo(tx, mesaId, meseroId, items, notas, esAdmin, esIA);
+        return this.agregarItemsAPedidoActivo(tx, mesaId, meseroId, items, notas, esAdmin, esIA, origenFinal);
       }
 
       // Si la mesa está POR_COBRAR, no se puede agregar nada
@@ -150,12 +182,13 @@ export class PedidosService {
         });
       }
 
-      // 3. Crear el Pedido y sus Detalles
+      // 3. Crear el Pedido y sus Detalles con canalOrigen
       const pedido = await tx.pedido.create({
         data: {
           subtotal: new Prisma.Decimal(subtotal),
           total: new Prisma.Decimal(subtotal),
           notas: esIA ? `[Pedido IA] ${notas || ''}`.trim() : notas,
+          canalOrigen: origenFinal as any,
           mesaId,
           meseroId,
           estado: EstadoPedido.ABIERTO,
@@ -180,7 +213,7 @@ export class PedidosService {
             },
           },
           mesa: {
-            select: { id: true, numero: true, estado: true },
+            select: { id: true, numero: true, estado: true, meseroAsignado: { select: { nombre: true } } },
           },
           mesero: {
             select: { nombre: true },
@@ -198,7 +231,29 @@ export class PedidosService {
       return { pedido, mesaActualizada };
     });
 
-    // 5. Notificaciones WebSocket en tiempo real
+    // 5. Registrar en Auditoría Operativa
+    const nombreMeseroResp = result.pedido.mesero?.nombre || 'Mesero';
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'CREACION_PEDIDO',
+      mesaId: result.mesaActualizada.id,
+      mesaNumero: result.pedido.mesa?.numero,
+      usuarioId: result.pedido.meseroId,
+      usuarioNombre: nombreMeseroResp,
+      rolUsuario: 'MESERO',
+      meseroResponsableNombre: nombreMeseroResp,
+      canalOrigen: origenFinal,
+      descripcion:
+        origenFinal === 'IA_DON_BETO'
+          ? `Comanda autónoma registrada vía Don Beto IA en Mesa ${result.pedido.mesa?.numero} por Bs. ${Number(result.pedido.total).toFixed(2)} (Responsable de mesa: ${nombreMeseroResp})`
+          : `Comanda creada en POS para Mesa ${result.pedido.mesa?.numero} por ${nombreMeseroResp} (Bs. ${Number(result.pedido.total).toFixed(2)})`,
+      metadata: {
+        pedidoId: result.pedido.id,
+        canalOrigen: origenFinal,
+        total: Number(result.pedido.total),
+      },
+    });
+
+    // 6. Notificaciones WebSocket en tiempo real
     this.gateway.broadcastNuevoPedido(result.pedido);
     this.gateway.broadcastEstadoPedido(result.pedido.id, result.pedido.estado);
     this.gateway.broadcastMesaEstado(result.mesaActualizada.id, result.mesaActualizada.estado);
@@ -229,6 +284,7 @@ export class PedidosService {
     notas?: string,
     esAdmin = false,
     esIA = false,
+    canalOrigen?: 'MESERO_POS' | 'IA_DON_BETO' | 'CLIENTE_DIGITAL',
   ) {
     // Buscar pedido activo de esta mesa en cualquier estado no cancelado
     let pedidoActivo = await tx.pedido.findFirst({
@@ -358,7 +414,28 @@ export class PedidosService {
 
     const mesa = await tx.mesa.findUnique({
       where: { id: mesaId },
-      select: { id: true, estado: true },
+      select: { id: true, estado: true, numero: true },
+    });
+
+    // Registrar en auditoría la nueva ronda
+    const respNombre = pedidoActualizado.mesero?.nombre || 'Mesero';
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'ITEM_AGREGADO',
+      mesaId,
+      mesaNumero: mesa?.numero,
+      usuarioId: pedidoActualizado.meseroId,
+      usuarioNombre: respNombre,
+      rolUsuario: 'MESERO',
+      meseroResponsableNombre: respNombre,
+      canalOrigen: esIA ? 'IA_DON_BETO' : 'MESERO_POS',
+      descripcion: esIA
+        ? `Nuevos platos agregados vía Don Beto IA a Mesa ${mesa?.numero} (+Bs. ${subtotalNuevo.toFixed(2)}) — Responsable: ${respNombre}`
+        : `Nuevos platos agregados en POS a Mesa ${mesa?.numero} (+Bs. ${subtotalNuevo.toFixed(2)}) por ${respNombre}`,
+      metadata: {
+        pedidoId: pedidoActualizado.id,
+        montoAgregado: subtotalNuevo,
+        nuevoTotal: Number(pedidoActualizado.total),
+      },
     });
 
     return { pedido: pedidoActualizado, mesaActualizada: mesa! };
