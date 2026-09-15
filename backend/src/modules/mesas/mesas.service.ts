@@ -1,24 +1,30 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EstadoMesa } from '@prisma/client';
 import { PedidosGateway } from '../pedidos/pedidos.gateway';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 
 @Injectable()
 export class MesasService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gateway: PedidosGateway,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   async findAll() {
     return this.prisma.mesa.findMany({
       where: { activa: true },
       include: {
+        meseroAsignado: {
+          select: { id: true, nombre: true, rol: true, email: true },
+        },
         pedidos: {
           where: { estado: { in: ['ABIERTO', 'EN_COCINA', 'LISTO', 'ENTREGADO'] } },
           select: {
             id: true,
             estado: true,
+            canalOrigen: true,
             total: true,
             subtotal: true,
             mesero: { select: { id: true, nombre: true } },
@@ -52,6 +58,9 @@ export class MesasService {
     const mesa = await this.prisma.mesa.findUnique({
       where: { id },
       include: {
+        meseroAsignado: {
+          select: { id: true, nombre: true, rol: true, email: true },
+        },
         pedidos: {
           where: { estado: { in: ['ABIERTO', 'EN_COCINA', 'LISTO'] } },
           include: {
@@ -70,6 +79,89 @@ export class MesasService {
     }
 
     return mesa;
+  }
+
+  /**
+   * Obtiene exclusivamente los garzones humanos activos (rol MESERO).
+   * Excluye administradores, cajeros y cuentas virtuales de sistema.
+   */
+  async obtenerMeserosActivos() {
+    return this.prisma.usuario.findMany({
+      where: {
+        rol: 'MESERO',
+        activo: true,
+        email: { not: 'ia@tukuypaj.com' },
+      },
+      select: {
+        id: true,
+        nombre: true,
+        rol: true,
+        email: true,
+      },
+      orderBy: { nombre: 'asc' },
+    });
+  }
+
+  /**
+   * Asigna o desasigna un mesero físico a una mesa con registro estricto en auditoría.
+   * Valida estrictamente que el usuario tenga rol MESERO (no ADMIN ni CAJERO).
+   */
+  async asignarMesero(
+    id: number,
+    meseroId: string | null,
+    usuarioAdmin?: { id: string; nombre: string; rol: string },
+  ) {
+    const mesa = await this.findOne(id);
+    let meseroNombre = 'Sin asignar';
+
+    if (meseroId) {
+      const mesero = await this.prisma.usuario.findUnique({
+        where: { id: meseroId },
+        select: { id: true, nombre: true, rol: true, activo: true, email: true },
+      });
+
+      if (!mesero || !mesero.activo) {
+        throw new BadRequestException('El mesero seleccionado no existe o no está activo');
+      }
+
+      if (mesero.rol !== 'MESERO' || mesero.email === 'ia@tukuypaj.com') {
+        throw new BadRequestException(
+          `Seguridad operativa: Solo el personal con rol MESERO puede ser asignado a mesas de salón. El usuario "${mesero.nombre}" tiene rol ${mesero.rol}.`,
+        );
+      }
+
+      meseroNombre = mesero.nombre;
+    }
+
+    const mesaActualizada = await this.prisma.mesa.update({
+      where: { id },
+      data: { meseroAsignadoId: meseroId },
+      include: {
+        meseroAsignado: {
+          select: { id: true, nombre: true, rol: true, email: true },
+        },
+      },
+    });
+
+    // Registrar en auditoría inmutable
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'ASIGNACION_MESERO',
+      mesaId: mesa.id,
+      mesaNumero: mesa.numero,
+      usuarioId: usuarioAdmin?.id,
+      usuarioNombre: usuarioAdmin?.nombre || 'Administrador',
+      rolUsuario: usuarioAdmin?.rol || 'ADMIN',
+      meseroResponsableNombre: meseroNombre,
+      descripcion: meseroId
+        ? `Mesa ${mesa.numero} asignada al mesero ${meseroNombre}`
+        : `Mesa ${mesa.numero} liberada de mesero responsable`,
+      metadata: { meseroId, meseroNombre },
+    });
+
+    // Notificar al salón por WebSocket
+    this.gateway.broadcastMesaEstado(id, mesaActualizada.estado);
+
+    return mesaActualizada;
   }
 
   async create(data: {

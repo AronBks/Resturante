@@ -12,6 +12,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { MesasService } from './mesas.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { EstadoMesa } from '@prisma/client';
 
 @Controller('mesas')
@@ -22,6 +23,11 @@ export class MesasController {
   @Get()
   findAll() {
     return this.mesasService.findAll();
+  }
+
+  @Get('meseros-activos')
+  obtenerMeserosActivos() {
+    return this.mesasService.obtenerMeserosActivos();
   }
 
   @Get(':id')
@@ -68,5 +74,15 @@ export class MesasController {
   @Roles('ADMIN')
   toggleActive(@Param('id', ParseIntPipe) id: number) {
     return this.mesasService.toggleActive(id);
+  }
+
+  @Patch(':id/asignar-mesero')
+  @Roles('ADMIN')
+  asignarMesero(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('meseroId') meseroId: string | null,
+    @CurrentUser() user: any,
+  ) {
+    return this.mesasService.asignarMesero(id, meseroId, user);
   }
 }
