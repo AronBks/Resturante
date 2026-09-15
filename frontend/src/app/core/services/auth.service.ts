@@ -28,6 +28,7 @@ export class AuthService {
   
   // Usamos Angular Signals para un manejo de estado reactivo y de alto rendimiento
   currentUserSignal = signal<UserProfile | null>(null);
+  readonly currentUser = this.currentUserSignal.asReadonly();
   
   // Signals computados para consultar el estado de autenticación de forma sencilla
   isAuthenticated = computed(() => this.currentUserSignal() !== null);
