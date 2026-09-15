@@ -122,6 +122,9 @@ export class ComandaDrawerComponent implements OnChanges {
   activePedidoId = signal<string | null>(null);
   activeMeseroNombre = signal('');
   activePedidoEstado = signal<string>('EN_COCINA');
+  activeCanalOrigen = signal<string>('MESERO_POS');
+  auditoriaEventos = signal<any[]>([]);
+  mostrarAuditoria = signal<boolean>(false);
 
   searchQuery = signal('');
   selectedCategoryId = signal<number | null>(null);
@@ -157,9 +160,15 @@ export class ComandaDrawerComponent implements OnChanges {
 
   atenderLlamadaDirecta() {
     if (!this.mesa) return;
-    this.http.post(`${this.baseUrl}/pedidos/atender-mesero`, { mesaNumero: this.mesa.numero }).subscribe({
+    const currentUser = this.authService.currentUserSignal();
+    const meseroNombre = currentUser?.nombre || this.activeMeseroNombre() || 'Garzón de Turno';
+    this.http.post(`${this.baseUrl}/pedidos/atender-mesero`, { 
+      mesaNumero: this.mesa.numero,
+      meseroNombre,
+    }).subscribe({
       next: () => {
         this.saved.emit();
+        this.cargarAuditoriaMesa(this.mesa!.numero);
       },
     });
   }
@@ -367,7 +376,9 @@ export class ComandaDrawerComponent implements OnChanges {
     if (changes['mesa'] && this.mesa) {
       this.errorMessage.set('');
       this.activePedidoId.set(null);
-      this.activeMeseroNombre.set('');
+      this.activeMeseroNombre.set((this.mesa as any).meseroAsignado?.nombre || '');
+      this.activeCanalOrigen.set('MESERO_POS');
+      this.mostrarAuditoria.set(false);
       this.comandaItems.set([]);
       this.generalNotes.set('');
       this.activeSentItems.set([]);
@@ -379,6 +390,9 @@ export class ComandaDrawerComponent implements OnChanges {
 
       this.viewMode.set('DETAIL');
 
+      // Cargar eventos de auditoría histórica de la mesa
+      this.cargarAuditoriaMesa(this.mesa.numero);
+
       if (this.mesa.estado !== 'LIBRE') {
         this.cargarPedidoActivo();
       }
@@ -387,6 +401,16 @@ export class ComandaDrawerComponent implements OnChanges {
         setTimeout(() => this.abrirCajaModal(), 100);
       }
     }
+  }
+
+  cargarAuditoriaMesa(mesaNumero: string) {
+    this.http.get<any>(`${this.baseUrl}/auditoria/mesa/${mesaNumero}`).subscribe({
+      next: (res) => {
+        const list = res?.data || res || [];
+        this.auditoriaEventos.set(list);
+      },
+      error: () => this.auditoriaEventos.set([]),
+    });
   }
 
   cargarWaiters() {
@@ -413,9 +437,14 @@ export class ComandaDrawerComponent implements OnChanges {
         if (pedido && pedido.id) {
           this.activePedidoId.set(pedido.id);
           this.activePedidoEstado.set(pedido.estado || 'EN_COCINA');
+          this.activeCanalOrigen.set(pedido.canalOrigen || 'MESERO_POS');
           this.generalNotes.set(pedido.notas || '');
           this.selectedWaitership.set(pedido.meseroId);
-          this.activeMeseroNombre.set(pedido.mesero?.nombre || 'Juan C.');
+          if (pedido.mesero?.nombre) {
+            this.activeMeseroNombre.set(pedido.mesero.nombre);
+          } else if ((this.mesa as any)?.meseroAsignado?.nombre) {
+            this.activeMeseroNombre.set((this.mesa as any).meseroAsignado.nombre);
+          }
 
           const sentItems = (pedido.detalles || []).map((d: any) => ({
             id: d.id,
@@ -435,6 +464,11 @@ export class ComandaDrawerComponent implements OnChanges {
             const diff = Math.max(0, Date.now() - start);
             const mins = Math.floor(diff / 60000);
             this.tiempoTranscurridoText.set(`${mins}m transcurridos`);
+          }
+
+          // Refrescar bitácora de auditoría
+          if (this.mesa?.numero) {
+            this.cargarAuditoriaMesa(this.mesa.numero);
           }
         }
       },

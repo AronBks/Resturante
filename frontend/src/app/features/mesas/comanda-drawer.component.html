@@ -23,20 +23,25 @@
           </button>
         </div>
 
-        <!-- Meta Subtítulo: Tiempo • Mesero • Pax -->
+        <!-- Meta Subtítulo: Tiempo • Mesero Responsable • Pax • Canal -->
         <div class="header-meta-row">
           <div class="meta-item">
             <lucide-icon name="clock" [size]="13"></lucide-icon>
             <span>{{ tiempoTranscurridoText() }}</span>
           </div>
-          <div class="meta-item">
-            <lucide-icon name="user" [size]="13"></lucide-icon>
-            <span>{{ activeMeseroNombre() || 'Don Roberto (Mesero)' }}</span>
+          <div class="meta-item meta-resp-highlight" title="Mesero Físico Responsable de Salón">
+            <lucide-icon name="user-check" [size]="13" class="text-gold"></lucide-icon>
+            <span>Resp: <strong>{{ activeMeseroNombre() || 'Carlos Condori' }}</strong></span>
           </div>
           <div class="meta-item">
             <lucide-icon name="users" [size]="13"></lucide-icon>
             <span>{{ mesa?.capacidad || 4 }} pax</span>
           </div>
+          @if (activeCanalOrigen() === 'IA_DON_BETO') {
+            <div class="meta-item badge-ia-comanda" title="Pedido autónomo procesado por Don Beto IA">
+              <span>🤖 Don Beto IA</span>
+            </div>
+          }
         </div>
       </header>
 
@@ -122,7 +127,86 @@
           </div>
         }
 
-        <!-- 1. Sección: COMANDA ACTIVA -->
+        <!-- PESTAÑAS: COMANDA vs AUDITORÍA OPERATIVA -->
+        <div class="drawer-nav-tabs-bar">
+          <button 
+            type="button" 
+            class="drawer-tab-btn" 
+            [class.active]="!mostrarAuditoria()"
+            (click)="mostrarAuditoria.set(false)"
+          >
+            <lucide-icon name="utensils" [size]="13"></lucide-icon>
+            <span>Comanda & Platos</span>
+          </button>
+          <button 
+            type="button" 
+            class="drawer-tab-btn" 
+            [class.active]="mostrarAuditoria()"
+            (click)="mostrarAuditoria.set(true)"
+          >
+            <lucide-icon name="shield-check" [size]="13"></lucide-icon>
+            <span>Auditoría Operativa ({{ auditoriaEventos().length }})</span>
+          </button>
+        </div>
+
+        <!-- ── VISTA DE AUDITORÍA OPERATIVA INMUTABLE ── -->
+        @if (mostrarAuditoria()) {
+          <section class="drawer-section auditoria-panel-section animate-fade-in">
+            <div class="auditoria-panel-header">
+              <div class="aph-left">
+                <lucide-icon name="shield" [size]="16" class="text-gold"></lucide-icon>
+                <strong class="aph-title">Trazabilidad de Sala (Mesa {{ mesa?.numero }})</strong>
+              </div>
+              <span class="aph-badge">{{ auditoriaEventos().length }} Eventos Registrados</span>
+            </div>
+
+            <div class="auditoria-stream-list">
+              @for (ev of auditoriaEventos(); track ev.id) {
+                <div class="auditoria-card-node">
+                  <div class="acn-header">
+                    <span class="acn-type-badge" [ngClass]="ev.tipoEvento.toLowerCase()">
+                      {{ ev.tipoEvento.replace('_', ' ') }}
+                    </span>
+                    <span class="acn-time">{{ ev.createdAt | date:'HH:mm:ss' }}</span>
+                  </div>
+
+                  <p class="acn-description">{{ ev.descripcion }}</p>
+
+                  <div class="acn-footer-meta">
+                    @if (ev.usuarioNombre) {
+                      <span class="acn-tag-user">
+                        <span class="acn-role-pill" [ngClass]="ev.rolUsuario?.toLowerCase() || 'sistema'">
+                          {{ ev.rolUsuario || 'SISTEMA' }}
+                        </span>
+                        <span class="acn-user-name">{{ ev.usuarioNombre }}</span>
+                      </span>
+                    }
+
+                    <span class="acn-tag-resp" *ngIf="ev.meseroResponsableNombre">
+                      <lucide-icon name="user-check" [size]="11"></lucide-icon>
+                      <span>Garzón: {{ ev.meseroResponsableNombre }}</span>
+                    </span>
+
+                    <span class="acn-tag-canal" *ngIf="ev.canalOrigen">
+                      <span>{{ ev.canalOrigen === 'IA_DON_BETO' ? '🤖 Don Beto IA' : '🖥️ POS Salón' }}</span>
+                    </span>
+                  </div>
+                </div>
+              }
+
+              @if (auditoriaEventos().length === 0) {
+                <div class="auditoria-empty-state">
+                  <lucide-icon name="shield-alert" [size]="24" class="text-gold"></lucide-icon>
+                  <strong>Sin registros previos</strong>
+                  <p>Las asignaciones, pedidos de IA y comandas de este turno se registrarán aquí automáticamente.</p>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- 1. Sección: COMANDA ACTIVA (Si no está en modo auditoría) -->
+        @if (!mostrarAuditoria()) {
         <section class="drawer-section">
           <div class="section-title-line">
             <div class="section-title-left">
@@ -292,6 +376,7 @@
             }
           </div>
         </section>
+        }
 
       </div>
 

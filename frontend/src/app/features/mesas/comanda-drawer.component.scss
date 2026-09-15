@@ -1805,3 +1805,264 @@
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══════════════════════════════════════════════════════
+   PESTAÑAS Y PANEL DE AUDITORÍA OPERATIVA EN DRAWER
+   ═══════════════════════════════════════════════════════ */
+
+.meta-resp-highlight {
+  background: rgba(212, 163, 89, 0.12) !important;
+  border: 1px solid rgba(212, 163, 89, 0.3) !important;
+  color: #e5c158 !important;
+  border-radius: 6px;
+  padding: 2px 8px !important;
+
+  strong {
+    color: #ffffff;
+  }
+}
+
+.badge-ia-comanda {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  color: #93c5fd !important;
+  border-radius: 6px;
+  padding: 2px 8px !important;
+  font-weight: 700;
+}
+
+.drawer-nav-tabs-bar {
+  display: flex;
+  gap: 8px;
+  margin: 12px 18px 8px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  .drawer-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #9e9484;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    &.active {
+      background: rgba(212, 163, 89, 0.18);
+      color: #e5c158;
+      border: 1px solid rgba(212, 163, 89, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.auditoria-panel-section {
+  padding: 12px 18px;
+
+  .auditoria-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    .aph-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .aph-title {
+        font-size: 0.82rem;
+        color: #e5c158;
+        letter-spacing: 0.3px;
+      }
+    }
+
+    .aph-badge {
+      font-size: 0.68rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #b8ac9a;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  }
+
+  .auditoria-stream-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .auditoria-card-node {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 3px solid #d4a359;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .acn-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .acn-type-badge {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(212, 163, 89, 0.15);
+        color: #e5c158;
+
+        &.cobro_caja {
+          background: rgba(34, 197, 94, 0.15);
+          color: #4ade80;
+        }
+
+        &.llamada_mesero {
+          background: rgba(239, 68, 68, 0.15);
+          color: #f87171;
+        }
+
+        &.asignacion_mesero {
+          background: rgba(147, 51, 234, 0.15);
+          color: #c084fc;
+        }
+      }
+
+      .acn-time {
+        font-size: 0.68rem;
+        color: #78716c;
+        font-family: monospace;
+      }
+    }
+
+    .acn-description {
+      font-size: 0.76rem;
+      color: #d6cbba;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .acn-footer-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 0.68rem;
+
+      .acn-tag-user {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #d6cbba;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 2px 7px;
+        border-radius: 4px;
+
+        .acn-role-pill {
+          font-size: 0.6rem;
+          font-weight: 800;
+          padding: 1px 4px;
+          border-radius: 3px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+
+          &.admin {
+            background: rgba(147, 51, 234, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #d8b4fe;
+          }
+
+          &.mesero {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            color: #4ade80;
+          }
+
+          &.cajero {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+          }
+
+          &.sistema {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #a89f91;
+          }
+        }
+
+        .acn-user-name {
+          font-weight: 600;
+          color: #f5f0eb;
+        }
+      }
+
+      .acn-tag-resp {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #e5c158;
+        background: rgba(212, 163, 89, 0.08);
+        border: 1px solid rgba(212, 163, 89, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      .acn-tag-canal {
+        color: #93c5fd;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+    }
+  }
+
+  .auditoria-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 30px 15px;
+
+    strong {
+      color: #ffffff;
+      font-size: 0.85rem;
+    }
+
+    p {
+      color: #9e9484;
+      font-size: 0.72rem;
+      margin: 0;
+      max-width: 250px;
+    }
+  }
+}
