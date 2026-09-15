@@ -8,6 +8,7 @@ import { CartaModule } from './modules/carta/carta.module';
 import { PedidosModule } from './modules/pedidos/pedidos.module';
 import { AnaliticaModule } from './modules/analitica/analitica.module';
 import { CajaModule } from './modules/caja/caja.module';
+import { AuditoriaModule } from './modules/auditoria/auditoria.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CajaModule } from './modules/caja/caja.module';
     PedidosModule,
     AnaliticaModule,
     CajaModule,
+    AuditoriaModule,
   ],
 })
 export class AppModule {}
