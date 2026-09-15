@@ -14,6 +14,7 @@ export interface DatosRecibo {
   mesa: { numero: string };
   mesero: { nombre: string };
   cajero: { nombre: string };
+  canalOrigen?: string;
   items: {
     nombre: string;
     cantidad: number;

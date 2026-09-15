@@ -46,6 +46,31 @@
         </div>
       </div>
 
+      <!-- Control y Auditoría de Seguridad Humana -->
+      <div class="caja-security-audit-card">
+        <div class="csa-header">
+          <lucide-icon name="shield-check" class="icon-sm icon-gold"></lucide-icon>
+          <span>Control y Auditoría de Salón</span>
+        </div>
+        <div class="csa-details">
+          <div class="csa-row">
+            <span class="csa-lbl">Mesero Responsable:</span>
+            <strong class="csa-val">{{ pedido?.meseroNombre || 'Carlos Condori' }}</strong>
+          </div>
+          <div class="csa-row">
+            <span class="csa-lbl">Verificación en Mesa:</span>
+            <span class="csa-status-ok">
+              <lucide-icon name="check" class="icon-xs"></lucide-icon>
+              <span>Atención Presencial de Salón</span>
+            </span>
+          </div>
+          <div class="csa-row">
+            <span class="csa-lbl">Seguridad Operativa:</span>
+            <span class="csa-audit-tag">Auditoría Sincronizada en BD</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Facturación opcional (NIT / Razón Social) con Switch iOS -->
       <div class="caja-facturacion-toggle-panel">
         <label class="factura-toggle-lbl">

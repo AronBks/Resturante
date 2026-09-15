@@ -56,6 +56,10 @@
         <span class="info-lbl">Mesero:</span>
         <span class="info-val">{{ datos.mesero.nombre }}</span>
       </div>
+      <div class="info-row" *ngIf="datos.canalOrigen === 'IA_DON_BETO'">
+        <span class="info-lbl">Atención:</span>
+        <span class="info-val font-bold">Asistente IA Don Beto</span>
+      </div>
       <div class="info-row">
         <span class="info-lbl">Cajero:</span>
         <span class="info-val">{{ datos.cajero.nombre }}</span>
