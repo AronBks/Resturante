@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { SocketService } from '../../core/services/socket.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ComandaDrawerComponent } from './comanda-drawer.component';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -21,6 +22,8 @@ export interface Mesa {
   estado: 'LIBRE' | 'OCUPADA' | 'POR_COBRAR' | 'RESERVADA' | string;
   posicion?: any;
   pedidos?: any[];
+  meseroAsignadoId?: string | null;
+  meseroAsignado?: { id: string; nombre: string; rol?: string };
 }
 
 export interface Plato {
@@ -58,6 +61,7 @@ export interface LiveLogEvent {
 export class MesasComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly socketService = inject(SocketService);
+  public readonly authService = inject(AuthService);
   private readonly baseUrl = 'http://localhost:3000/api';
 
   // ── Signals de Estado Principal ──
@@ -65,6 +69,11 @@ export class MesasComponent implements OnInit, OnDestroy {
   platos = signal<Plato[]>([]);
   selectedMesa = signal<Mesa | null>(null);
   activeDrawer = signal<'COMANDA' | 'COBRO' | null>(null);
+
+  // ── Asignación de Meseros y Seguridad Operativa ──
+  meseros = signal<{ id: string; nombre: string; rol: string }[]>([]);
+  mesaParaAsignar = signal<Mesa | null>(null);
+  filtroMeseroId = signal<string>('TODOS'); // 'TODOS' | 'MIS_MESAS' | meseroId específico
 
   // ── Filtros de Zona y Estado ──
   filtroZona = signal<string>('TODOS');
@@ -96,10 +105,11 @@ export class MesasComponent implements OnInit, OnDestroy {
   ocupadasCount = computed(() => this.mesas().filter((m) => m.estado === 'OCUPADA').length);
   porCobrarCount = computed(() => this.mesas().filter((m) => m.estado === 'POR_COBRAR').length);
 
-  // ── Mesas Filtradas ──
+  // ── Mesas Filtradas por Estado y por Mesero Designado ──
   mesasFiltradas = computed(() => {
     let result = this.mesas();
 
+    // 1. Filtro por Estado Operativo
     const estado = this.filtroEstado();
     if (estado !== 'TODOS') {
       if (estado === 'COMANDA') {
@@ -109,8 +119,32 @@ export class MesasComponent implements OnInit, OnDestroy {
       }
     }
 
+    // 2. Filtro por Apartado de Mesero / "Mis Mesas"
+    const filtroMesero = this.filtroMeseroId();
+    if (filtroMesero === 'MIS_MESAS') {
+      const user = this.authService.currentUserSignal();
+      if (user) {
+        result = result.filter((m) => m.meseroAsignadoId === user.id);
+      }
+    } else if (filtroMesero !== 'TODOS') {
+      result = result.filter((m) => m.meseroAsignadoId === filtroMesero);
+    }
+
     return result;
   });
+
+  marcarEntregadoMesa(mesa: Mesa, ev: MouseEvent) {
+    ev.stopPropagation();
+    const pedido = mesa.pedidos?.[0];
+    if (!pedido || !pedido.id) return;
+
+    this.http.patch(`${this.baseUrl}/pedidos/${pedido.id}/estado`, { estado: 'ENTREGADO' }).subscribe({
+      next: () => {
+        this.cargarMesas();
+      },
+      error: (err) => console.error('Error al entregar pedido', err),
+    });
+  }
 
   cerrarMenuContextual() {
     this.selectedMesa.set(null);
@@ -118,10 +152,39 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.cargarMesas();
+    this.cargarMeseros();
     this.cargarLlamadasMesero();
     this.cargarPlatos();
     this.suscribirAActualizaciones();
     this.iniciarTemporizador();
+  }
+
+  cargarMeseros() {
+    this.http.get<any>(`${this.baseUrl}/mesas/meseros-activos`).subscribe({
+      next: (res) => {
+        const data = res?.data || res || [];
+        this.meseros.set(data);
+      },
+      error: (err) => console.error('Error cargando meseros de salón', err),
+    });
+  }
+
+  abrirAsignarMesero(mesa: Mesa, ev: MouseEvent) {
+    ev.stopPropagation();
+    this.mesaParaAsignar.set(mesa);
+  }
+
+  asignarMeseroAMesa(mesaId: number, meseroId: string | null) {
+    this.http.patch<any>(`${this.baseUrl}/mesas/${mesaId}/asignar-mesero`, { meseroId }).subscribe({
+      next: () => {
+        this.cargarMesas();
+        this.mesaParaAsignar.set(null);
+      },
+      error: (err) => {
+        console.error('Error al asignar mesero a la mesa', err);
+        alert('No se pudo asignar el mesero a la mesa.');
+      },
+    });
   }
 
   ngOnDestroy() {

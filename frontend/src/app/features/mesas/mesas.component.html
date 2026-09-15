@@ -30,9 +30,47 @@
   </header>
 
   <!-- ═══════════════════════════════════════════════════════
-       2. BARRA DE FILTROS DE ESTADO CON EMOJIS
+       2. BARRA DE CONTROL OPERATIVO: FILTRO MESERO & ESTADOS
        ═══════════════════════════════════════════════════════ -->
   <div class="cmd-filter-legend-bar">
+    <!-- Apartado de Mesero (Control Humano de Salón) -->
+    <div class="mesero-turn-selector">
+      <button 
+        class="mesero-tab-pill" 
+        [class.active]="filtroMeseroId() === 'TODOS'"
+        (click)="filtroMeseroId.set('TODOS')"
+      >
+        <lucide-icon name="users" [size]="12"></lucide-icon>
+        <span>Salón Completo</span>
+      </button>
+
+      <button 
+        class="mesero-tab-pill highlight-my-tables" 
+        *ngIf="authService.currentUserSignal()"
+        [class.active]="filtroMeseroId() === 'MIS_MESAS'"
+        (click)="filtroMeseroId.set('MIS_MESAS')"
+        title="Ver únicamente las mesas asignadas a mi responsabilidad"
+      >
+        <lucide-icon name="star" [size]="12" class="text-gold"></lucide-icon>
+        <span>Mis Mesas ({{ authService.currentUserSignal()?.nombre }})</span>
+      </button>
+
+      <div class="mesero-dropdown-box">
+        <select 
+          class="select-mesero-operativo" 
+          [value]="filtroMeseroId()" 
+          (change)="filtroMeseroId.set($any($event.target).value)"
+        >
+          <option value="TODOS">Todos los meseros</option>
+          <option value="MIS_MESAS" *ngIf="authService.currentUserSignal()">⭐ Mis Mesas Asignadas</option>
+          @for (m of meseros(); track m.id) {
+            <option [value]="m.id">👤 {{ m.nombre }} ({{ m.rol }})</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Filtros de Estado con Emojis -->
     <div class="zone-filter-tabs">
       <button
         class="zone-tab"
@@ -151,6 +189,28 @@
               }
             </div>
 
+            <!-- Mesero Responsable y Origen (Seguridad Operativa) -->
+            <div class="card-cmd-mesero-row">
+              <button 
+                class="btn-mesero-asignado" 
+                [class.btn-mesero-readonly]="authService.userRole() !== 'ADMIN'"
+                (click)="authService.userRole() === 'ADMIN' ? abrirAsignarMesero(mesa, $event) : null"
+                [title]="authService.userRole() === 'ADMIN' ? 'Clic para asignar o reasignar garzón de turno' : 'Garzón de salón asignado a esta mesa'"
+              >
+                <lucide-icon name="user" [size]="11"></lucide-icon>
+                <span class="mesero-name">{{ mesa.meseroAsignado?.nombre || 'Sin Mesero' }}</span>
+                @if (authService.userRole() === 'ADMIN') {
+                  <lucide-icon name="chevron-down" [size]="10" class="arrow-down"></lucide-icon>
+                }
+              </button>
+
+              @if (mesa.pedidos?.[0]?.canalOrigen === 'IA_DON_BETO') {
+                <span class="badge-origen-ia" title="Pedido autónomo procesado por Don Beto IA">
+                  🤖 IA
+                </span>
+              }
+            </div>
+
             <!-- ── CUERPO DE TARJETA SEGÚN ESTADO ── -->
             <div class="card-cmd-body">
               
@@ -201,6 +261,31 @@
                   <span class="progress-percent">{{ getKitchenProgress(mesa) }}%</span>
                 </div>
 
+                <!-- Control Operativo de Entrega por Mesero -->
+                <div class="card-waiter-control-actions">
+                  <span class="delivery-waiter-label" title="Mesero humano a cargo de la entrega física">
+                    <lucide-icon name="user-check" [size]="11"></lucide-icon>
+                    <span>{{ mesa.meseroAsignado?.nombre || 'Mesero Asignado' }}</span>
+                  </span>
+
+                  @if (mesa.pedidos?.[0]?.estado !== 'ENTREGADO') {
+                    <button 
+                      type="button"
+                      class="btn-deliver-order" 
+                      (click)="marcarEntregadoMesa(mesa, $event)"
+                      title="Confirmar entrega presencial en mesa"
+                    >
+                      <lucide-icon name="check" [size]="11"></lucide-icon>
+                      <span>Entregar</span>
+                    </button>
+                  } @else {
+                    <span class="badge-delivered-ok">
+                      <lucide-icon name="check-check" [size]="11"></lucide-icon>
+                      <span>Servido</span>
+                    </span>
+                  }
+                </div>
+
               }
 
               <!-- CASO 2: POR COBRAR (TOTAL GRANDE + PROCESAR PAGO) -->
@@ -224,13 +309,17 @@
 
               }
 
-              <!-- CASO 3: LIBRE (CÍRCULO DISCRETO DE PAX) -->
+              <!-- CASO 3: LIBRE (TOMA DIRECTA DE PEDIDO) -->
               @else {
                 
                 <div class="libre-body-box">
                   <div class="pax-dashed-circle">
                     <span>{{ mesa.capacidad }} Pax</span>
                   </div>
+                  <span class="btn-take-order-prompt">
+                    <lucide-icon name="plus-circle" [size]="12"></lucide-icon>
+                    <span>Tomar Pedido</span>
+                  </span>
                 </div>
 
               }
@@ -244,27 +333,8 @@
       </div>
     </main>
 
-    <!-- ── COLUMNA DERECHA: SIDEBAR DE ACCIONES RÁPIDAS & LOG EN VIVO ── -->
+    <!-- ── COLUMNA DERECHA: SIDEBAR DE ACTIVIDAD DEL SALÓN EN VIVO ── -->
     <aside class="cmd-sidebar-panel">
-      
-      <!-- 1. Card: Acciones Rápidas -->
-      <div class="sidebar-action-card">
-        <div class="card-section-title">
-          <lucide-icon name="sparkles" [size]="16" class="title-gold-icon"></lucide-icon>
-          <span>Acciones Rápidas</span>
-        </div>
-
-        <div class="quick-action-buttons-grid">
-          <button class="quick-act-btn" (click)="onMesaClick(mesasFiltradas()[0])">
-            <lucide-icon name="plus-circle" [size]="20" class="btn-icon"></lucide-icon>
-            <span>Nueva Mesa</span>
-          </button>
-          <button class="quick-act-btn" (click)="cargarMesas()">
-            <lucide-icon name="qr-code" [size]="20" class="btn-icon"></lucide-icon>
-            <span>Escanear</span>
-          </button>
-        </div>
-      </div>
 
       <!-- 2. Card: Actividad del Salón en Tiempo Real -->
       <div class="sidebar-log-card">
@@ -339,6 +409,62 @@
     (close)="closeDrawer()"
     (saved)="cargarMesas()"
   ></app-comanda-drawer>
+
+  <!-- ═══════════════════════════════════════════════════════
+       5. MODAL DE ASIGNACIÓN DE MESERO Y AUDITORÍA
+       ═══════════════════════════════════════════════════════ -->
+  @if (mesaParaAsignar()) {
+    <div class="modal-backdrop-assign" (click)="mesaParaAsignar.set(null)">
+      <div class="modal-assign-content" (click)="$event.stopPropagation()">
+        <div class="modal-assign-header">
+          <div class="header-left">
+            <lucide-icon name="shield-check" [size]="18" class="text-gold"></lucide-icon>
+            <h3>Asignar Mesero Responsable</h3>
+          </div>
+          <button class="btn-close-modal" (click)="mesaParaAsignar.set(null)">
+            <lucide-icon name="x" [size]="16"></lucide-icon>
+          </button>
+        </div>
+
+        <p class="modal-assign-desc">
+          Mesa <strong>{{ mesaParaAsignar()?.numero }}</strong> — Designa al mesero físico de turno responsable de la atención presencial, despacho de platos y registro de auditoría.
+        </p>
+
+        <div class="meseros-list-options">
+          @for (m of meseros(); track m.id) {
+            <button 
+              class="mesero-select-item"
+              [class.active]="mesaParaAsignar()?.meseroAsignadoId === m.id"
+              (click)="asignarMeseroAMesa(mesaParaAsignar()!.id, m.id)"
+            >
+              <div class="avatar-circle">
+                <lucide-icon name="user" [size]="14"></lucide-icon>
+              </div>
+              <div class="mesero-info-wrap">
+                <span class="m-nombre">{{ m.nombre }}</span>
+                <span class="m-rol">Personal de Salón (Garzón)</span>
+              </div>
+              @if (mesaParaAsignar()?.meseroAsignadoId === m.id) {
+                <lucide-icon name="check" [size]="16" class="check-icon"></lucide-icon>
+              }
+            </button>
+          }
+
+          @if (mesaParaAsignar()?.meseroAsignadoId) {
+            <button class="mesero-select-item unassign" (click)="asignarMeseroAMesa(mesaParaAsignar()!.id, null)">
+              <div class="avatar-circle danger">
+                <lucide-icon name="user-x" [size]="14"></lucide-icon>
+              </div>
+              <div class="mesero-info-wrap">
+                <span class="m-nombre text-danger">Desasignar Mesero</span>
+                <span class="m-rol">Dejar mesa sin responsable asignado</span>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
 
 </div>
 
