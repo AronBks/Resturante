@@ -66,29 +66,49 @@ async function main() {
   console.log('✅ Usuarios creados (6)');
 
   // ── 2. MESAS ──
+  const carlos = await prisma.usuario.findUnique({ where: { email: 'carlos@tukuypaj.com' } });
+  const lucia = await prisma.usuario.findUnique({ where: { email: 'lucia@tukuypaj.com' } });
+
   const mesasData = [
-    { numero: 'M01', capacidad: 6, posicion: { x: 80,  y: 180, zona: 'Zona Central' } },
-    { numero: 'M02', capacidad: 4, posicion: { x: 230, y: 180, zona: 'Zona Central' } },
-    { numero: 'M03', capacidad: 4, posicion: { x: 380, y: 180, zona: 'Zona Central' } },
-    { numero: 'M04', capacidad: 6, posicion: { x: 530, y: 180, zona: 'Zona Central' } },
-    { numero: 'M05', capacidad: 4, posicion: { x: 80,  y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'M06', capacidad: 2, posicion: { x: 230, y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'M07', capacidad: 4, posicion: { x: 380, y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'M08', capacidad: 2, posicion: { x: 530, y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'B01', capacidad: 2, posicion: { x: 700, y: 180, zona: 'Barra' } },
-    { numero: 'B02', capacidad: 3, posicion: { x: 700, y: 320, zona: 'Barra' } },
+    { numero: 'M01', capacidad: 6, meseroId: carlos?.id, posicion: { x: 80,  y: 180, zona: 'Zona Central' } },
+    { numero: 'M02', capacidad: 4, meseroId: carlos?.id, posicion: { x: 230, y: 180, zona: 'Zona Central' } },
+    { numero: 'M03', capacidad: 4, meseroId: carlos?.id, posicion: { x: 380, y: 180, zona: 'Zona Central' } },
+    { numero: 'M04', capacidad: 6, meseroId: carlos?.id, posicion: { x: 530, y: 180, zona: 'Zona Central' } },
+    { numero: 'M05', capacidad: 4, meseroId: carlos?.id, posicion: { x: 80,  y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M06', capacidad: 2, meseroId: lucia?.id,  posicion: { x: 230, y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M07', capacidad: 4, meseroId: lucia?.id,  posicion: { x: 380, y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M08', capacidad: 2, meseroId: lucia?.id,  posicion: { x: 530, y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'B01', capacidad: 2, meseroId: lucia?.id,  posicion: { x: 700, y: 180, zona: 'Barra' } },
+    { numero: 'B02', capacidad: 3, meseroId: lucia?.id,  posicion: { x: 700, y: 320, zona: 'Barra' } },
   ];
 
   for (const mesa of mesasData) {
-    await prisma.mesa.create({
+    const mesaCreada = await prisma.mesa.create({
       data: {
         numero: mesa.numero,
         capacidad: mesa.capacidad,
+        meseroAsignadoId: mesa.meseroId || null,
         posicion: JSON.stringify(mesa.posicion),
       },
     });
+
+    if (mesa.meseroId) {
+      const nombreMesero = mesa.meseroId === carlos?.id ? 'Carlos Condori' : 'Lucía Fernández';
+      await (prisma as any).auditoriaEvento.create({
+        data: {
+          tipoEvento: 'ASIGNACION_MESERO',
+          mesaId: mesaCreada.id,
+          mesaNumero: mesaCreada.numero,
+          usuarioNombre: 'Don Roberto Mamani',
+          rolUsuario: 'ADMIN',
+          meseroResponsableNombre: nombreMesero,
+          descripcion: `Apertura de turno: Mesa ${mesaCreada.numero} asignada al mesero ${nombreMesero}`,
+          metadata: { meseroId: mesa.meseroId, meseroNombre: nombreMesero },
+        },
+      });
+    }
   }
-  console.log('✅ Mesas creadas (10)');
+  console.log('✅ Mesas creadas (10) con meseros asignados y auditoría inicial');
 
   // ── 3. CATEGORÍAS ──
   const catPlatos = await prisma.categoriaPlato.create({

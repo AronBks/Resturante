@@ -37,8 +37,9 @@ model Usuario {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relaciones
-  pedidos       Pedido[]
-  cajasAbiertas Caja[]
+  pedidos        Pedido[]
+  cajasAbiertas  Caja[]
+  mesasAsignadas Mesa[]   @relation("MeseroAsignadoMesa")
 
   @@map("usuarios")
 }
@@ -54,18 +55,21 @@ enum EstadoMesa {
 }
 
 model Mesa {
-  id        Int        @id @default(autoincrement())
-  numero    String     @unique @db.VarChar(10)
-  capacidad Int        @default(4)
-  estado    EstadoMesa @default(LIBRE)
+  id               Int        @id @default(autoincrement())
+  numero           String     @unique @db.VarChar(10)
+  capacidad        Int        @default(4)
+  estado           EstadoMesa @default(LIBRE)
   /// Coordenadas {x, y, zona} para el mapa visual interactivo
-  posicion  Json       @default("{\"x\": 0, \"y\": 0, \"zona\": \"Zona Central\"}")
-  activa    Boolean    @default(true)
-  createdAt DateTime   @default(now()) @map("created_at")
+  posicion         Json       @default("{\"x\": 0, \"y\": 0, \"zona\": \"Zona Central\"}")
+  activa           Boolean    @default(true)
+  createdAt        DateTime   @default(now()) @map("created_at")
 
   // Relaciones
-  pedidos Pedido[]
+  pedidos          Pedido[]
+  meseroAsignadoId String?    @map("mesero_asignado_id") @db.Uuid
+  meseroAsignado   Usuario?   @relation("MeseroAsignadoMesa", fields: [meseroAsignadoId], references: [id], onDelete: SetNull)
 
+  @@index([meseroAsignadoId])
   @@map("mesas")
 }
 
@@ -127,14 +131,21 @@ enum EstadoPedido {
   CANCELADO
 }
 
+enum OrigenPedido {
+  MESERO_POS
+  IA_DON_BETO
+  CLIENTE_DIGITAL
+}
+
 model Pedido {
-  id         String       @id @default(uuid()) @db.Uuid
-  estado     EstadoPedido @default(ABIERTO)
-  subtotal   Decimal      @default(0) @db.Decimal(10, 2)
-  total      Decimal      @default(0) @db.Decimal(10, 2)
-  notas      String?      @db.VarChar(500)
-  createdAt  DateTime     @default(now()) @map("created_at")
-  updatedAt  DateTime     @updatedAt @map("updated_at")
+  id          String       @id @default(uuid()) @db.Uuid
+  estado      EstadoPedido @default(ABIERTO)
+  canalOrigen OrigenPedido @default(MESERO_POS) @map("canal_origen")
+  subtotal    Decimal      @default(0) @db.Decimal(10, 2)
+  total       Decimal      @default(0) @db.Decimal(10, 2)
+  notas       String?      @db.VarChar(500)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
 
   // FKs
   mesaId    Int     @map("mesa_id")
@@ -150,6 +161,7 @@ model Pedido {
   @@index([mesaId])
   @@index([meseroId])
   @@index([estado])
+  @@index([canalOrigen])
   @@index([createdAt])
   @@map("pedidos")
 }
@@ -295,5 +307,31 @@ model VariantePlato {
 
   @@index([platoId])
   @@map("variantes_plato")
+}
+
+// ─────────────────────────────────────────────
+// AUDITORÍA Y SEGURIDAD OPERATIVA
+// Bitácora inmutable de eventos de sala y trazabilidad
+// ─────────────────────────────────────────────
+
+model AuditoriaEvento {
+  id                      String        @id @default(uuid()) @db.Uuid
+  tipoEvento              String        @map("tipo_evento") @db.VarChar(50) // ASIGNACION_MESERO, CREACION_PEDIDO, ITEM_AGREGADO, LLAMADA_MESERO, COBRO_CAJA, etc.
+  mesaId                  Int?          @map("mesa_id")
+  mesaNumero              String?       @map("mesa_numero") @db.VarChar(20)
+  usuarioId               String?       @map("usuario_id") @db.Uuid
+  usuarioNombre           String?       @map("usuario_nombre") @db.VarChar(100)
+  rolUsuario              String?       @map("rol_usuario") @db.VarChar(50)
+  meseroResponsableNombre String?       @map("mesero_responsable_nombre") @db.VarChar(100)
+  canalOrigen             OrigenPedido? @map("canal_origen")
+  descripcion             String        @db.VarChar(500)
+  metadata                Json?
+  createdAt               DateTime      @default(now()) @map("created_at")
+
+  @@index([mesaId])
+  @@index([usuarioId])
+  @@index([tipoEvento])
+  @@index([createdAt])
+  @@map("auditoria_eventos")
 }
 
