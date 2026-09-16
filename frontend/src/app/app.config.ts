@@ -76,9 +76,17 @@ import {
   ShieldCheck,
   ChevronDown,
   History,
+  Star,
+  UserX,
+  ShieldAlert,
+  Ban,
 } from 'lucide-angular';
 
 export const appIcons = {
+  Ban,
+  Star,
+  UserX,
+  ShieldAlert,
   LayoutDashboard,
   Grid,
   Wallet,

@@ -145,6 +145,33 @@ export class CarritoService {
         } catch (e) {}
       }
     });
+
+    this.socketPublico.onStockActualizado().subscribe((stockEvt) => {
+      this.items.update((currentItems) => {
+        let changed = false;
+        const updated = currentItems
+          .map((item) => {
+            if (item.platoId === stockEvt.platoId && stockEvt.stockActual !== null && stockEvt.stockActual !== undefined) {
+              if (stockEvt.stockActual <= 0) {
+                changed = true;
+                this.error.set(`⚠️ El plato "${item.nombre}" se acaba de agotar en cocina y fue retirado del pedido.`);
+                return null;
+              } else if (item.cantidad > stockEvt.stockActual) {
+                changed = true;
+                this.error.set(`⚠️ Ajuste de cocina: solo quedan ${stockEvt.stockActual} porciones de "${item.nombre}".`);
+                return { ...item, cantidad: stockEvt.stockActual };
+              }
+            }
+            return item;
+          })
+          .filter(Boolean) as ItemCarrito[];
+
+        if (changed) {
+          this.guardarEnLocalStorage(updated);
+        }
+        return updated;
+      });
+    });
   }
 
   // ── Computed Signals ──
@@ -164,6 +191,18 @@ export class CarritoService {
     if (plato.disponibleAhora === false) {
       this.error.set(`"${plato.nombre}" no está disponible en este horario (${plato.horaInicio || ''} a ${plato.horaFin || 'cierre'}).`);
       return false;
+    }
+
+    if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+      if (plato.stockActual <= 0) {
+        this.error.set(`Lo sentimos: El plato "${plato.nombre}" se encuentra agotado en cocina.`);
+        return false;
+      }
+      const cantActual = this.items().find((it) => it.platoId === plato.id && it.varianteId === (variante?.id || undefined))?.cantidad || 0;
+      if (cantActual >= plato.stockActual) {
+        this.error.set(`Solo quedan ${plato.stockActual} porciones disponibles de "${plato.nombre}".`);
+        return false;
+      }
     }
 
     this.items.update((currentItems) => {

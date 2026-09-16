@@ -41,6 +41,7 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   private readonly socketService = inject(SocketPublicoService);
   private readonly route = inject(ActivatedRoute);
   private wsSub!: Subscription;
+  private wsStockSub?: Subscription;
 
   // Control de visibilidad de drawers y modales
   drawerOpen = signal(false);
@@ -111,35 +112,42 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
       .onDisponibilidadActualizada()
       .subscribe((evento) => {
         if (!evento.disponible) {
-          // Plato desactivado → animación fadeOut + remover del estado
-          this.removingPlatoIds.update((set) => {
-            const next = new Set(set);
-            next.add(evento.platoId);
-            return next;
-          });
-
-          // Esperar a que la animación CSS termine antes de remover
-          setTimeout(() => {
-            this.cartaService.removerPlato(evento.platoId);
-            this.removingPlatoIds.update((set) => {
-              const next = new Set(set);
-              next.delete(evento.platoId);
-              return next;
-            });
-          }, 400);
+          // Si el plato se marca como no disponible, pasa a estado agotado (NUNCA desaparece de la carta)
+          this.cartaService.actualizarStockPlato(evento.platoId, 0, false);
         } else {
           // Plato reactivado → re-fetch para incorporarlo con sus datos
           this.cartaService.recargarCarta();
         }
       });
+
+    // 3. Suscripción a cambios de stock en tiempo real (evita sobreventa)
+    this.wsStockSub = this.socketService
+      .onStockActualizado()
+      .subscribe((evento) => {
+        this.cartaService.actualizarStockPlato(evento.platoId, evento.stockActual, evento.disponible);
+      });
   }
 
   ngOnDestroy(): void {
     this.wsSub?.unsubscribe();
+    this.wsStockSub?.unsubscribe();
   }
 
   isPlatoRemoving(platoId: string): boolean {
     return this.removingPlatoIds().has(platoId);
+  }
+
+  isAgotado(plato: PlatoPublico): boolean {
+    if (plato.agotado === true) return true;
+    if (plato.stockActual !== null && plato.stockActual !== undefined) {
+      return plato.stockActual <= 0;
+    }
+    return false;
+  }
+
+  isFueraDeHorario(plato: PlatoPublico): boolean {
+    if (this.isAgotado(plato)) return false;
+    return !!plato.horaInicio && plato.disponibleAhora === false;
   }
 
   selectCategory(catId: number | null): void {
@@ -149,7 +157,7 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
   // ── Operaciones con Variantes ──
 
   abrirSelectorVariante(plato: PlatoPublico): void {
-    if (plato.disponibleAhora === false) return;
+    if (this.isAgotado(plato) || this.isFueraDeHorario(plato)) return;
     this.selectedPlatoParaVariante.set(plato);
     const disponible = plato.variantes?.find((v) => v.disponible);
     this.selectedVariante.set(disponible || null);

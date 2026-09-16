@@ -84,10 +84,16 @@ import {
   Phone,
   ShieldCheck,
   HelpCircle,
-  CheckCheck
+  CheckCheck,
+  Ban,
+  AlertTriangle,
+  Info
 } from 'lucide-angular';
 
 export const appIcons = {
+  Ban,
+  AlertTriangle,
+  Info,
   LayoutDashboard,
   Grid,
   Wallet,

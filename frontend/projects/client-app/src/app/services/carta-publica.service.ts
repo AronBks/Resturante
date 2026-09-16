@@ -25,6 +25,10 @@ export interface PlatoPublico {
   horaInicio?: string | null;
   horaFin?: string | null;
   disponibleAhora?: boolean;
+  stockActual?: number | null;
+  controlarStock?: boolean;
+  stockMinimo?: number;
+  agotado?: boolean;
   variantes?: VariantePublica[];
 }
 
@@ -164,6 +168,31 @@ export class CartaPublicaService {
           platos: cat.platos.filter((p) => p.id !== platoId),
         }))
         .filter((cat) => cat.platos.length > 0),
+    );
+  }
+
+  /**
+   * Actualiza en vivo el stock y disponibilidad de un plato
+   * cuando se recibe un evento WebSocket de compra o reposición.
+   */
+  actualizarStockPlato(platoId: string, nuevoStock: number | null, disponible: boolean): void {
+    this.categorias.update((cats) =>
+      cats.map((cat) => ({
+        ...cat,
+        platos: cat.platos.map((p) => {
+          if (p.id === platoId) {
+            const esAgotado = (nuevoStock !== null && nuevoStock !== undefined && nuevoStock <= 0) || !disponible;
+            return {
+              ...p,
+              stockActual: nuevoStock,
+              controlarStock: true,
+              disponibleAhora: !esAgotado,
+              agotado: esAgotado,
+            };
+          }
+          return p;
+        }),
+      })),
     );
   }
 

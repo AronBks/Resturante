@@ -234,7 +234,8 @@
                 <article
                   class="editorial-card"
                   [class.removing]="isPlatoRemoving(plato.id)"
-                  [class.editorial-card--disabled]="plato.disponibleAhora === false"
+                  [class.editorial-card--disabled]="isAgotado(plato) || isFueraDeHorario(plato)"
+                  [class.editorial-card--agotado]="isAgotado(plato)"
                   [id]="'plato-' + plato.id"
                 >
                   <!-- Visual / Imagen Expansiva de Alta Calidad -->
@@ -250,10 +251,15 @@
                       loading="lazy"
                       (error)="onImgError($event, plato.nombre)"
                     />
-                    @if (plato.disponibleAhora === false) {
+                    @if (isAgotado(plato)) {
+                      <div class="card-agotado-overlay">
+                        <lucide-icon name="ban" [size]="18"></lucide-icon>
+                        <span>AGOTADO</span>
+                      </div>
+                    } @else if (isFueraDeHorario(plato)) {
                       <div class="card-out-of-hours-overlay">
                         <lucide-icon name="clock" [size]="18"></lucide-icon>
-                        <span>No disponible</span>
+                        <span>Fuera de Horario</span>
                       </div>
                     }
                   </div>
@@ -261,6 +267,14 @@
                   <!-- Info de la Tarjeta Editorial -->
                   <div class="editorial-card__body">
                     <h3 class="editorial-card__title">{{ plato.nombre }}</h3>
+
+                    <!-- Aviso solo si el plato ya se terminó por hoy -->
+                    @if (isAgotado(plato)) {
+                      <div class="stock-pill-menu stock-pill-menu--agotado">
+                        <lucide-icon name="ban" [size]="11"></lucide-icon>
+                        <span>Agotado por hoy</span>
+                      </div>
+                    }
 
                     <!-- Badge de Horario para caldos y platos con restricción -->
                     @if (plato.horaInicio) {
@@ -294,7 +308,12 @@
 
                       <!-- Botón (+) o Stepper de Pedido Rápidos -->
                       <div class="editorial-card__action">
-                        @if (plato.disponibleAhora === false) {
+                        @if (isAgotado(plato)) {
+                          <div class="btn-menu-agotado-badge">
+                            <lucide-icon name="ban" [size]="13"></lucide-icon>
+                            <span>Agotado</span>
+                          </div>
+                        } @else if (isFueraDeHorario(plato)) {
                           <div class="horario-agotado-badge" title="Horario: {{ plato.horaInicio }} a {{ plato.horaFin }}">
                             <lucide-icon name="lock" [size]="13"></lucide-icon>
                             <span>Fuera de Horario</span>
@@ -329,6 +348,7 @@
                                 <span class="stepper-count">{{ carritoService.obtenerCantidad(plato.id) }}</span>
                                 <button
                                   class="stepper-btn plus"
+                                  [disabled]="plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined && carritoService.obtenerCantidad(plato.id) >= plato.stockActual"
                                   (click)="carritoService.agregarPlato(plato)"
                                   [id]="'btn-plus-' + plato.id"
                                 >

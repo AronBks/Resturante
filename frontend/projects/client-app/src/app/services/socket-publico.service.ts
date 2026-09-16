@@ -69,6 +69,22 @@ export class SocketPublicoService implements OnDestroy {
   }
 
   /**
+   * Observable que emite en tiempo real cuando el stock de un plato disminuye
+   * o se agota tras la compra de cualquier mesa.
+   */
+  onStockActualizado(): Observable<{ platoId: string; stockActual: number | null; disponible: boolean }> {
+    return new Observable<{ platoId: string; stockActual: number | null; disponible: boolean }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+
+      this.socket.on('plato:stock-actualizado', handler);
+
+      return () => {
+        this.socket.off('plato:stock-actualizado', handler);
+      };
+    });
+  }
+
+  /**
    * Observable que emite cuando el mesero o administrador marca 'Atender'
    * para notificar al cliente que un garzón va en camino.
    */
