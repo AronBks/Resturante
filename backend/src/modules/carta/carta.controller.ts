@@ -13,6 +13,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { CartaService } from './carta.service';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Controller('carta')
@@ -121,5 +122,41 @@ export class CartaController {
     @Body() body: { precio: number },
   ) {
     return this.cartaService.updateVariantePrecio(id, body.precio);
+  }
+
+  // ── GESTIÓN DE STOCK (ADMIN Y CAJERO) ──
+
+  @Patch('platos/:id/stock')
+  @Roles('ADMIN', 'CAJERO')
+  actualizarStockPlato(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      stockActual?: number | null;
+      controlarStock?: boolean;
+      stockMinimo?: number;
+      motivo?: string;
+    },
+    @CurrentUser() usuario: any,
+  ) {
+    return this.cartaService.actualizarStockPlato(id, body, usuario);
+  }
+
+  @Post('stock/bulk')
+  @Roles('ADMIN', 'CAJERO')
+  reposicionMasivaStock(
+    @Body()
+    body: {
+      items: Array<{
+        platoId: string;
+        stockActual: number;
+        controlarStock?: boolean;
+        stockMinimo?: number;
+      }>;
+      motivo?: string;
+    },
+    @CurrentUser() usuario: any,
+  ) {
+    return this.cartaService.reposicionMasivaStock(body.items, usuario, body.motivo);
   }
 }

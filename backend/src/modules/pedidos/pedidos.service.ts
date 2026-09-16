@@ -128,7 +128,9 @@ export class PedidosService {
       }[] = [];
       let subtotal = 0;
 
-      // 2. Validar disponibilidad de platos y guardar snapshots de precio
+      const platosStockModificado: { id: string; nombre: string; nuevoStock: number; disponible: boolean }[] = [];
+
+      // 2. Validar disponibilidad de platos, stock y guardar snapshots de precio
       for (const item of items) {
         const plato = await tx.plato.findUnique({
           where: { id: item.platoId },
@@ -140,6 +142,34 @@ export class PedidosService {
         }
         if (!plato.disponible) {
           throw new BadRequestException(`El plato "${plato.nombre}" no está disponible temporalmente`);
+        }
+
+        // ── CONTROL Y RESERVA ATÓMICA DE STOCK ──
+        if (plato.controlarStock) {
+          if (plato.stockActual !== null && plato.stockActual < item.cantidad) {
+            throw new BadRequestException(
+              plato.stockActual <= 0
+                ? `Lo sentimos: El plato "${plato.nombre}" se acaba de agotar en cocina.`
+                : `Stock insuficiente para "${plato.nombre}". Solicitó ${item.cantidad}, pero solo quedan ${plato.stockActual} porciones disponibles.`,
+            );
+          }
+
+          const nuevoStock = (plato.stockActual ?? 0) - item.cantidad;
+
+          await tx.plato.update({
+            where: { id: plato.id },
+            data: {
+              stockActual: nuevoStock,
+              disponible: true,
+            },
+          });
+
+          platosStockModificado.push({
+            id: plato.id,
+            nombre: plato.nombre,
+            nuevoStock,
+            disponible: nuevoStock > 0,
+          });
         }
 
         // Validación estricta de horario (ej. Caldos 09:00 - 13:00 / Platos 12:00 - 17:00)
@@ -228,7 +258,7 @@ export class PedidosService {
         select: { id: true, estado: true },
       });
 
-      return { pedido, mesaActualizada };
+      return { pedido, mesaActualizada, platosStockModificado };
     });
 
     // 5. Registrar en Auditoría Operativa
@@ -253,7 +283,7 @@ export class PedidosService {
       },
     });
 
-    // 6. Notificaciones WebSocket en tiempo real
+    // 6. Notificaciones WebSocket en tiempo real de Pedido y Mesa
     this.gateway.broadcastNuevoPedido(result.pedido);
     this.gateway.broadcastEstadoPedido(result.pedido.id, result.pedido.estado);
     this.gateway.broadcastMesaEstado(result.mesaActualizada.id, result.mesaActualizada.estado);
@@ -268,6 +298,32 @@ export class PedidosService {
         mesaNumeroPublica,
         result.pedido.estado,
       );
+    }
+
+    // 7. Sincronización instantánea de Stock a comensales y salón (Evita sobreventa)
+    if (result.platosStockModificado && result.platosStockModificado.length > 0) {
+      for (const sp of result.platosStockModificado) {
+        if (this.cartaGateway) {
+          this.cartaGateway.broadcastStock(sp.id, sp.nuevoStock, sp.disponible);
+        }
+        if (this.gateway?.server) {
+          this.gateway.server.emit('plato:stock-actualizado', {
+            platoId: sp.id,
+            nuevoStock: sp.nuevoStock,
+            disponible: sp.disponible,
+          });
+        }
+        if (!sp.disponible) {
+          await this.auditoriaService.registrarEvento({
+            tipoEvento: 'STOCK_AGOTADO',
+            mesaId: result.mesaActualizada.id,
+            mesaNumero: result.pedido.mesa?.numero,
+            usuarioNombre: 'Control de Stock',
+            descripcion: `El plato "${sp.nombre}" se ha agotado en cocina tras la orden de la Mesa ${result.pedido.mesa?.numero}`,
+            metadata: { platoId: sp.id, platoNombre: sp.nombre },
+          });
+        }
+      }
     }
 
     return result.pedido;
@@ -326,6 +382,8 @@ export class PedidosService {
     }[] = [];
     let subtotalNuevo = 0;
 
+    const platosStockModificado: { id: string; nombre: string; nuevoStock: number; disponible: boolean }[] = [];
+
     // Validar y crear los nuevos items
     for (const item of items) {
       const plato = await tx.plato.findUnique({
@@ -337,6 +395,35 @@ export class PedidosService {
       }
       if (!plato.disponible) {
         throw new BadRequestException(`El plato "${plato.nombre}" no está disponible`);
+      }
+
+      // ── CONTROL Y RESERVA ATÓMICA DE STOCK ──
+      if (plato.controlarStock) {
+        if (plato.stockActual !== null && plato.stockActual < item.cantidad) {
+          throw new BadRequestException(
+            plato.stockActual <= 0
+              ? `Lo sentimos: El plato "${plato.nombre}" se acaba de agotar en cocina.`
+              : `Stock insuficiente para "${plato.nombre}". Solicitó ${item.cantidad}, pero solo quedan ${plato.stockActual} porciones disponibles.`,
+          );
+        }
+
+        const nuevoStock = (plato.stockActual ?? 0) - item.cantidad;
+        const sigueDisponible = nuevoStock > 0;
+
+        await tx.plato.update({
+          where: { id: plato.id },
+          data: {
+            stockActual: nuevoStock,
+            disponible: sigueDisponible,
+          },
+        });
+
+        platosStockModificado.push({
+          id: plato.id,
+          nombre: plato.nombre,
+          nuevoStock,
+          disponible: sigueDisponible,
+        });
       }
 
       // Validación estricta de horario solo para pedidos de clientes móviles por QR
@@ -438,7 +525,7 @@ export class PedidosService {
       },
     });
 
-    return { pedido: pedidoActualizado, mesaActualizada: mesa! };
+    return { pedido: pedidoActualizado, mesaActualizada: mesa!, platosStockModificado };
   }
 
   /**

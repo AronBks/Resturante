@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/commo
 import { PrismaService } from '../../prisma/prisma.service';
 import { CartaGateway } from './carta.gateway';
 import { PedidosGateway } from '../pedidos/pedidos.gateway';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 
 @Injectable()
 export class CartaService {
@@ -10,6 +11,7 @@ export class CartaService {
     private readonly cartaGateway: CartaGateway,
     @Inject(forwardRef(() => PedidosGateway))
     private readonly pedidosGateway: PedidosGateway,
+    private readonly auditoriaService: AuditoriaService,
   ) {}
 
   // ── Categorías ──
@@ -19,7 +21,16 @@ export class CartaService {
       where: { activa: true },
       include: {
         platos: {
-          select: { id: true, nombre: true, precioVenta: true, imagenUrl: true, disponible: true },
+          select: {
+            id: true,
+            nombre: true,
+            precioVenta: true,
+            imagenUrl: true,
+            disponible: true,
+            stockActual: true,
+            controlarStock: true,
+            stockMinimo: true,
+          },
           orderBy: { nombre: 'asc' },
         },
       },
@@ -283,7 +294,6 @@ export class CartaService {
     const categorias = await this.prisma.categoriaPlato.findMany({
       where: {
         activa: true,
-        platos: { some: { disponible: true } },
       },
       select: {
         id: true,
@@ -291,7 +301,6 @@ export class CartaService {
         descripcion: true,
         orden: true,
         platos: {
-          where: { disponible: true },
           select: {
             id: true,
             nombre: true,
@@ -300,6 +309,10 @@ export class CartaService {
             imagenUrl: true,
             horaInicio: true,
             horaFin: true,
+            stockActual: true,
+            controlarStock: true,
+            stockMinimo: true,
+            disponible: true,
             variantes: {
               where: { disponible: true },
               select: {
@@ -317,23 +330,34 @@ export class CartaService {
       orderBy: { orden: 'asc' },
     });
 
-    // Enriquecer cada plato con flag de disponibilidad horaria actual
+    // Enriquecer cada plato con flag de disponibilidad horaria y de stock actual
     const ahoraMinutos = this.minutosDelDia(new Date());
 
-    return categorias.map((cat) => ({
-      ...cat,
-      platos: cat.platos.map((plato) => {
-        const disponibleAhora = this.estaDisponibleAhora(
-          plato.horaInicio,
-          plato.horaFin,
-          ahoraMinutos,
-        );
-        return {
-          ...plato,
-          disponibleAhora,
-        };
-      }),
-    }));
+    return categorias
+      .map((cat) => ({
+        ...cat,
+        platos: cat.platos.map((plato) => {
+          const porHorario = this.estaDisponibleAhora(
+            plato.horaInicio,
+            plato.horaFin,
+            ahoraMinutos,
+          );
+          const estaAgotado =
+            plato.stockActual !== null && plato.stockActual !== undefined
+              ? plato.stockActual <= 0
+              : false;
+          const disponibleAhora = porHorario && !estaAgotado;
+
+          return {
+            ...plato,
+            controlarStock: true,
+            disponibleAhora,
+            enHorario: porHorario,
+            agotado: estaAgotado,
+          };
+        }),
+      }))
+      .filter((cat) => cat.platos.length > 0);
   }
 
   /** Convierte "HH:MM" a minutos desde medianoche según la hora local de Bolivia (UTC-4) */
@@ -361,4 +385,138 @@ export class CartaService {
     const finMin = hF * 60 + mF;
     return ahoraMinutos >= inicioMin && ahoraMinutos <= finMin;
   }
+
+  // ── GESTIÓN Y ADMINISTRACIÓN DE STOCK (ADMIN & CAJERO) ──
+
+  async actualizarStockPlato(
+    id: string,
+    dto: {
+      stockActual?: number | null;
+      controlarStock?: boolean;
+      stockMinimo?: number;
+      motivo?: string;
+    },
+    usuario?: any,
+  ) {
+    const plato = await this.prisma.plato.findUnique({
+      where: { id },
+      include: { categoria: true },
+    });
+
+    if (!plato) {
+      throw new NotFoundException(`Plato con ID ${id} no encontrado`);
+    }
+
+    const stockAnterior = plato.stockActual ?? 0;
+
+    let nuevoStock = plato.stockActual ?? 0;
+    if (dto.stockActual !== undefined && dto.stockActual !== null) {
+      nuevoStock = Math.max(0, dto.stockActual);
+    }
+
+    const nuevoStockMinimo =
+      dto.stockMinimo !== undefined ? Math.max(0, dto.stockMinimo) : (plato.stockMinimo || 3);
+
+    // Todo producto tiene stock finito: si llega a 0 queda agotado por hoy, pero permanece en carta
+    const updated = await this.prisma.plato.update({
+      where: { id },
+      data: {
+        stockActual: nuevoStock,
+        controlarStock: true,
+        stockMinimo: nuevoStockMinimo,
+        disponible: true,
+      },
+      include: {
+        categoria: { select: { id: true, nombre: true } },
+        variantes: true,
+      },
+    });
+
+    // 📡 Broadcast en tiempo real a clientes y POS interno
+    this.cartaGateway.broadcastStock(id, updated.stockActual, updated.disponible);
+    if (this.pedidosGateway?.server) {
+      this.pedidosGateway.server.emit('plato:stock-actualizado', {
+        platoId: id,
+        stockActual: updated.stockActual,
+        controlarStock: true,
+        stockMinimo: updated.stockMinimo,
+        disponible: updated.disponible,
+      });
+      this.pedidosGateway.server.emit('menu:actualizado', {
+        platoId: id,
+        disponible: updated.disponible,
+      });
+    }
+
+    // 🛡️ Registrar evento en Auditoría inmutable
+    try {
+      if (this.auditoriaService) {
+        await this.auditoriaService.registrarEvento({
+          tipoEvento: 'AJUSTE_STOCK',
+          usuarioId: usuario?.id,
+          usuarioNombre: usuario?.nombre || usuario?.username || 'Administración',
+          rolUsuario: usuario?.rol || 'ADMIN',
+          canalOrigen: 'MESERO_POS',
+          descripcion: `Ajuste de inventario para "${plato.nombre}": ` +
+            `Existencia anterior: ${stockAnterior} ➔ Nueva existencia: ${updated.stockActual} porciones/unidades ` +
+            `(Alerta mínima: ${updated.stockMinimo}). ` +
+            `${dto.motivo ? 'Motivo: ' + dto.motivo : ''}`.trim(),
+          metadata: {
+            platoId: id,
+            platoNombre: plato.nombre,
+            categoria: plato.categoria?.nombre,
+            stockAnterior,
+            stockNuevo: updated.stockActual,
+            controlarStock: true,
+            stockMinimo: updated.stockMinimo,
+            disponible: updated.disponible,
+            motivo: dto.motivo,
+          },
+        });
+      }
+    } catch (e) {
+      console.error('Error registrando auditoría de stock:', e);
+    }
+
+    return updated;
+  }
+
+  async reposicionMasivaStock(
+    items: Array<{
+      platoId: string;
+      stockActual: number;
+      controlarStock?: boolean;
+      stockMinimo?: number;
+    }>,
+    usuario?: any,
+    motivo?: string,
+  ) {
+    const resultados = [];
+
+    for (const item of items) {
+      try {
+        const res = await this.actualizarStockPlato(
+          item.platoId,
+          {
+            stockActual: item.stockActual,
+            controlarStock: item.controlarStock !== undefined ? item.controlarStock : true,
+            stockMinimo: item.stockMinimo,
+            motivo: motivo || 'Apertura de turno / Reposición masiva de inventario',
+          },
+          usuario,
+        );
+        resultados.push(res);
+      } catch (err) {
+        console.error(`Error actualizando stock masivo plato ${item.platoId}:`, err);
+      }
+    }
+
+    return {
+      success: true,
+      actualizados: resultados.length,
+      total: items.length,
+      items: resultados,
+    };
+  }
 }
+

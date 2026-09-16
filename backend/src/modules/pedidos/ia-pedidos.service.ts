@@ -7,6 +7,8 @@ export interface PlatoDisponible {
   nombre: string;
   precioVenta: number;
   categoriaId: number;
+  stockActual?: number | null;
+  controlarStock?: boolean;
   variantes?: {
     id: string;
     nombre: string;
@@ -89,12 +91,18 @@ export class IaPedidosService {
     comandaPrevia: ItemInterpretado[],
     platos: PlatoDisponible[],
   ): Promise<ResultadoConversacionIA> {
-    const cartaJSON = platos.map((p) => ({
-      id: p.id,
-      nombre: p.nombre,
-      precioBase: Number(p.precioVenta),
-      variantes: p.variantes || [],
-    }));
+    const cartaJSON = platos.map((p) => {
+      const stockNum = p.stockActual !== null && p.stockActual !== undefined ? p.stockActual : null;
+      return {
+        id: p.id,
+        nombre: p.nombre,
+        precioBase: Number(p.precioVenta),
+        stockDisponible: stockNum !== null && stockNum <= 0
+          ? '0 (AGOTADO)'
+          : (stockNum ?? 0),
+        variantes: p.variantes || [],
+      };
+    });
 
     const systemPrompt = `Eres "Don Beto", el cordial, educado y atento mesero virtual de "Peña Restaurant Tukuypaj" en Cochabamba, Bolivia.
 
@@ -119,13 +127,21 @@ COMPORTAMIENTO Y REGLAS DE CONVERSACIÓN:
 3. SUGERENCIA INTELIGENTE DE BEBIDAS / MARIDAJE:
    - De manera fluida y natural, al pedir platos fuertes (Pique, Chicharrón, Parrillada), sugiere acompañar la mesa con limonada con hierba buena, chicha cochabambina o una cerveza bien fría.
 
-4. CONFIRMACIÓN FINAL:
+4. CONTROL ESTRICTO DE STOCK EN TIEMPO REAL Y SINCRONIZACIÓN DE PORCIONES:
+   - Revisa minuciosamente el campo "stockDisponible" de cada plato en la carta.
+   - Si "stockDisponible" es '0 (AGOTADO)' o un número <= 0, el plato está completamente terminado por hoy. Si el cliente lo pide, explícaselo con suma calidez y respeto: "Mil disculpas casero/a, ese platito ya se nos terminó por hoy en cocina. ¿Le gustaría que le prepare [plato alternativo con stock]?". NUNCA lo agregues a "comandaActualizada".
+   - Si el cliente solicita N porciones (ej: 2) de un plato pero "stockDisponible" es menor (ej: 1):
+     * NUNCA confirmes ni dupliques porciones inexistentes.
+     * Acláraselo con total claridad: "Casero/a, de [Nombre del plato] solo nos queda [X] porción en cocina. Le aseguro esa última porción [X] y para completar le sugiero [Plato alternativo]."
+     * En "comandaActualizada", asigna como cantidad MÁXIMA las porciones realmente disponibles (ej: 1), NUNCA la cantidad solicitada que sobrepasa el stock.
+
+5. CONFIRMACIÓN FINAL:
    - Si el cliente indica que completó su elección (ej: "eso es todo", "confirmar pedido", "envíalo a cocina", "ya está"), agradece con calidez y asigna "estadoConversacion": "CONFIRMACION_FINAL".
 
-5. ACUMULACIÓN DE COMANDA:
-   - Mantén en "comandaActualizada" los platos de la comanda previa, actualizándolos o agregando nuevos si el cliente añade más ítems.
+6. ACUMULACIÓN DE COMANDA:
+   - Mantén en "comandaActualizada" los platos de la comanda previa, actualizándolos o agregando nuevos si el cliente añade más ítems válidos con stock.
 
-FORMATO DE SALIDA (RESPOONDE ÚNICAMENTE CON JSON VÁLIDO CON ESTA ESTRUCTURA EXACTA):
+FORMATO DE SALIDA (RESPONDE ÚNICAMENTE CON JSON VÁLIDO CON ESTA ESTRUCTURA EXACTA):
 {
   "respuestaMesero": "Mensaje en lenguaje natural de Don Beto con calidez valluna.",
   "comandaActualizada": [
@@ -203,6 +219,20 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
       for (const item of parsed.comandaActualizada || []) {
         const plato = platosMap.get(item.platoId);
         if (plato) {
+          // ── VALIDACIÓN ATÓMICA DE STOCK EN BACKEND ──
+          if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+            if (plato.stockActual <= 0) {
+              this.logger.warn(`[IA Don Beto] Plato agotado "${plato.nombre}", omitiendo de comanda.`);
+              continue;
+            }
+            if (item.cantidad > plato.stockActual) {
+              this.logger.warn(
+                `[IA Don Beto] Cantidad solicitada (${item.cantidad}) excede stock disponible (${plato.stockActual}) para "${plato.nombre}". Ajustando a ${plato.stockActual}.`,
+              );
+              item.cantidad = plato.stockActual;
+            }
+          }
+
           let precio = Number(item.precioUnitario || plato.precioVenta);
           let nombreConVariante = item.nombre || plato.nombre;
           let varianteIdValida: string | undefined = item.varianteId || undefined;
@@ -269,6 +299,8 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
     const textoNorm = this.normalizar(textoCliente);
     const itemsEncontrados: ItemInterpretado[] = [...comandaPrevia];
     const platosUsados = new Set<string>(itemsEncontrados.map((i) => i.platoId));
+    const avisosAgotados: string[] = [];
+    const avisosStockAjustado: string[] = [];
 
     for (const plato of platos) {
       const nombreNorm = this.normalizar(plato.nombre);
@@ -276,9 +308,27 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
       const match = this.buscarCoincidenciaEnTexto(textoNorm, nombreNorm, palabrasPlato);
 
       if (match && !platosUsados.has(plato.id)) {
+        // ── CONTROL DE STOCK EN TIEMPO REAL ──
+        if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+          if (plato.stockActual <= 0) {
+            avisosAgotados.push(plato.nombre);
+            continue; // No añadir a comanda
+          }
+        }
+
         platosUsados.add(plato.id);
-        const cantidad = this.extraerCantidad(textoNorm, match.indice);
+        let cantidad = this.extraerCantidad(textoNorm, match.indice);
         const notas = this.extraerNotas(textoNorm);
+
+        // Validar límite de porciones disponibles
+        if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+          if (cantidad > plato.stockActual) {
+            avisosStockAjustado.push(
+              `solicitó ${cantidad} pero solo quedan ${plato.stockActual} porciones de "${plato.nombre}" (se aseguraron ${plato.stockActual})`,
+            );
+            cantidad = plato.stockActual;
+          }
+        }
 
         let precioUnitario = Number(plato.precioVenta);
         let varianteId: string | undefined = undefined;
@@ -321,9 +371,20 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
     let mensaje: string;
     let estado: EstadoConversacion = 'TOMANDO_PEDIDO';
 
+    let complementoAvisos = '';
+    if (avisosAgotados.length > 0) {
+      complementoAvisos += `\n⚠️ Casero/a, mil disculpas: ${avisosAgotados.join(', ')} ya se agotó en cocina por hoy.`;
+    }
+    if (avisosStockAjustado.length > 0) {
+      complementoAvisos += `\n⚠️ Nota de stock: ${avisosStockAjustado.join('; ')}.`;
+    }
+
     if (itemsEncontrados.length > 0) {
       const resumen = itemsEncontrados.map((i) => `${i.cantidad}x ${i.nombre}`).join(', ');
-      mensaje = `¡Con mucho gusto, casero! Le anoto: ${resumen}. El total estimado es Bs. ${total.toFixed(2)}. ¿Gusta alguna cosita más o lo enviamos a cocina?`;
+      mensaje = `¡Con mucho gusto, casero! Le anoto: ${resumen}.${complementoAvisos} El total estimado es Bs. ${total.toFixed(2)}. ¿Gusta alguna cosita más o lo enviamos a cocina?`;
+    } else if (avisosAgotados.length > 0) {
+      estado = 'TOMANDO_PEDIDO';
+      mensaje = `¡Mil disculpas, casero! Justamente el plato ${avisosAgotados.join(', ')} se nos acaba de agotar en cocina. Le sugiero probar nuestro sabroso Pique Macho, un Chicharrón o Parrillada Tukuypaj. ¿Qué le preparamos?`;
     } else {
       estado = 'SALUDO';
       mensaje = '¡Sea bienvenido a Peña Tukuypaj, casero! Le sugiero probar nuestro sabroso Pique Macho, un Chicharrón bien dorado o un Silpancho. ¿Con qué le podemos servir hoy?';
@@ -540,6 +601,8 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
         categoriaId: true,
         horaInicio: true,
         horaFin: true,
+        stockActual: true,
+        controlarStock: true,
         variantes: {
           where: { disponible: true },
           select: {
@@ -565,6 +628,8 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
       nombre: p.nombre,
       precioVenta: Number(p.precioVenta),
       categoriaId: p.categoriaId,
+      stockActual: p.stockActual,
+      controlarStock: p.controlarStock,
       variantes: p.variantes.map((v) => ({
         id: v.id,
         nombre: v.nombre,

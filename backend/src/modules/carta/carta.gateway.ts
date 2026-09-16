@@ -61,6 +61,23 @@ export class CartaGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Emite a TODOS los clientes conectados al namespace público (/publica)
+   * la actualización exacta de stock remanente en tiempo real.
+   */
+  broadcastStock(platoId: string, stockActual: number | null, disponible: boolean) {
+    this.server.emit('plato:stock-actualizado', {
+      platoId,
+      stockActual,
+      disponible,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(
+      `📡 Broadcast público de Stock: Plato ${platoId} → Stock: ${stockActual} | Disp: ${disponible}`,
+    );
+  }
+
+  /**
    * Emite a la app cliente que el garzón ya va en camino a atender la mesa
    */
   broadcastMeseroAtendido(mesaNumero: string) {
