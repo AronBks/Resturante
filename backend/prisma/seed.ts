@@ -301,35 +301,35 @@ async function main() {
     // ── GASEOSAS ──
     {
       nombre: 'Coca Cola',
-      descripcion: 'Botella personal 500ml.',
+      descripcion: 'Botella familiar 2.5 Litros bien helada para compartir en mesa.',
       precioVenta: 20,
       imagenUrl: IMG.gaseosa,
       categoriaId: catGaseosas.id,
     },
     {
       nombre: 'Fanta',
-      descripcion: 'Botella personal 500ml.',
+      descripcion: 'Botella familiar 2.5 Litros bien helada.',
       precioVenta: 20,
       imagenUrl: IMG.gaseosa,
       categoriaId: catGaseosas.id,
     },
     {
       nombre: 'Sprite',
-      descripcion: 'Botella personal 500ml.',
+      descripcion: 'Botella familiar 2.5 Litros bien helada.',
       precioVenta: 20,
       imagenUrl: IMG.gaseosa,
       categoriaId: catGaseosas.id,
     },
     {
       nombre: 'Simba',
-      descripcion: 'Refresco de cola nacional. Botella personal.',
+      descripcion: 'Gaseosa nacional botella familiar 2 Litros.',
       precioVenta: 18,
       imagenUrl: IMG.gaseosa,
       categoriaId: catGaseosas.id,
     },
     {
       nombre: 'Cascada',
-      descripcion: 'Bebida refrescante de frutas. Botella personal.',
+      descripcion: 'Bebida tradicional botella familiar 2 Litros.',
       precioVenta: 18,
       imagenUrl: IMG.gaseosa,
       categoriaId: catGaseosas.id,
@@ -393,6 +393,9 @@ async function main() {
     await prisma.plato.create({
       data: {
         ...platoBase,
+        stockActual: platoBase.stockActual ?? 15,
+        controlarStock: true,
+        disponible: true,
         horaInicio: horaInicio ?? null,
         horaFin: horaFin ?? null,
         variantes: variantes
