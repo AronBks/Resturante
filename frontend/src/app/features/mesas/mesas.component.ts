@@ -412,7 +412,38 @@ export class MesasComponent implements OnInit, OnDestroy {
         this.cargarMesas();
       });
 
-    this.subs.push(subMesa, subMesaLiberada, subPedido, subMeseroLlamado, subPagoConf);
+    const subStock = this.socketService
+      .onEvent<{ platoId: string; nuevoStock: number; disponible: boolean }>('plato:stock-actualizado')
+      .subscribe((data) => {
+        this.platos.update((lista) =>
+          lista.map((p) =>
+            p.id === data.platoId
+              ? { ...p, stockActual: data.nuevoStock, disponible: data.disponible }
+              : p,
+          ),
+        );
+      });
+
+    const subMeseroAtendido = this.socketService
+      .onEvent<{ mesaNumero: string }>('mesero:atendido')
+      .subscribe((data) => {
+        const mesaNum = data?.mesaNumero;
+        if (mesaNum) {
+          this.mesasLlamando.update((prev) => {
+            const next = new Set(prev);
+            next.delete(mesaNum);
+            return next;
+          });
+          this.llamadasDetalle.update((prev) => {
+            const next = { ...prev };
+            delete next[mesaNum];
+            return next;
+          });
+        }
+        this.cargarMesas();
+      });
+
+    this.subs.push(subMesa, subMesaLiberada, subPedido, subMeseroLlamado, subMeseroAtendido, subPagoConf, subStock);
   }
 
   private agregarEvento(ev: { tipo: 'ALERTA' | 'COMANDA' | 'CUENTA' | 'APERTURA'; titulo: string; descripcion: string }) {

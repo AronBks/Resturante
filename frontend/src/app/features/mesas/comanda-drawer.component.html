@@ -46,7 +46,7 @@
       </header>
 
       <!-- ── ALERTA EN TIEMPO REAL: SOLICITUD DE CUENTA / PAGO EN EFECTIVO O QR ── -->
-      @if (llamadaActiva || (mesa?.estado === 'POR_COBRAR' && esSolicitudPago())) {
+      @if (esSolicitudPago()) {
         <section class="solicitud-pago-banner animate-fade-in">
           <div class="sp-icon-col">
             <div class="sp-bell-pulse">
@@ -56,7 +56,7 @@
           <div class="sp-text-col">
             <div class="sp-badge-row">
               <span class="sp-pill-cuenta">{{ llamadaActiva ? 'SOLICITUD DE CUENTA' : 'PRE-CUENTA EMITIDA' }}</span>
-              <span class="sp-pill-metodo">{{ llamadaActiva ? getMetodoPagoSolicitado() : 'CAJA' }}</span>
+              <span class="sp-pill-metodo">{{ getMetodoPagoSolicitado() }}</span>
             </div>
             <strong class="sp-headline">
               {{ llamadaActiva?.motivo || 'Mesa pendiente de cobro en caja' }}
@@ -100,113 +100,32 @@
       <!-- ── CUERPO PRINCIPAL CON SCROLL ── -->
       <div class="drawer-scrollable-body scrollbar-custom">
         
-        <!-- Banner Informativo de Solicitud de Cuenta o Asistencia de Garzón -->
-        @if (llamadaActiva) {
-          <div class="comanda-call-alert-banner animate-in" [class.payment-style]="esSolicitudPago()">
+        <!-- Banner Informativo de Asistencia de Garzón en Sala -->
+        @if (llamadaActiva && !esSolicitudPago()) {
+          <div class="comanda-call-alert-banner animate-in">
             <div class="cca-icon-wrapper">
-              <lucide-icon [name]="esSolicitudPago() ? 'wallet' : 'bell-ring'" [size]="18"></lucide-icon>
+              <lucide-icon name="bell-ring" [size]="18"></lucide-icon>
             </div>
             <div class="cca-info-box">
               <div class="cca-header-row">
-                <strong class="cca-title">{{ esSolicitudPago() ? 'Solicitud de Cuenta por Comensal' : 'Llamada de Asistencia en Sala' }}</strong>
-                <span class="cca-badge">{{ esSolicitudPago() ? 'Pago Pendiente' : 'Atención en Sala' }}</span>
+                <strong class="cca-title">Llamada de Asistencia en Sala</strong>
+                <span class="cca-badge">Atención en Sala</span>
               </div>
               <p class="cca-desc">{{ llamadaActiva.motivo }}</p>
             </div>
-            @if (!esSolicitudPago()) {
-              <button
-                type="button"
-                class="cca-atender-btn"
-                (click)="atenderLlamadaDirecta()"
-                title="Marcar solicitud como atendida"
-              >
-                <lucide-icon name="check" [size]="14"></lucide-icon>
-                <span>Atendido</span>
-              </button>
-            }
+            <button
+              type="button"
+              class="cca-atender-btn"
+              (click)="atenderLlamadaDirecta()"
+              title="Marcar solicitud como atendida"
+            >
+              <lucide-icon name="check" [size]="14"></lucide-icon>
+              <span>Atendido</span>
+            </button>
           </div>
         }
 
-        <!-- PESTAÑAS: COMANDA vs AUDITORÍA OPERATIVA -->
-        <div class="drawer-nav-tabs-bar">
-          <button 
-            type="button" 
-            class="drawer-tab-btn" 
-            [class.active]="!mostrarAuditoria()"
-            (click)="mostrarAuditoria.set(false)"
-          >
-            <lucide-icon name="utensils" [size]="13"></lucide-icon>
-            <span>Comanda & Platos</span>
-          </button>
-          <button 
-            type="button" 
-            class="drawer-tab-btn" 
-            [class.active]="mostrarAuditoria()"
-            (click)="mostrarAuditoria.set(true)"
-          >
-            <lucide-icon name="shield-check" [size]="13"></lucide-icon>
-            <span>Auditoría Operativa ({{ auditoriaEventos().length }})</span>
-          </button>
-        </div>
-
-        <!-- ── VISTA DE AUDITORÍA OPERATIVA INMUTABLE ── -->
-        @if (mostrarAuditoria()) {
-          <section class="drawer-section auditoria-panel-section animate-fade-in">
-            <div class="auditoria-panel-header">
-              <div class="aph-left">
-                <lucide-icon name="shield" [size]="16" class="text-gold"></lucide-icon>
-                <strong class="aph-title">Trazabilidad de Sala (Mesa {{ mesa?.numero }})</strong>
-              </div>
-              <span class="aph-badge">{{ auditoriaEventos().length }} Eventos Registrados</span>
-            </div>
-
-            <div class="auditoria-stream-list">
-              @for (ev of auditoriaEventos(); track ev.id) {
-                <div class="auditoria-card-node">
-                  <div class="acn-header">
-                    <span class="acn-type-badge" [ngClass]="ev.tipoEvento.toLowerCase()">
-                      {{ ev.tipoEvento.replace('_', ' ') }}
-                    </span>
-                    <span class="acn-time">{{ ev.createdAt | date:'HH:mm:ss' }}</span>
-                  </div>
-
-                  <p class="acn-description">{{ ev.descripcion }}</p>
-
-                  <div class="acn-footer-meta">
-                    @if (ev.usuarioNombre) {
-                      <span class="acn-tag-user">
-                        <span class="acn-role-pill" [ngClass]="ev.rolUsuario?.toLowerCase() || 'sistema'">
-                          {{ ev.rolUsuario || 'SISTEMA' }}
-                        </span>
-                        <span class="acn-user-name">{{ ev.usuarioNombre }}</span>
-                      </span>
-                    }
-
-                    <span class="acn-tag-resp" *ngIf="ev.meseroResponsableNombre">
-                      <lucide-icon name="user-check" [size]="11"></lucide-icon>
-                      <span>Garzón: {{ ev.meseroResponsableNombre }}</span>
-                    </span>
-
-                    <span class="acn-tag-canal" *ngIf="ev.canalOrigen">
-                      <span>{{ ev.canalOrigen === 'IA_DON_BETO' ? '🤖 Don Beto IA' : '🖥️ POS Salón' }}</span>
-                    </span>
-                  </div>
-                </div>
-              }
-
-              @if (auditoriaEventos().length === 0) {
-                <div class="auditoria-empty-state">
-                  <lucide-icon name="shield-alert" [size]="24" class="text-gold"></lucide-icon>
-                  <strong>Sin registros previos</strong>
-                  <p>Las asignaciones, pedidos de IA y comandas de este turno se registrarán aquí automáticamente.</p>
-                </div>
-              }
-            </div>
-          </section>
-        }
-
-        <!-- 1. Sección: COMANDA ACTIVA (Si no está en modo auditoría) -->
-        @if (!mostrarAuditoria()) {
+        <!-- 1. Sección: COMANDA ACTIVA -->
         <section class="drawer-section">
           <div class="section-title-line">
             <div class="section-title-left">
@@ -376,7 +295,6 @@
             }
           </div>
         </section>
-        }
 
       </div>
 
@@ -463,7 +381,7 @@
         <!-- Grilla de Tarjetas de Platos (3 Columnas con Alto Consistente) -->
         <div class="modal-dishes-grid scrollbar-custom">
           @for (plato of filteredPlatos(); track plato.id) {
-            <article class="modal-dish-card" (click)="abrirPersonalizarPlato(plato, $event)">
+            <article class="modal-dish-card" [class.dish-card-agotado]="isAgotado(plato)" (click)="abrirPersonalizarPlato(plato, $event)">
               
               <!-- Imagen / Thumbnail con Alto Fijo -->
               <div class="dish-card-thumb" [class.dish-card-thumb--beverage]="esBebida(plato)">
@@ -471,6 +389,20 @@
                   <lucide-icon name="sparkles" [size]="11"></lucide-icon>
                   <span>{{ plato.variantes?.length || 2 }} Tamaños</span>
                 </span>
+
+                <!-- Stock Badges -->
+                <span class="stock-pos-tag stock-pos-tag--agotado" *ngIf="isAgotado(plato)">
+                  <lucide-icon name="ban" [size]="10"></lucide-icon>
+                  <span>AGOTADO</span>
+                </span>
+                <span class="stock-pos-tag stock-pos-tag--ultimas" *ngIf="isPocasPorciones(plato)">
+                  <lucide-icon name="flame" [size]="10"></lucide-icon>
+                  <span>¡Quedan {{ plato.stockActual }}!</span>
+                </span>
+                <span class="stock-pos-tag stock-pos-tag--disp" *ngIf="plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined && plato.stockActual > (plato.stockMinimo || 3)">
+                  <span>{{ plato.stockActual }} disp.</span>
+                </span>
+
                 <img 
                   [src]="getPlatoImageUrl(plato)" 
                   [alt]="plato.nombre" 
@@ -496,10 +428,11 @@
                 <button
                   class="dish-plus-circle-btn"
                   [class.btn-has-options]="plato.tieneVariantes"
+                  [disabled]="isAgotado(plato)"
                   (click)="abrirPersonalizarPlato(plato, $event)"
-                  [title]="plato.tieneVariantes ? 'Elegir opciones' : 'Añadir a la orden'"
+                  [title]="isAgotado(plato) ? 'Plato agotado' : (plato.tieneVariantes ? 'Elegir opciones' : 'Añadir a la orden')"
                 >
-                  <lucide-icon [name]="plato.tieneVariantes ? 'sliders-horizontal' : 'plus'" [size]="15"></lucide-icon>
+                  <lucide-icon [name]="isAgotado(plato) ? 'ban' : (plato.tieneVariantes ? 'sliders-horizontal' : 'plus')" [size]="15"></lucide-icon>
                 </button>
               </div>
 

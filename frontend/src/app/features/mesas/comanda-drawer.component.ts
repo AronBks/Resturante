@@ -37,6 +37,9 @@ interface Plato {
   horaInicio?: string | null;
   horaFin?: string | null;
   disponibleAhora?: boolean;
+  stockActual?: number | null;
+  controlarStock?: boolean;
+  stockMinimo?: number;
   variantes?: {
     id: string;
     nombre: string;
@@ -496,9 +499,34 @@ export class ComandaDrawerComponent implements OnChanges {
   cantidadPersonalizada = signal<number>(1);
   notaPersonalizada = signal<string>('');
 
+  isAgotado(plato: any): boolean {
+    return !!(
+      plato?.controlarStock &&
+      plato?.stockActual !== null &&
+      plato?.stockActual !== undefined &&
+      plato?.stockActual <= 0
+    );
+  }
+
+  isPocasPorciones(plato: any): boolean {
+    return !!(
+      plato?.controlarStock &&
+      plato?.stockActual !== null &&
+      plato?.stockActual !== undefined &&
+      plato?.stockActual > 0 &&
+      plato?.stockActual <= (plato?.stockMinimo || 3)
+    );
+  }
+
   // ── Selección y suma de platos ──
   abrirPersonalizarPlato(plato: any, event?: Event) {
     if (event) event.stopPropagation();
+
+    if (this.isAgotado(plato)) {
+      this.errorMessage.set(`Lo sentimos: El plato "${plato.nombre}" se encuentra agotado en cocina.`);
+      return;
+    }
+
     if (plato.tieneVariantes && plato.variantes && plato.variantes.length > 0) {
       this.platoParaPersonalizar.set(plato);
       this.varianteSeleccionada.set(plato.variantes[0]);
@@ -519,6 +547,13 @@ export class ComandaDrawerComponent implements OnChanges {
   }
 
   incCantidadPersonalizada() {
+    const plato = this.platoParaPersonalizar();
+    if (plato?.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+      if (this.cantidadPersonalizada() >= plato.stockActual) {
+        this.errorMessage.set(`Solo quedan ${plato.stockActual} porciones disponibles de "${plato.nombre}".`);
+        return;
+      }
+    }
     this.cantidadPersonalizada.update((c) => c + 1);
   }
 
@@ -539,6 +574,14 @@ export class ComandaDrawerComponent implements OnChanges {
     const notas = this.notaPersonalizada();
 
     if (!plato || !variante) return;
+
+    if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+      const actualEnDraft = this.comandaItems().find((i) => i.platoId === plato.id && i.varianteId === variante.id)?.cantidad || 0;
+      if (actualEnDraft + cant > plato.stockActual) {
+        this.errorMessage.set(`Stock insuficiente: Solo quedan ${plato.stockActual} porciones de "${plato.nombre}".`);
+        return;
+      }
+    }
 
     this.comandaItems.update((items) => {
       const idx = items.findIndex((i) => i.platoId === plato.id && i.varianteId === variante.id);
@@ -571,6 +614,20 @@ export class ComandaDrawerComponent implements OnChanges {
 
   agregarPlatoSinVariante(plato: any, event?: Event) {
     if (event) event.stopPropagation();
+
+    if (this.isAgotado(plato)) {
+      this.errorMessage.set(`El plato "${plato.nombre}" se encuentra agotado en cocina.`);
+      return;
+    }
+
+    if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+      const itemExistente = this.comandaItems().find((i) => i.platoId === plato.id && !i.varianteId);
+      if (itemExistente && itemExistente.cantidad >= plato.stockActual) {
+        this.errorMessage.set(`Solo quedan ${plato.stockActual} porciones disponibles de "${plato.nombre}".`);
+        return;
+      }
+    }
+
     this.comandaItems.update((items) => {
       const idx = items.findIndex((i) => i.platoId === plato.id && !i.varianteId);
       if (idx > -1) {
@@ -593,6 +650,14 @@ export class ComandaDrawerComponent implements OnChanges {
   }
 
   incrementarCantidad(item: ItemComanda) {
+    const plato = this.platosSignal().find((p) => p.id === item.platoId);
+    if (plato?.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+      if (item.cantidad >= plato.stockActual) {
+        this.errorMessage.set(`Solo quedan ${plato.stockActual} porciones disponibles de "${item.nombre}".`);
+        return;
+      }
+    }
+
     this.comandaItems.update((items) =>
       items.map((i) =>
         i.platoId === item.platoId && i.varianteId === item.varianteId
@@ -778,11 +843,15 @@ export class ComandaDrawerComponent implements OnChanges {
     this.http
       .post(`${this.baseUrl}/pedidos/llamar-mesero`, {
         mesaNumero: this.mesa.numero,
-        motivo: 'Solicitud desde el Centro de Mando',
+        motivo: 'Asistencia solicitada para Mesa ' + this.mesa.numero,
       })
       .subscribe({
-        next: () => alert(`🔔 Garzón notificado para Mesa ${this.mesa?.numero}`),
-        error: () => alert(`🔔 Solicitud de garzón enviada para Mesa ${this.mesa?.numero}`),
+        next: () => {
+          this.saved.emit();
+        },
+        error: () => {
+          this.saved.emit();
+        },
       });
   }
 
