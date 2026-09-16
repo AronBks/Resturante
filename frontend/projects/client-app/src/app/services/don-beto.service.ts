@@ -304,9 +304,25 @@ export class DonBetoService {
           notasItem = 'bien cocido';
         }
 
-        // 3. Buscar si ya estaba en la comanda para actualizar cantidad o agregar
+        // 3. Control de Stock en tiempo real
+        let cantidadFinal = cantidad;
+        if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+          if (plato.stockActual <= 0) {
+            // Plato agotado: omitir de la comanda
+            continue;
+          }
+          if (cantidadFinal > plato.stockActual) {
+            cantidadFinal = plato.stockActual;
+          }
+        }
+
+        // 4. Buscar si ya estaba en la comanda para actualizar cantidad o agregar
         if (idxExistente >= 0) {
-          resultado[idxExistente].cantidad = Math.max(resultado[idxExistente].cantidad, cantidad);
+          let nuevaCant = Math.max(resultado[idxExistente].cantidad, cantidadFinal);
+          if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+            nuevaCant = Math.min(nuevaCant, plato.stockActual);
+          }
+          resultado[idxExistente].cantidad = nuevaCant;
           if (notasItem) resultado[idxExistente].notas = notasItem;
         } else {
           resultado.push({
@@ -314,7 +330,7 @@ export class DonBetoService {
             varianteId,
             varianteNombre,
             nombre: nombreCompleto,
-            cantidad,
+            cantidad: cantidadFinal,
             precioUnitario: precio,
             notas: notasItem,
           });

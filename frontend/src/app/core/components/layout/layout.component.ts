@@ -56,10 +56,10 @@ export class LayoutComponent {
         roles: [RolUsuario.ADMIN, RolUsuario.CAJERO],
       },
       {
-        label: 'Nuestra Carta',
+        label: 'Carta y Platos del Día',
         route: '/dashboard/carta',
         iconName: 'utensils-crossed',
-        roles: [RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO],
+        roles: [RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO, RolUsuario.CAJERO],
       },
       {
         label: 'Equipo de Trabajo',

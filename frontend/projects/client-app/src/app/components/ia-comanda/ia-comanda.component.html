@@ -526,11 +526,20 @@
           } @else {
             <div class="carta-cards-grid">
               @for (item of platosFiltradosCarta(); track item.plato.id) {
-                <div class="plato-card-compact animate-fade-in" [class.has-in-comanda]="getCantidadEnComanda(item.plato) > 0">
+                <div class="plato-card-compact animate-fade-in" [class.has-in-comanda]="getCantidadEnComanda(item.plato) > 0" [class.plato-card-compact--agotado]="isAgotado(item.plato)">
                   <!-- Lado Izquierdo: Info, porción y consulta IA -->
                   <div class="card-info-side">
                     <div class="card-meta-line">
                       <span class="plato-cat-pill">{{ item.categoriaNombre }}</span>
+
+                      <!-- Estado de agotado -->
+                      @if (isAgotado(item.plato)) {
+                        <span class="stock-pill stock-pill--agotado">
+                          <lucide-icon name="ban" [size]="10"></lucide-icon>
+                          <span>Agotado</span>
+                        </span>
+                      }
+
                       @if (getCantidadEnComanda(item.plato) > 0) {
                         <span class="in-comanda-badge">
                           {{ getCantidadEnComanda(item.plato) }} en comanda
@@ -588,11 +597,21 @@
                           <lucide-icon name="utensils" [size]="24" class="gold-fallback-icon"></lucide-icon>
                         </div>
                       }
+                      @if (isAgotado(item.plato)) {
+                        <div class="thumb-agotado-overlay">
+                          <span>AGOTADO</span>
+                        </div>
+                      }
                     </div>
 
                     <!-- Botón Rápido o Stepper -->
                     <div class="dish-cta-wrap">
-                      @if (getCantidadEnComanda(item.plato) === 0) {
+                      @if (isAgotado(item.plato)) {
+                        <button type="button" class="btn-pedir-agotado" disabled title="Plato agotado en cocina">
+                          <lucide-icon name="ban" [size]="12"></lucide-icon>
+                          <span>Agotado</span>
+                        </button>
+                      } @else if (getCantidadEnComanda(item.plato) === 0) {
                         <button
                           type="button"
                           class="btn-pedir-directo"
@@ -616,6 +635,7 @@
                           <button
                             type="button"
                             class="btn-stepper-act"
+                            [disabled]="item.plato.controlarStock && item.plato.stockActual !== null && item.plato.stockActual !== undefined && getCantidadEnComanda(item.plato) >= item.plato.stockActual"
                             (click)="cambiarCantidadDesdeCarta(item.plato, 1, $event)"
                             aria-label="Aumentar"
                           >

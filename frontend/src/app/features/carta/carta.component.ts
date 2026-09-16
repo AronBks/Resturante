@@ -15,21 +15,27 @@ interface Variante {
   disponible: boolean;
 }
 
+export interface PlatoAdmin {
+  id: string;
+  nombre: string;
+  precioVenta: number;
+  descripcion?: string;
+  imagenUrl?: string;
+  disponible: boolean;
+  categoriaId: number;
+  categoriaNombre?: string;
+  stockActual?: number | null;
+  controlarStock?: boolean;
+  stockMinimo?: number;
+  variantes?: Variante[];
+}
+
 interface Categoria {
   id: number;
   nombre: string;
   descripcion?: string;
   orden?: number;
-  platos: {
-    id: string;
-    nombre: string;
-    precioVenta: number;
-    descripcion?: string;
-    imagenUrl?: string;
-    disponible: boolean;
-    categoriaId: number;
-    variantes?: Variante[];
-  }[];
+  platos: PlatoAdmin[];
 }
 
 @Component({
@@ -38,6 +44,37 @@ interface Categoria {
   imports: [CommonModule, FormsModule, LucideAngularModule],
   template: `
     <div class="carta-container animate-in">
+
+      <!-- Barra de Navegación de Modos de la Carta -->
+      <div class="main-view-nav-tabs">
+        <button 
+          type="button" 
+          class="tab-nav-btn" 
+          [class.active]="currentView() === 'list'"
+          (click)="currentView.set('list')"
+        >
+          <lucide-icon name="book-open" class="icon-sm"></lucide-icon>
+          <span>Catálogo & Precios</span>
+          <span class="tab-count-pill">{{ totalPlatos() }} platos</span>
+        </button>
+
+        <button 
+          type="button" 
+          class="tab-nav-btn" 
+          [class.active]="currentView() === 'stock'"
+          (click)="currentView.set('stock')"
+        >
+          <lucide-icon name="utensils" class="icon-sm"></lucide-icon>
+          <span>Platos del Día & Disponibilidad</span>
+          @if (totalAgotados() > 0) {
+            <span class="tab-alert-pill pulse-slow">{{ totalAgotados() }} terminados</span>
+          } @else if (totalStockBajo() > 0) {
+            <span class="tab-warning-pill">{{ totalStockBajo() }} por agotarse</span>
+          } @else {
+            <span class="tab-ok-pill">{{ totalPorcionesDisponibles() }} porciones listas</span>
+          }
+        </button>
+      </div>
       
       <!-- VIEW MODE 1: MAIN MENU DASHBOARD GRID -->
       @if (currentView() === 'list') {
@@ -563,6 +600,414 @@ interface Categoria {
             <div class="modal-footer">
               <button type="button" class="btn-modal-cancel" (click)="cerrarModales()">Cancelar</button>
               <button type="button" class="btn-modal-save" (click)="guardarCategoria()">Guardar Categoría</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- VIEW MODE 3: CONTROL DE STOCK & BEBIDAS -->
+      @if (currentView() === 'stock') {
+        <div class="stock-admin-view animate-in">
+          
+          <!-- Stock Header Bar -->
+          <div class="header-admin-bar">
+            <div class="header-left">
+              <div class="breadcrumb">
+                <span class="crumb-brand">Tukuypaj</span>
+                <span class="crumb-sep">/</span>
+                <span class="crumb-current">Platos del Día & Disponibilidad</span>
+              </div>
+              <h1 class="font-playfair">¿Qué platos tenemos para hoy?</h1>
+              <p class="subtitle">
+                Revise cuántas porciones quedan de cada plato para hoy. Cuando un plato se termina, el sistema y Don Beto IA avisan al instante a los clientes y garzones para que no se pida.
+              </p>
+            </div>
+
+            <div class="header-actions">
+              <button type="button" class="btn-action-outline-gold" (click)="cargarCarta()" title="Actualizar lista">
+                <lucide-icon name="refresh-cw" class="icon-sm"></lucide-icon>
+                Refrescar
+              </button>
+              @if (canManageStock()) {
+                <button type="button" class="btn-action-filled-gold" (click)="abrirModalApertura()">
+                  <lucide-icon name="sparkles" class="icon-sm"></lucide-icon>
+                  Preparación del Día
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Role Access Notice -->
+          @if (canManageStock()) {
+            <div class="role-badge-panel success glass-panel">
+              <div class="role-badge-left">
+                <lucide-icon name="shield-check" class="icon-md text-emerald"></lucide-icon>
+                <div>
+                  <div class="role-badge-title">PERMISO PARA MODIFICAR CANTIDADES ACTIVO ({{ currentUser()?.rol }})</div>
+                  <div class="role-badge-sub">
+                    Operador: <strong>{{ currentUser()?.nombre || 'Administración' }}</strong>. Puede aumentar porciones, descontar o marcar platos terminados.
+                  </div>
+                </div>
+              </div>
+              <span class="live-sync-indicator">
+                <span class="live-pulse"></span>
+                Actualizando a todos en vivo
+              </span>
+            </div>
+          } @else {
+            <div class="role-badge-panel warning glass-panel">
+              <div class="role-badge-left">
+                <lucide-icon name="lock" class="icon-md text-amber"></lucide-icon>
+                <div>
+                  <div class="role-badge-title">VISTA INFORMATIVA PARA GARZONES</div>
+                  <div class="role-badge-sub">
+                    Rol: <strong>MESERO</strong>. Vea con exactitud qué platos quedan y cuáles ya se terminaron para informar con seguridad a los clientes en las mesas.
+                  </div>
+                </div>
+              </div>
+              <span class="readonly-tag">SÓLO LECTURA</span>
+            </div>
+          }
+
+          <!-- Stock KPI Cards -->
+          <div class="stock-kpi-grid">
+            <div class="stock-kpi-card glass-panel">
+              <div class="kpi-icon-wrap bg-blue-subtle">
+                <lucide-icon name="sliders-horizontal" class="icon-lg text-blue"></lucide-icon>
+              </div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total en la Carta</div>
+                <div class="kpi-number">{{ totalPlatos() }}</div>
+                <div class="kpi-hint">Platos y bebidas registrados</div>
+              </div>
+            </div>
+
+            <div class="stock-kpi-card glass-panel" [class.danger-glow]="totalAgotados() > 0">
+              <div class="kpi-icon-wrap bg-red-subtle">
+                <lucide-icon name="alert-triangle" class="icon-lg text-red"></lucide-icon>
+              </div>
+              <div class="kpi-content">
+                <div class="kpi-label">Ya se Terminaron</div>
+                <div class="kpi-number text-red">{{ totalAgotados() }}</div>
+                <div class="kpi-hint">No se pueden pedir hoy</div>
+              </div>
+            </div>
+
+            <div class="stock-kpi-card glass-panel" [class.warning-glow]="totalStockBajo() > 0">
+              <div class="kpi-icon-wrap bg-amber-subtle">
+                <lucide-icon name="clock" class="icon-lg text-amber"></lucide-icon>
+              </div>
+              <div class="kpi-content">
+                <div class="kpi-label">Quedan Pocos</div>
+                <div class="kpi-number text-amber">{{ totalStockBajo() }}</div>
+                <div class="kpi-hint">Por terminarse pronto</div>
+              </div>
+            </div>
+
+            <div class="stock-kpi-card glass-panel">
+              <div class="kpi-icon-wrap bg-emerald-subtle">
+                <lucide-icon name="utensils" class="icon-lg text-emerald"></lucide-icon>
+              </div>
+              <div class="kpi-content">
+                <div class="kpi-label">Porciones Disponibles</div>
+                <div class="kpi-number text-emerald">{{ totalPorcionesDisponibles() }}</div>
+                <div class="kpi-hint">Listas para servir a los comensales</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters Row: Category & Search -->
+          <div class="stock-filter-toolbar glass-panel">
+            <div class="stock-search-wrap">
+              <lucide-icon name="search" class="search-icon"></lucide-icon>
+              <input 
+                type="text" 
+                [ngModel]="stockSearchQuery()" 
+                (ngModelChange)="stockSearchQuery.set($event)"
+                placeholder="Buscar plato o bebida en carta..." 
+                class="stock-search-input"
+              />
+            </div>
+
+            <div class="stock-filter-select-wrap">
+              <label class="filter-mini-label">Categoría:</label>
+              <select 
+                class="stock-select" 
+                [ngModel]="stockCategoryFilter()" 
+                (ngModelChange)="stockCategoryFilter.set($event)"
+              >
+                <option [ngValue]="null">Todas las Categorías</option>
+                @for (cat of categorias(); track cat.id) {
+                  <option [ngValue]="cat.id">{{ cat.nombre }} ({{ cat.platos.length }})</option>
+                }
+              </select>
+            </div>
+
+            <div class="stock-status-chips">
+              <button 
+                type="button" 
+                class="chip-btn" 
+                [class.active]="stockFilterState() === 'todos'"
+                (click)="stockFilterState.set('todos')"
+              >
+                Todos ({{ totalPlatos() }})
+              </button>
+              <button 
+                type="button" 
+                class="chip-btn chip-danger" 
+                [class.active]="stockFilterState() === 'agotados'"
+                (click)="stockFilterState.set('agotados')"
+              >
+                🔴 Terminados ({{ totalAgotados() }})
+              </button>
+              <button 
+                type="button" 
+                class="chip-btn chip-warning" 
+                [class.active]="stockFilterState() === 'bajo'"
+                (click)="stockFilterState.set('bajo')"
+              >
+                🟡 Quedan Pocos ({{ totalStockBajo() }})
+              </button>
+              <button 
+                type="button" 
+                class="chip-btn chip-success" 
+                [class.active]="stockFilterState() === 'disponibles'"
+                (click)="stockFilterState.set('disponibles')"
+              >
+                🟢 Disponibles ({{ totalConStock() }})
+              </button>
+            </div>
+          </div>
+
+          <!-- Stock Table Card -->
+          <div class="stock-table-card glass-panel">
+            <div class="stock-table-header">
+              <div class="col-item">Plato o Bebida</div>
+              <div class="col-status">Estado Actual</div>
+              <div class="col-qty">¿Cuántos Quedan?</div>
+              <div class="col-actions">Cambiar Cantidad</div>
+            </div>
+
+            <div class="stock-table-body">
+              @for (item of filteredStockPlatos(); track item.id) {
+                <div 
+                  class="stock-table-row" 
+                  [class.is-agotado]="isItemAgotado(item)"
+                  [class.is-bajo]="isItemBajoStock(item)"
+                >
+                  <!-- Item Info -->
+                  <div class="col-item">
+                    <img 
+                      [src]="getPlatoImageUrl(item)" 
+                      [alt]="item.nombre" 
+                      class="stock-thumb-img"
+                      (error)="handleImageError(item)"
+                    />
+                    <div class="stock-item-details">
+                      <span class="stock-cat-pill">{{ item.categoriaNombre }}</span>
+                      <h3 class="stock-item-name">{{ item.nombre }}</h3>
+                      <span class="stock-price">Bs. {{ item.precioVenta }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Current Status Pill -->
+                  <div class="col-status">
+                    @if (isItemAgotado(item)) {
+                      <span class="badge-status-red pulse-slow">
+                        <lucide-icon name="alert-triangle" class="icon-xs"></lucide-icon>
+                        SE TERMINÓ (0)
+                      </span>
+                    } @else if (isItemBajoStock(item)) {
+                      <span class="badge-status-amber">
+                        <lucide-icon name="clock" class="icon-xs"></lucide-icon>
+                        QUEDAN SOLO {{ item.stockActual }}
+                      </span>
+                    } @else {
+                      <span class="badge-status-emerald">
+                        <lucide-icon name="check-circle-2" class="icon-xs"></lucide-icon>
+                        {{ item.stockActual }} DISPONIBLES
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Quantity / Min Level -->
+                  <div class="col-qty">
+                    <div class="qty-control-box">
+                      <span class="qty-big-number">{{ item.stockActual ?? 0 }}</span>
+                      <span class="qty-unit">porciones listas</span>
+                      <div class="min-alert-box" title="Avisar cuando queden pocas porciones">
+                        <label>Avisar al quedar:</label>
+                        @if (canManageStock()) {
+                          <input 
+                            type="number" 
+                            min="1" 
+                            max="50"
+                            class="input-min-stock"
+                            [ngModel]="item.stockMinimo || 3"
+                            (change)="actualizarStockMinimo(item, $any($event.target).value)"
+                          />
+                        } @else {
+                          <span class="min-readonly">{{ item.stockMinimo || 3 }}</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Quick Action Buttons -->
+                  <div class="col-actions">
+                    @if (canManageStock()) {
+                      <div class="action-btn-group">
+                        <button 
+                          type="button" 
+                          class="btn-stock-micro btn-minus" 
+                          (click)="ajustarStockDelta(item, -5)"
+                          title="Restar 5 porciones"
+                          [disabled]="(item.stockActual ?? 0) <= 0"
+                        >
+                          -5
+                        </button>
+                        <button 
+                          type="button" 
+                          class="btn-stock-micro btn-minus" 
+                          (click)="ajustarStockDelta(item, -1)"
+                          title="Restar 1 porción"
+                          [disabled]="(item.stockActual ?? 0) <= 0"
+                        >
+                          -1
+                        </button>
+
+                        <button 
+                          type="button" 
+                          class="btn-stock-micro btn-plus" 
+                          (click)="ajustarStockDelta(item, 1)"
+                          title="Añadir 1 porción"
+                        >
+                          +1
+                        </button>
+                        <button 
+                          type="button" 
+                          class="btn-stock-micro btn-plus" 
+                          (click)="ajustarStockDelta(item, 5)"
+                          title="Añadir 5 porciones"
+                        >
+                          +5
+                        </button>
+
+                        <button 
+                          type="button" 
+                          class="btn-stock-pill btn-batch" 
+                          (click)="ajustarStockDelta(item, 10)"
+                          title="Añadir 10 porciones preparadas"
+                        >
+                          +10 porciones
+                        </button>
+
+                        <button 
+                          type="button" 
+                          class="btn-stock-pill btn-danger-mini" 
+                          (click)="fijarStockDirecto(item, 0)"
+                          title="Marcar como terminado"
+                          [disabled]="item.stockActual === 0"
+                        >
+                          Se Terminó (0)
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="readonly-badge-cell">
+                        <lucide-icon name="lock" class="icon-xs"></lucide-icon>
+                        <span>Solo Lectura (Caja / Admin)</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <div class="empty-stock-state">
+                  <lucide-icon name="info" class="icon-xl text-muted"></lucide-icon>
+                  <p>No se encontraron platos con los filtros seleccionados.</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- MODAL PREPARACIÓN DEL DÍA -->
+      @if (modalAperturaOpen()) {
+        <div class="modal-backdrop-custom animate-in" (click)="modalAperturaOpen.set(false)">
+          <div class="modal-card-custom glass-panel" (click)="$event.stopPropagation()">
+            <div class="modal-header-custom">
+              <div class="modal-title-wrap">
+                <lucide-icon name="sparkles" class="icon-md text-gold"></lucide-icon>
+                <div>
+                  <h2 class="modal-title font-playfair">Preparación del Día: ¿Cuántos platos se hicieron hoy?</h2>
+                  <p class="modal-sub">Indique cuántas porciones o unidades prepararon hoy en el restaurante para saber con claridad qué se puede servir.</p>
+                </div>
+              </div>
+              <button type="button" class="btn-close-custom" (click)="modalAperturaOpen.set(false)">
+                <lucide-icon name="x" class="icon-sm"></lucide-icon>
+              </button>
+            </div>
+
+            <div class="modal-body-custom scrollbar-custom">
+              <div class="apertura-quick-presets">
+                <span class="preset-title">Poner a todos:</span>
+                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(15)">
+                  15 a todos
+                </button>
+                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(20)">
+                  20 a todos
+                </button>
+                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(30)">
+                  30 a todos
+                </button>
+                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(50)">
+                  50 a todos
+                </button>
+              </div>
+
+              <div class="apertura-items-list">
+                @for (item of aperturaItems(); track item.platoId) {
+                  <div class="apertura-row">
+                    <div class="apertura-info">
+                      <span class="apertura-cat">{{ item.categoria }}</span>
+                      <strong class="apertura-name">{{ item.nombre }}</strong>
+                    </div>
+
+                    <div class="apertura-qty-input-wrap">
+                      <label>Listos hoy:</label>
+                      <input 
+                        type="number" 
+                        min="0" 
+                        max="999"
+                        class="apertura-input"
+                        [(ngModel)]="item.stockActual"
+                      />
+                      <span class="apertura-unit">porc.</span>
+                    </div>
+
+                    <div class="apertura-min-wrap">
+                      <label>Avisar al quedar:</label>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max="50"
+                        class="apertura-input-min"
+                        [(ngModel)]="item.stockMinimo"
+                      />
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="modal-footer-custom">
+              <button type="button" class="btn-action-outline-gold" (click)="modalAperturaOpen.set(false)">
+                Cancelar
+              </button>
+              <button type="button" class="btn-action-filled-gold" (click)="guardarAperturaMasiva()" [disabled]="guardandoApertura()">
+                <lucide-icon name="check" class="icon-sm"></lucide-icon>
+                {{ guardandoApertura() ? 'Guardando...' : 'Guardar Platos de Hoy' }}
+              </button>
             </div>
           </div>
         </div>
@@ -2048,21 +2493,980 @@ interface Categoria {
         }
       }
     }
+
+    /* ── Barra Superior de Navegación de Modos ── */
+    .main-view-nav-tabs {
+      display: flex;
+      gap: 12px;
+      padding: 6px;
+      background: rgba(22, 16, 12, 0.7);
+      border: 1px solid rgba(212, 175, 55, 0.18);
+      border-radius: 12px;
+      backdrop-filter: blur(12px);
+      width: fit-content;
+      margin-bottom: 8px;
+
+      .tab-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #a89f91;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s ease;
+
+        &:hover {
+          color: #f3ebe2;
+          background: rgba(255, 255, 255, 0.04);
+        }
+
+        &.active {
+          background: linear-gradient(135deg, rgba(212, 175, 55, 0.18), rgba(184, 134, 11, 0.08));
+          color: #d4af37;
+          border-color: rgba(212, 175, 55, 0.4);
+          box-shadow: 0 4px 16px rgba(212, 175, 55, 0.12);
+        }
+
+        .tab-count-pill {
+          background: rgba(255, 255, 255, 0.08);
+          color: #d6cbbf;
+          font-size: 0.75rem;
+          padding: 2px 8px;
+          border-radius: 999px;
+        }
+
+        .tab-alert-pill {
+          background: rgba(239, 68, 68, 0.25);
+          color: #fca5a5;
+          border: 1px solid rgba(239, 68, 68, 0.4);
+          font-size: 0.72rem;
+          padding: 2px 8px;
+          border-radius: 999px;
+          font-weight: 700;
+        }
+
+        .tab-warning-pill {
+          background: rgba(245, 158, 11, 0.25);
+          color: #fde68a;
+          border: 1px solid rgba(245, 158, 11, 0.4);
+          font-size: 0.72rem;
+          padding: 2px 8px;
+          border-radius: 999px;
+          font-weight: 700;
+        }
+
+        .tab-ok-pill {
+          background: rgba(16, 185, 129, 0.18);
+          color: #6ee7b7;
+          font-size: 0.72rem;
+          padding: 2px 8px;
+          border-radius: 999px;
+        }
+      }
+    }
+
+    /* ── Stock Admin View ── */
+    .stock-admin-view {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Role Badge Panel ── */
+    .role-badge-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 22px;
+      border-radius: 12px;
+      background: rgba(18, 13, 10, 0.85);
+
+      &.success {
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(18, 13, 10, 0.95));
+      }
+
+      &.warning {
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(18, 13, 10, 0.95));
+      }
+
+      .role-badge-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+
+        .role-badge-title {
+          font-size: 0.82rem;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          color: #f3ebe2;
+          margin-bottom: 2px;
+        }
+
+        .role-badge-sub {
+          font-size: 0.78rem;
+          color: #a89f91;
+          strong {
+            color: #d4af37;
+          }
+        }
+      }
+
+      .live-sync-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #34d399;
+        background: rgba(16, 185, 129, 0.12);
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        white-space: nowrap;
+
+        .live-pulse {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #10b981;
+          box-shadow: 0 0 10px #10b981;
+          animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+      }
+
+      .readonly-tag {
+        font-size: 0.72rem;
+        font-weight: 800;
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        letter-spacing: 0.08em;
+      }
+    }
+
+    /* ── Stock KPI Grid ── */
+    .stock-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+
+      @media (max-width: 1024px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+      }
+
+      .stock-kpi-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        border-radius: 12px;
+        background: rgba(22, 16, 12, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          border-color: rgba(212, 175, 55, 0.3);
+        }
+
+        &.danger-glow {
+          border-color: rgba(239, 68, 68, 0.4);
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+        }
+
+        &.warning-glow {
+          border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .kpi-icon-wrap {
+          width: 52px;
+          height: 52px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+
+          &.bg-blue-subtle {
+            background: rgba(59, 130, 246, 0.15);
+          }
+          &.bg-red-subtle {
+            background: rgba(239, 68, 68, 0.15);
+          }
+          &.bg-amber-subtle {
+            background: rgba(245, 158, 11, 0.15);
+          }
+          &.bg-emerald-subtle {
+            background: rgba(16, 185, 129, 0.15);
+          }
+        }
+
+        .kpi-content {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+
+          .kpi-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #8c8277;
+            font-weight: 700;
+          }
+
+          .kpi-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #f3ebe2;
+            line-height: 1.1;
+          }
+
+          .kpi-hint {
+            font-size: 0.72rem;
+            color: #a89f91;
+          }
+        }
+      }
+    }
+
+    /* ── Stock Toolbar & Filters ── */
+    .stock-filter-toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      background: rgba(22, 16, 12, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+
+      .stock-search-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 240px;
+
+        .search-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #8c8277;
+          width: 16px;
+          height: 16px;
+        }
+
+        .stock-search-input {
+          width: 100%;
+          background: #100c08;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 10px 14px 10px 38px;
+          color: #f3ebe2;
+          font-size: 0.84rem;
+          outline: none;
+          transition: border-color 0.2s ease;
+
+          &:focus {
+            border-color: #d4af37;
+          }
+        }
+      }
+
+      .stock-filter-select-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .filter-mini-label {
+          font-size: 0.76rem;
+          font-weight: 700;
+          color: #8c8277;
+          text-transform: uppercase;
+        }
+
+        .stock-select {
+          background: #100c08;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 9px 14px;
+          color: #f3ebe2;
+          font-size: 0.84rem;
+          outline: none;
+          cursor: pointer;
+
+          &:focus {
+            border-color: #d4af37;
+          }
+        }
+      }
+
+      .stock-status-chips {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .chip-btn {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #a89f91;
+          padding: 7px 14px;
+          border-radius: 8px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:hover {
+            color: #f3ebe2;
+            background: rgba(255, 255, 255, 0.08);
+          }
+
+          &.active {
+            background: #d4af37;
+            color: #120d09;
+            border-color: #d4af37;
+            font-weight: 700;
+          }
+
+          &.chip-danger.active {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+          }
+
+          &.chip-warning.active {
+            background: #f59e0b;
+            color: #120d09;
+            border-color: #f59e0b;
+          }
+
+          &.chip-success.active {
+            background: #10b981;
+            color: #ffffff;
+            border-color: #10b981;
+          }
+        }
+      }
+    }
+
+    /* ── Stock Table Layout ── */
+    .stock-table-card {
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(22, 16, 12, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+
+      .stock-table-header {
+        display: grid;
+        grid-template-columns: 2.5fr 1.5fr 1.4fr 2.6fr;
+        padding: 16px 24px;
+        background: rgba(14, 10, 7, 0.9);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #8c8277;
+
+        @media (max-width: 1024px) {
+          display: none;
+        }
+      }
+
+      .stock-table-body {
+        display: flex;
+        flex-direction: column;
+
+        .stock-table-row {
+          display: grid;
+          grid-template-columns: 2.5fr 1.5fr 1.4fr 2.6fr;
+          align-items: center;
+          padding: 16px 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          transition: background 0.2s ease;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.02);
+          }
+
+          &.is-agotado {
+            background: rgba(239, 68, 68, 0.04);
+          }
+
+          &.is-bajo {
+            background: rgba(245, 158, 11, 0.03);
+          }
+
+          @media (max-width: 1024px) {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+          }
+
+          .col-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+
+            .stock-thumb-img {
+              width: 52px;
+              height: 52px;
+              border-radius: 8px;
+              object-fit: cover;
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              flex-shrink: 0;
+            }
+
+            .stock-item-details {
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+
+              .stock-cat-pill {
+                font-size: 0.68rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #d4af37;
+                font-weight: 700;
+              }
+
+              .stock-item-name {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #f3ebe2;
+                margin: 0;
+              }
+
+              .stock-price {
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: #a89f91;
+              }
+            }
+          }
+
+          .col-status {
+            display: flex;
+            align-items: center;
+
+            .badge-status-slate {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              padding: 4px 10px;
+              border-radius: 6px;
+              font-size: 0.74rem;
+              font-weight: 700;
+              background: rgba(148, 163, 184, 0.15);
+              color: #cbd5e1;
+              border: 1px solid rgba(148, 163, 184, 0.25);
+            }
+
+            .badge-status-red {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              padding: 4px 10px;
+              border-radius: 6px;
+              font-size: 0.74rem;
+              font-weight: 700;
+              background: rgba(239, 68, 68, 0.18);
+              color: #f87171;
+              border: 1px solid rgba(239, 68, 68, 0.35);
+            }
+
+            .badge-status-amber {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              padding: 4px 10px;
+              border-radius: 6px;
+              font-size: 0.74rem;
+              font-weight: 700;
+              background: rgba(245, 158, 11, 0.18);
+              color: #fbbf24;
+              border: 1px solid rgba(245, 158, 11, 0.35);
+            }
+
+            .badge-status-emerald {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              padding: 4px 10px;
+              border-radius: 6px;
+              font-size: 0.74rem;
+              font-weight: 700;
+              background: rgba(16, 185, 129, 0.18);
+              color: #34d399;
+              border: 1px solid rgba(16, 185, 129, 0.35);
+            }
+          }
+
+          .col-qty {
+            .qty-control-box {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+
+              .qty-big-number {
+                font-size: 1.4rem;
+                font-weight: 800;
+                color: #f3ebe2;
+                line-height: 1;
+              }
+
+              .qty-unit {
+                font-size: 0.72rem;
+                color: #8c8277;
+                text-transform: uppercase;
+              }
+
+              .min-alert-box {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.72rem;
+                color: #a89f91;
+
+                .input-min-stock {
+                  width: 44px;
+                  background: #100c08;
+                  border: 1px solid rgba(255, 255, 255, 0.15);
+                  border-radius: 4px;
+                  padding: 2px 4px;
+                  color: #f3ebe2;
+                  font-size: 0.75rem;
+                  text-align: center;
+                  outline: none;
+
+                  &:focus {
+                    border-color: #d4af37;
+                  }
+                }
+
+                .min-readonly {
+                  font-weight: 700;
+                  color: #d4af37;
+                }
+              }
+            }
+
+            .text-muted-italic {
+              font-size: 0.78rem;
+              color: #6e6459;
+              font-style: italic;
+            }
+          }
+
+          .col-actions {
+            .action-btn-group {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              flex-wrap: wrap;
+
+              .btn-stock-micro {
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s ease;
+
+                &:disabled {
+                  opacity: 0.3;
+                  cursor: not-allowed;
+                }
+
+                &.btn-minus {
+                  background: rgba(239, 68, 68, 0.15);
+                  color: #fca5a5;
+                  border: 1px solid rgba(239, 68, 68, 0.3);
+
+                  &:hover:not(:disabled) {
+                    background: #ef4444;
+                    color: #ffffff;
+                  }
+                }
+
+                &.btn-plus {
+                  background: rgba(16, 185, 129, 0.15);
+                  color: #6ee7b7;
+                  border: 1px solid rgba(16, 185, 129, 0.3);
+
+                  &:hover:not(:disabled) {
+                    background: #10b981;
+                    color: #ffffff;
+                  }
+                }
+              }
+
+              .btn-stock-pill {
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 0.76rem;
+                font-weight: 700;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s ease;
+
+                &:disabled {
+                  opacity: 0.3;
+                  cursor: not-allowed;
+                }
+
+                &.btn-batch {
+                  background: rgba(212, 175, 55, 0.15);
+                  color: #fde047;
+                  border: 1px solid rgba(212, 175, 55, 0.4);
+
+                  &:hover:not(:disabled) {
+                    background: #d4af37;
+                    color: #120d09;
+                  }
+                }
+
+
+                &.btn-danger-mini {
+                  background: rgba(239, 68, 68, 0.15);
+                  color: #f87171;
+                  border: 1px solid rgba(239, 68, 68, 0.3);
+
+                  &:hover:not(:disabled) {
+                    background: #dc2626;
+                    color: #ffffff;
+                  }
+                }
+              }
+            }
+
+            .readonly-badge-cell {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              font-size: 0.75rem;
+              color: #8c8277;
+              background: rgba(255, 255, 255, 0.04);
+              padding: 6px 12px;
+              border-radius: 6px;
+            }
+          }
+        }
+
+        .empty-stock-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          padding: 60px 20px;
+          color: #8c8277;
+          font-size: 0.9rem;
+        }
+      }
+    }
+
+    /* ── Modal Apertura Masiva ── */
+    .modal-backdrop-custom {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 5, 3, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+
+      .modal-card-custom {
+        width: 100%;
+        max-width: 680px;
+        max-height: 85vh;
+        background: #18110c;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+
+        .modal-header-custom {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 20px 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+          .modal-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            .modal-title {
+              font-size: 1.15rem;
+              font-weight: 700;
+              color: #f3ebe2;
+              margin: 0;
+            }
+
+            .modal-sub {
+              font-size: 0.78rem;
+              color: #8c8277;
+              margin: 2px 0 0 0;
+            }
+          }
+
+          .btn-close-custom {
+            background: transparent;
+            border: none;
+            color: #8c8277;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            &:hover {
+              color: #f3ebe2;
+              background: rgba(255, 255, 255, 0.05);
+            }
+          }
+        }
+
+        .modal-body-custom {
+          padding: 20px 24px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+
+          .apertura-quick-presets {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+
+            .preset-title {
+              font-size: 0.76rem;
+              font-weight: 700;
+              color: #d4af37;
+              text-transform: uppercase;
+            }
+
+            .btn-preset {
+              background: rgba(212, 175, 55, 0.12);
+              border: 1px solid rgba(212, 175, 55, 0.25);
+              color: #f3ebe2;
+              padding: 5px 12px;
+              border-radius: 6px;
+              font-size: 0.76rem;
+              font-weight: 600;
+              cursor: pointer;
+
+              &:hover {
+                background: #d4af37;
+                color: #120d09;
+              }
+
+              &.btn-preset-subtle {
+                background: rgba(255, 255, 255, 0.05);
+                border-color: rgba(255, 255, 255, 0.12);
+                color: #d6cbbf;
+
+                &:hover {
+                  background: rgba(255, 255, 255, 0.1);
+                  color: #ffffff;
+                }
+              }
+            }
+          }
+
+          .apertura-items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            .apertura-row {
+              display: grid;
+              grid-template-columns: 2.4fr 1.4fr 1fr;
+              align-items: center;
+              gap: 12px;
+              padding: 12px 16px;
+              border-radius: 8px;
+              background: rgba(255, 255, 255, 0.02);
+              border: 1px solid rgba(255, 255, 255, 0.04);
+
+              @media (max-width: 600px) {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+              }
+
+              .apertura-info {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+
+                .apertura-cat {
+                  font-size: 0.68rem;
+                  color: #d4af37;
+                  text-transform: uppercase;
+                  font-weight: 700;
+                }
+
+                .apertura-name {
+                  font-size: 0.88rem;
+                  color: #f3ebe2;
+                }
+              }
+
+              .apertura-qty-input-wrap, .apertura-min-wrap {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+
+                label {
+                  font-size: 0.74rem;
+                  color: #8c8277;
+                  font-weight: 600;
+                }
+
+                .apertura-input {
+                  width: 58px;
+                  background: #100c08;
+                  border: 1px solid rgba(255, 255, 255, 0.15);
+                  border-radius: 6px;
+                  padding: 6px 8px;
+                  color: #f3ebe2;
+                  font-size: 0.84rem;
+                  font-weight: 700;
+                  text-align: center;
+                  outline: none;
+
+                  &:focus {
+                    border-color: #d4af37;
+                  }
+
+                  &:disabled {
+                    opacity: 0.4;
+                  }
+                }
+
+                .apertura-input-min {
+                  width: 44px;
+                  background: #100c08;
+                  border: 1px solid rgba(255, 255, 255, 0.15);
+                  border-radius: 6px;
+                  padding: 6px 6px;
+                  color: #f3ebe2;
+                  font-size: 0.8rem;
+                  text-align: center;
+                  outline: none;
+
+                  &:disabled {
+                    opacity: 0.4;
+                  }
+                }
+
+                .apertura-unit {
+                  font-size: 0.72rem;
+                  color: #8c8277;
+                }
+              }
+            }
+          }
+        }
+
+        .modal-footer-custom {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 12px;
+          padding: 16px 24px;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(14, 10, 7, 0.9);
+        }
+      }
+    }
   `]
 })
 export class CartaComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
-  private authService = inject(AuthService);
+  authService = inject(AuthService);
+  currentUser = computed(() => this.authService.currentUserSignal());
   private socketService = inject(SocketService);
   private uploadService = inject(UploadCloudinaryService);
   private readonly baseUrl = 'http://localhost:3000/api';
+
+  isItemAgotado(item: PlatoAdmin): boolean {
+    return item.stockActual == null || item.stockActual <= 0;
+  }
+
+  isItemBajoStock(item: PlatoAdmin): boolean {
+    return (
+      typeof item.stockActual === 'number' &&
+      item.stockActual > 0 &&
+      item.stockActual <= (item.stockMinimo || 3)
+    );
+  }
+
+  getUnidadMedida(item: PlatoAdmin): string {
+    const cat = (item.categoriaNombre || '').toLowerCase();
+    if (cat.includes('bebida') || cat.includes('cerveza') || cat.includes('refresco')) {
+      return 'unid.';
+    }
+    return 'porc.';
+  }
+
+  getAreaInfo(item: PlatoAdmin): { label: string; icon: string; esBar: boolean; tipo: 'cocina' | 'bar' } {
+    const cat = (item.categoriaNombre || '').toLowerCase();
+    const nombre = (item.nombre || '').toLowerCase();
+    const esBar = cat.includes('bebida') || cat.includes('cerveza') || cat.includes('trago') || cat.includes('gaseosa') || cat.includes('refresco') || cat.includes('vino') || cat.includes('coctel') || nombre.includes('huari') || nombre.includes('paceña') || nombre.includes('coca') || nombre.includes('sprite');
+    if (esBar) {
+      return { label: 'Bar & Bebidas', icon: 'beer', esBar: true, tipo: 'bar' };
+    }
+    return { label: 'Cocina & Caldos', icon: 'soup', esBar: false, tipo: 'cocina' };
+  }
 
   categorias = signal<Categoria[]>([]);
   selectedCategoryId = signal<number | null>(null);
   searchQuery = signal<string>('');
 
-  // View state: 'list' (menu dashboard) vs 'create' (full panel for new dish)
-  currentView = signal<'list' | 'create'>('list');
+  // View state: 'list' (menu dashboard) vs 'create' (full panel for new dish) vs 'stock' (daily stock control)
+  currentView = signal<'list' | 'create' | 'stock'>('list');
+
+  // Filtros y modales de gestión operativa de stock (100% finito)
+  stockFilterState = signal<'todos' | 'agotados' | 'bajo' | 'disponibles'>('todos');
+  stockCategoryFilter = signal<number | null>(null);
+  stockSearchQuery = signal<string>('');
+  modalAperturaOpen = signal<boolean>(false);
+  guardandoApertura = signal<boolean>(false);
+  aperturaItems = signal<Array<{
+    platoId: string;
+    nombre: string;
+    categoria: string;
+    stockActual: number;
+    stockMinimo: number;
+    esBar: boolean;
+    unidad: string;
+  }>>([]);
 
   // Modales adicionales
   showCategoriaModal = signal(false);
@@ -2098,7 +3502,12 @@ export class CartaComponent implements OnInit, OnDestroy {
   pastedUrl = '';
 
   isAdmin = computed(() => this.authService.currentUserSignal()?.rol === 'ADMIN');
+  canManageStock = computed(() => {
+    const rol = this.authService.currentUserSignal()?.rol;
+    return rol === 'ADMIN' || rol === 'CAJERO';
+  });
   private wsSubscription?: Subscription;
+  private stockSub?: Subscription;
 
   // Computed properties
   filteredCategorias = computed(() => {
@@ -2130,14 +3539,79 @@ export class CartaComponent implements OnInit, OnDestroy {
     return bebidasCat ? bebidasCat.platos.length : 0;
   });
 
-  totalAgotados = computed(() => {
-    let count = 0;
+  todosLosPlatos = computed(() => {
+    const list: PlatoAdmin[] = [];
     for (const cat of this.categorias()) {
       for (const p of cat.platos) {
-        if (!this.isPlatoDisponible(p)) count++;
+        list.push({
+          ...p,
+          categoriaNombre: cat.nombre,
+          controlarStock: true,
+        });
       }
     }
-    return count;
+    return list;
+  });
+
+  totalAgotados = computed(() => {
+    return this.todosLosPlatos().filter((p) => p.stockActual == null || p.stockActual <= 0).length;
+  });
+
+  totalStockBajo = computed(() => {
+    return this.todosLosPlatos().filter(
+      (p) =>
+        typeof p.stockActual === 'number' &&
+        p.stockActual > 0 &&
+        p.stockActual <= (p.stockMinimo || 3),
+    ).length;
+  });
+
+  totalConStock = computed(() => {
+    return this.todosLosPlatos().filter(
+      (p) => typeof p.stockActual === 'number' && p.stockActual > (p.stockMinimo || 3),
+    ).length;
+  });
+
+  totalPorcionesDisponibles = computed(() => {
+    return this.todosLosPlatos()
+      .filter((p) => typeof p.stockActual === 'number' && p.stockActual > 0)
+      .reduce((acc, p) => acc + (p.stockActual || 0), 0);
+  });
+
+  filteredStockPlatos = computed(() => {
+    let items = this.todosLosPlatos();
+    const query = this.stockSearchQuery().trim().toLowerCase();
+    const catId = this.stockCategoryFilter();
+    const state = this.stockFilterState();
+
+    if (catId !== null) {
+      items = items.filter((i) => i.categoriaId === catId);
+    }
+
+    if (query) {
+      items = items.filter(
+        (i) =>
+          i.nombre.toLowerCase().includes(query) ||
+          (i.categoriaNombre && i.categoriaNombre.toLowerCase().includes(query)),
+      );
+    }
+
+    if (state === 'agotados') {
+      items = items.filter((i) => i.stockActual == null || i.stockActual <= 0);
+    } else if (state === 'bajo') {
+      items = items.filter(
+        (i) =>
+          typeof i.stockActual === 'number' &&
+          i.stockActual > 0 &&
+          i.stockActual <= (i.stockMinimo || 3),
+      );
+    } else if (state === 'disponibles') {
+      items = items.filter(
+        (i) => typeof i.stockActual === 'number' && i.stockActual > (i.stockMinimo || 3),
+      );
+    }
+
+    return items;
   });
 
   readonly CLOUDINARY_DISHES_MAP: Record<string, string> = {
@@ -2214,10 +3688,23 @@ export class CartaComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.cargarCarta();
       });
+
+    this.stockSub = this.socketService
+      .onEvent<any>('plato:stock-actualizado')
+      .subscribe((data) => {
+        if (data && data.platoId) {
+          this.actualizarPlatoStockLocal(
+            data.platoId,
+            data.stockActual,
+            data.disponible,
+          );
+        }
+      });
   }
 
   ngOnDestroy() {
     this.wsSubscription?.unsubscribe();
+    this.stockSub?.unsubscribe();
   }
 
   cargarCarta() {
@@ -2255,10 +3742,133 @@ export class CartaComponent implements OnInit, OnDestroy {
 
   isPlatoDisponible(plato: any): boolean {
     if (!plato) return false;
+    if (plato.stockActual == null || plato.stockActual <= 0) {
+      return false;
+    }
     if (plato.variantes && plato.variantes.length > 0) {
       return plato.variantes.some((v: any) => v.disponible);
     }
     return plato.disponible;
+  }
+
+  // ── MÉTODOS OPERATIVOS DE CONTROL DE STOCK (100% FINITO) ──
+
+  ajustarStockDelta(plato: PlatoAdmin, delta: number) {
+    if (!this.canManageStock()) return;
+    const actual = plato.stockActual ?? 0;
+    const nuevo = Math.max(0, actual + delta);
+    this.fijarStockDirecto(plato, nuevo);
+  }
+
+  fijarStockDirecto(plato: PlatoAdmin, nuevoStock: number) {
+    if (!this.canManageStock()) return;
+    const valor = Math.max(0, Number(nuevoStock));
+    
+    // Actualización optimista inmediata
+    this.actualizarPlatoStockLocal(plato.id, valor, valor > 0);
+
+    this.http
+      .patch<any>(`${this.baseUrl}/carta/platos/${plato.id}/stock`, {
+        stockActual: valor,
+      })
+      .subscribe({
+        next: () => {
+          this.ultimaActualizacion.set(
+            'HOY ' + new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })
+          );
+        },
+        error: (err) => {
+          console.error('Error al actualizar stock:', err);
+          this.cargarCarta();
+        },
+      });
+  }
+
+  actualizarStockMinimo(plato: PlatoAdmin, min: any) {
+    if (!this.canManageStock()) return;
+    const num = Math.max(0, parseInt(min) || 3);
+    plato.stockMinimo = num;
+
+    this.http
+      .patch<any>(`${this.baseUrl}/carta/platos/${plato.id}/stock`, {
+        stockMinimo: num,
+      })
+      .subscribe({
+        error: (err) => console.error('Error al actualizar alerta mínima:', err),
+      });
+  }
+
+  actualizarPlatoStockLocal(
+    platoId: string,
+    stockActual: number | null,
+    disponible: boolean,
+  ) {
+    const cats = this.categorias();
+    const updated = cats.map((c) => ({
+      ...c,
+      platos: c.platos.map((p) => {
+        if (p.id === platoId) {
+          return {
+            ...p,
+            stockActual: stockActual,
+            disponible: disponible,
+            controlarStock: true,
+          };
+        }
+        return p;
+      }),
+    }));
+    this.categorias.set(updated);
+  }
+
+  abrirModalApertura() {
+    const items = this.todosLosPlatos().map((p) => {
+      return {
+        platoId: p.id,
+        nombre: p.nombre,
+        categoria: p.categoriaNombre || 'Carta',
+        stockActual: p.stockActual ?? 15,
+        stockMinimo: p.stockMinimo || 3,
+        esBar: false,
+        unidad: 'porc.',
+      };
+    });
+    this.aperturaItems.set(items);
+    this.modalAperturaOpen.set(true);
+  }
+
+  aplicarPresetMasivo(cantidad: number) {
+    const items = this.aperturaItems().map((i) => ({
+      ...i,
+      stockActual: cantidad,
+    }));
+    this.aperturaItems.set(items);
+  }
+
+  guardarAperturaMasiva() {
+    if (!this.canManageStock()) return;
+    this.guardandoApertura.set(true);
+
+    const payload = {
+      items: this.aperturaItems().map((i) => ({
+        platoId: i.platoId,
+        stockActual: Math.max(0, Number(i.stockActual)),
+        stockMinimo: Math.max(0, Number(i.stockMinimo)),
+      })),
+      motivo: 'Preparación del día por ' + (this.authService.currentUserSignal()?.nombre || 'Caja/Administración'),
+    };
+
+    this.http.post<any>(`${this.baseUrl}/carta/stock/bulk`, payload).subscribe({
+      next: () => {
+        this.guardandoApertura.set(false);
+        this.modalAperturaOpen.set(false);
+        this.cargarCarta();
+      },
+      error: (err) => {
+        console.error('Error guardando apertura masiva:', err);
+        this.guardandoApertura.set(false);
+      },
+    });
   }
 
   getMinPrecio(plato: any): number {

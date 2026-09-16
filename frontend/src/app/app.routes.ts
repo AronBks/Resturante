@@ -44,7 +44,7 @@ export const routes: Routes = [
 
       {
         path: 'carta',
-        canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO])],
+        canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO, RolUsuario.CAJERO])],
         loadComponent: () =>
           import('./features/carta/carta.component').then((m) => m.CartaComponent),
       },

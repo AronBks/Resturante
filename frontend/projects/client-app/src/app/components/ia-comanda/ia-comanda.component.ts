@@ -168,6 +168,37 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
       }
     });
 
+    this.socketPublico.onStockActualizado().subscribe((stockEvt) => {
+      // 1. Actualizar catálogo en memoria de la carta
+      this.cartaService.actualizarStockPlato(stockEvt.platoId, stockEvt.stockActual, stockEvt.disponible);
+
+      // 2. Ajustar o remover ítems en comanda draft si el stock cambió
+      this.comandaItems.update((items) => {
+        let huboAjuste = false;
+        const actualizados = items
+          .map((item) => {
+            if (item.platoId === stockEvt.platoId && stockEvt.stockActual !== null && stockEvt.stockActual !== undefined) {
+              if (stockEvt.stockActual <= 0) {
+                huboAjuste = true;
+                this.toastMensaje.set(`⚠️ El plato "${item.nombre}" se acaba de agotar en cocina.`);
+                return null;
+              } else if (item.cantidad > stockEvt.stockActual) {
+                huboAjuste = true;
+                this.toastMensaje.set(`⚠️ Ajuste: solo quedan ${stockEvt.stockActual} porciones de "${item.nombre}".`);
+                return { ...item, cantidad: stockEvt.stockActual };
+              }
+            }
+            return item;
+          })
+          .filter(Boolean) as ItemComanda[];
+
+        if (huboAjuste) {
+          this.guardarEnSesion();
+        }
+        return actualizados;
+      });
+    });
+
     this.socketPublico.onPagoConfirmado().subscribe((evento) => {
       const mesaNormEvent = formatearMesaParaBackend(evento.mesaNumero);
       if (mesaNormEvent === this.mesaBackend()) {
@@ -335,8 +366,35 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
     const totalConsolidado = (pedidoActual ? Number(pedidoActual.total) : 0) +
       itemsBorrador.reduce((acc, i) => acc + i.precioUnitario * i.cantidad, 0);
 
-    if (resumenMesa) {
+    // 2.3 Resumen de stock en cocina para Don Beto
+    const todosPlatos = this.cartaService.categorias().flatMap((c) => c.platos);
+    const agotados = todosPlatos
+      .filter((p) => p.controlarStock && p.stockActual !== null && p.stockActual !== undefined && p.stockActual <= 0)
+      .map((p) => p.nombre);
+    const pocasPorciones = todosPlatos
+      .filter(
+        (p) =>
+          p.controlarStock &&
+          p.stockActual !== null &&
+          p.stockActual !== undefined &&
+          p.stockActual > 0 &&
+          p.stockActual <= (p.stockMinimo || 3),
+      )
+      .map((p) => `${p.nombre} (quedan ${p.stockActual})`);
+
+    let stockInfo = '';
+    if (agotados.length > 0) {
+      stockInfo += `Platos agotados hoy: [${agotados.join(', ')}]. `;
+    }
+    if (pocasPorciones.length > 0) {
+      stockInfo += `Platos con pocas porciones: [${pocasPorciones.join(', ')}]. `;
+    }
+
+    if (resumenMesa || stockInfo) {
       resumenMesa += `Total acumulado actual de la mesa: Bs. ${totalConsolidado.toFixed(2)}. `;
+      if (stockInfo) {
+        resumenMesa += `[STOCK COCINA: ${stockInfo}Si el cliente pide un plato agotado o más porciones de las que quedan, avísale amablemente sin duplicar y ofrece alternativas.] `;
+      }
       resumenMesa += `REGLA DE ATENCIÓN: NO ofrezcas cobrar, pagar ni cancelar en efectivo o QR mientras el cliente esté ordenando o consultando. Solo confirma los platos. Si el cliente dice que es todo o pide marchar, confirma el envío a cocina.`;
     }
 
@@ -600,6 +658,15 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
    * Modifica la cantidad de un ítem en la comanda
    */
   modificarCantidad(item: ItemComanda, delta: number): void {
+    const platoReal = this.cartaService.categorias().flatMap((c) => c.platos).find((p) => p.id === item.platoId);
+    if (delta > 0 && platoReal?.controlarStock && platoReal.stockActual !== null && platoReal.stockActual !== undefined) {
+      if (item.cantidad >= platoReal.stockActual) {
+        this.toastMensaje.set(`⚠️ Solo quedan ${platoReal.stockActual} porciones disponibles de "${item.nombre}".`);
+        setTimeout(() => this.toastMensaje.set(''), 2600);
+        return;
+      }
+    }
+
     this.comandaItems.update((items) => {
       return items
         .map((i) => {
@@ -709,16 +776,32 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
    */
   agregarDirectoAComanda(plato: PlatoPublico, event?: Event): void {
     if (event) event.stopPropagation();
+
+    if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+      if (plato.stockActual <= 0) {
+        this.toastMensaje.set(`⚠️ El plato "${plato.nombre}" se encuentra agotado en cocina.`);
+        setTimeout(() => this.toastMensaje.set(''), 2600);
+        return;
+      }
+    }
+
     const v = this.getVarianteActual(plato);
     const nombre = v ? `${plato.nombre} (${v.nombre})` : plato.nombre;
     const precio = v ? Number(v.precio) : Number(plato.precioVenta);
     const varianteId = v?.id;
 
+    let excede = false;
     this.comandaItems.update((items) => {
       const idx = items.findIndex(
         (i) => i.platoId === plato.id && (i.varianteId || '') === (varianteId || ''),
       );
       if (idx >= 0) {
+        if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
+          if (items[idx].cantidad >= plato.stockActual) {
+            excede = true;
+            return items;
+          }
+        }
         const copia = [...items];
         copia[idx] = { ...copia[idx], cantidad: copia[idx].cantidad + 1 };
         return copia;
@@ -736,9 +819,33 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
       }
     });
 
+    if (excede) {
+      this.toastMensaje.set(`⚠️ Solo quedan ${plato.stockActual} porciones disponibles de "${plato.nombre}".`);
+      setTimeout(() => this.toastMensaje.set(''), 2600);
+      return;
+    }
+
     this.guardarEnSesion();
     this.toastMensaje.set(`¡${nombre} agregado a su comanda!`);
     setTimeout(() => this.toastMensaje.set(''), 2600);
+  }
+
+  isAgotado(plato: PlatoPublico): boolean {
+    if (plato.agotado === true) return true;
+    if (plato.stockActual !== null && plato.stockActual !== undefined) {
+      return plato.stockActual <= 0;
+    }
+    return false;
+  }
+
+  isPocasPorciones(plato: PlatoPublico): boolean {
+    return !!(
+      plato.controlarStock &&
+      plato.stockActual !== null &&
+      plato.stockActual !== undefined &&
+      plato.stockActual > 0 &&
+      plato.stockActual <= (plato.stockMinimo || 3)
+    );
   }
 
   /**
