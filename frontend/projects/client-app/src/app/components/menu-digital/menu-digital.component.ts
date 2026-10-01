@@ -91,6 +91,10 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
 
   totalPlatos = this.cartaService.totalPlatos;
 
+  tienePedidoActivo = computed(() => {
+    return !!this.carritoService.ultimoPedido() || this.carritoService.pedidoConfirmado();
+  });
+
   ngOnInit(): void {
     // 0. Leer mesa de la URL o localStorage y restaurar comanda activa automáticamente
     this.route.queryParams.subscribe((params) => {

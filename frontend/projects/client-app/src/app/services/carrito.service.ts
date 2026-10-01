@@ -315,6 +315,8 @@ export class CarritoService {
 
     const payload = {
       mesaNumero,
+      canalOrigen: 'CLIENTE_DIGITAL',
+      notas: `Pedido interactivo desde la Carta Digital — Mesa ${mesaNumero}`,
       items: this.items().map((item) => ({
         platoId: item.platoId,
         varianteId: item.varianteId || undefined,
@@ -333,7 +335,7 @@ export class CarritoService {
       const horaCocina = `${pad(cocinaTime.getHours())}:${pad(cocinaTime.getMinutes())}`;
       const randomNum = Math.floor(1000 + Math.random() * 9000);
 
-      this.http.post(`${this.apiUrl}/ia/confirmar`, payload).subscribe({
+      this.http.post(`${this.apiUrl}/publica/confirmar`, payload).subscribe({
         next: (response: any) => {
           const codigo = response?.pedido?.codigo || `TK-${randomNum}`;
 
@@ -436,8 +438,9 @@ export class CarritoService {
   // ── Solicitar Atención Presencial (Llamar Mesero) ──
   llamarMesero(mesaNumero: string, motivo?: string): Observable<any> {
     this.meseroLlamadoStatus.set('calling');
+    const mesaBackend = formatearMesaParaBackend(mesaNumero);
     return new Observable((subscriber) => {
-      this.http.post(`${this.apiUrl}/llamar-mesero`, { mesaNumero, motivo }).subscribe({
+      this.http.post(`${this.apiUrl}/llamar-mesero`, { mesaNumero: mesaBackend, motivo }).subscribe({
         next: (res: any) => {
           this.meseroLlamadoStatus.set('success');
           setTimeout(() => this.meseroLlamadoStatus.set('idle'), 6000);
@@ -450,6 +453,25 @@ export class CarritoService {
           subscriber.error(err);
         },
       });
+    });
+  }
+
+  // ── Solicitar la Cuenta (Flujo Seguro de Restaurante) ──
+  solicitarCuenta(mesaNumero: string, metodoPago?: string, montoPagaCon?: number): Observable<any> {
+    const mesaBackend = formatearMesaParaBackend(mesaNumero);
+    return this.http.post(`${this.apiUrl}/solicitar-cuenta`, {
+      mesaNumero: mesaBackend,
+      metodoPago,
+      montoPagaCon,
+    });
+  }
+
+  // ── Notificar Pago en Efectivo y Billete con el que se paga (Cálculo de cambio) ──
+  notificarPagoEfectivo(mesaNumero: string, montoPagaCon: number): Observable<any> {
+    const mesaBackend = formatearMesaParaBackend(mesaNumero);
+    return this.http.post(`${this.apiUrl}/notificar-pago-efectivo`, {
+      mesaNumero: mesaBackend,
+      montoPagaCon,
     });
   }
 

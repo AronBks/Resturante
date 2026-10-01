@@ -117,6 +117,47 @@ export class SocketPublicoService implements OnDestroy {
   }
 
   /**
+   * Observable que emite cuando la cuenta fue solicitada al personal de salón.
+   */
+  onCuentaSolicitada(): Observable<{ mesaNumero: string }> {
+    return new Observable<{ mesaNumero: string }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('cuenta:solicitada', handler);
+      return () => {
+        this.socket.off('cuenta:solicitada', handler);
+      };
+    });
+  }
+
+  /**
+   * Observable que emite cuando el garzón entrega físicamente la cuenta a la mesa.
+   * Desbloquea las opciones de pago en el cliente (Efectivo / QR).
+   */
+  onCuentaEntregada(): Observable<{ mesaNumero: string }> {
+    return new Observable<{ mesaNumero: string }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('cuenta:entregada', handler);
+      return () => {
+        this.socket.off('cuenta:entregada', handler);
+      };
+    });
+  }
+
+  /**
+   * Observable que emite cuando el garzón reabre la comanda.
+   * Permite al cliente volver a la carta y ordenar platos adicionales.
+   */
+  onComandaReabierta(): Observable<{ mesaNumero: string }> {
+    return new Observable<{ mesaNumero: string }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+      this.socket.on('comanda:reabierta', handler);
+      return () => {
+        this.socket.off('comanda:reabierta', handler);
+      };
+    });
+  }
+
+  /**
    * Observable que emite cuando la cuenta de la mesa fue pagada y confirmada en caja.
    * Desbloquea la factura digital oficial para el cliente.
    */

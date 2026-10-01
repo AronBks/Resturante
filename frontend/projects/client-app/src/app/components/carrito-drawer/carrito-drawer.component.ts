@@ -60,35 +60,31 @@ export class CarritoDrawerComponent {
     this.close.emit();
   }
 
-  compartirRecibo(): void {
-    const p = this.carritoService.ultimoPedido();
-    const text = `Resumen de Pedido Tukuypaj #${p?.codigo || 'TK-4592'} (Mesa ${this.mesaNumero()}): Total Bs. ${p?.total || 0}`;
-    if (navigator.share) {
-      navigator.share({ title: 'Pedido Tukuypaj', text }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(text);
-      alert('Resumen del recibo copiado al portapapeles.');
-    }
-  }
-
   anadirAlgoMas(): void {
     this.carritoService.pedidoConfirmado.set(false);
     this.close.emit();
   }
 
-  solicitarAtencionPresencial(): void {
+  llamarMesero(): void {
     const mesa = this.mesaNumero() || 'M01';
-    this.carritoService.llamarMesero(mesa, 'Atención presencial en mesa solicitada').subscribe();
+    this.carritoService.llamarMesero(mesa, 'Atención presencial en mesa solicitada').subscribe({
+      next: () => console.log('Garzón llamado con éxito desde mesa', mesa),
+      error: (e) => console.error('Error llamando al garzón:', e),
+    });
   }
 
-  llamarRestaurante(): void {
-    this.solicitarAtencionPresencial();
+  solicitarAtencionPresencial(): void {
+    this.llamarMesero();
   }
 
   pedirCuenta(): void {
+    const mesa = this.mesaNumero() || 'M01';
+    this.carritoService.solicitarCuenta(mesa).subscribe({
+      next: () => console.log('Cuenta solicitada desde carrito para mesa', mesa),
+    });
     this.close.emit();
     this.router.navigate(['/cierre-cuenta'], {
-      queryParams: { mesa: this.mesaNumero() },
+      queryParams: { mesa },
     });
   }
 

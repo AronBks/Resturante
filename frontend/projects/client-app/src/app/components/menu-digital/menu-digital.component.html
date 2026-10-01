@@ -63,18 +63,22 @@
     </nav>
 
     <div class="menu-sidebar__footer">
-      <!-- Tarjeta / Botón de Carrito Desktop en Sidebar -->
-      <button class="sidebar-cart-btn" (click)="abrirCarrito()" id="sidebar-btn-cart">
+      <!-- Tarjeta / Botón de Mi Pedido Desktop en Sidebar -->
+      <button class="sidebar-cart-btn" [class.has-active-order]="tienePedidoActivo()" (click)="abrirCarrito()" id="sidebar-btn-cart">
         <div class="sidebar-cart-btn__icon">
-          <lucide-icon name="shopping-bag" [size]="20"></lucide-icon>
-          @if (carritoService.cantidadTotalItems() > 0) {
+          <lucide-icon [name]="tienePedidoActivo() ? 'receipt' : 'utensils'" [size]="20"></lucide-icon>
+          @if (tienePedidoActivo()) {
+            <span class="sidebar-cart-badge live-pulse"></span>
+          } @else if (carritoService.cantidadTotalItems() > 0) {
             <span class="sidebar-cart-badge">{{ carritoService.cantidadTotalItems() }}</span>
           }
         </div>
         <div class="sidebar-cart-btn__info">
-          <span class="lbl">Mi Pedido</span>
+          <span class="lbl">{{ tienePedidoActivo() ? 'Pedido Activo' : 'Mi Pedido' }}</span>
           <span class="val">
-            @if (carritoService.cantidadTotalItems() > 0) {
+            @if (tienePedidoActivo()) {
+              #{{ carritoService.ultimoPedido()?.codigo || 'En Curso' }}
+            } @else if (carritoService.cantidadTotalItems() > 0) {
               Bs. {{ carritoService.subtotal() | number:'1.2-2' }}
             } @else {
               0 platos
@@ -113,15 +117,19 @@
       </div>
 
       <div class="desktop-header__right">
-        <button class="desktop-cart-action-btn" (click)="abrirCarrito()" id="btn-desktop-cart-header">
+        <button class="desktop-cart-action-btn" [class.has-active-order]="tienePedidoActivo()" (click)="abrirCarrito()" id="btn-desktop-cart-header">
           <div class="cart-icon-wrapper">
-            <lucide-icon name="shopping-bag" [size]="18"></lucide-icon>
-            @if (carritoService.cantidadTotalItems() > 0) {
+            <lucide-icon [name]="tienePedidoActivo() ? 'receipt' : 'utensils'" [size]="18"></lucide-icon>
+            @if (tienePedidoActivo()) {
+              <span class="cart-pill-count live-gold-pulse">En Mesa</span>
+            } @else if (carritoService.cantidadTotalItems() > 0) {
               <span class="cart-pill-count">{{ carritoService.cantidadTotalItems() }}</span>
             }
           </div>
-          <span class="cart-btn-text">Ver Mi Pedido</span>
-          @if (carritoService.cantidadTotalItems() > 0) {
+          <span class="cart-btn-text">{{ tienePedidoActivo() ? 'Ver Mi Pedido Activo' : 'Ver Mi Pedido' }}</span>
+          @if (tienePedidoActivo()) {
+            <span class="cart-total-badge">Bs. {{ (carritoService.ultimoPedido()?.total || 0) | number:'1.2-2' }}</span>
+          } @else if (carritoService.cantidadTotalItems() > 0) {
             <span class="cart-total-badge">Bs. {{ carritoService.subtotal() | number:'1.2-2' }}</span>
           }
         </button>
@@ -141,10 +149,18 @@
           <h1>COCHABAMBA PEÑA</h1>
         </div>
 
-        <!-- Botón de Carrito -->
-        <button class="mobile-header__btn cart-btn" (click)="abrirCarrito()" id="btn-cart-header">
-          <lucide-icon name="shopping-bag" [size]="22"></lucide-icon>
-          @if (carritoService.cantidadTotalItems() > 0) {
+        <!-- Botón de Mi Pedido / Comanda en Header Móvil -->
+        <button 
+          class="mobile-header__btn cart-btn" 
+          [class.has-active-order]="tienePedidoActivo()" 
+          (click)="abrirCarrito()" 
+          id="btn-cart-header"
+          title="Ver Mi Pedido"
+        >
+          <lucide-icon [name]="tienePedidoActivo() ? 'receipt' : 'utensils'" [size]="20"></lucide-icon>
+          @if (tienePedidoActivo()) {
+            <span class="header-cart-badge live-pulse"></span>
+          } @else if (carritoService.cantidadTotalItems() > 0) {
             <span class="header-cart-badge">{{ carritoService.cantidadTotalItems() }}</span>
           }
         </button>
@@ -418,16 +434,21 @@
 
   <button
     class="bottom-nav-item"
+    [class.has-active-order]="tienePedidoActivo()"
     (click)="abrirCarrito()"
     id="nav-item-cart"
   >
     <div class="nav-icon-box">
-      <lucide-icon name="shopping-bag" [size]="20"></lucide-icon>
-      @if (carritoService.cantidadTotalItems() > 0) {
+      <lucide-icon [name]="tienePedidoActivo() ? 'receipt' : 'utensils'" [size]="20"></lucide-icon>
+      @if (tienePedidoActivo()) {
+        <span class="bottom-nav-badge live-pulse" title="Pedido Activo"></span>
+      } @else if (carritoService.cantidadTotalItems() > 0) {
         <span class="bottom-nav-badge">{{ carritoService.cantidadTotalItems() }}</span>
       }
     </div>
-    <span class="nav-label">Carrito</span>
+    <span class="nav-label">
+      {{ tienePedidoActivo() ? 'Mi Pedido' : (carritoService.cantidadTotalItems() > 0 ? 'Mi Orden' : 'Mi Pedido') }}
+    </span>
   </button>
 
   <button

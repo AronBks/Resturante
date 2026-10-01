@@ -369,11 +369,11 @@
   }
 }
 
-/* ── FILA DE 3 BOTONES DE ACCIÓN RÁPIDA (COMPARTIR, AÑADIR, LLAMAR) ── */
+/* ── FILA DE 2 BOTONES DE ACCIÓN RÁPIDA (AÑADIR ALGO MÁS, LLAMAR AL GARZÓN) ── */
 .action-grid-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
   margin-top: 24px;
 }
 
@@ -381,12 +381,12 @@
   background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 16px 8px;
+  padding: 16px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--text-muted);
   cursor: pointer;
   text-align: center;
@@ -394,7 +394,7 @@
 
   span {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 600;
     line-height: 1.25;
   }
@@ -418,9 +418,41 @@
     }
   }
 
+  &.success {
+    border-color: rgba(34, 197, 94, 0.4);
+    background: rgba(34, 197, 94, 0.08);
+    color: #4ade80;
+
+    .grid-btn-icon {
+      color: #4ade80;
+    }
+
+    span {
+      color: #4ade80;
+      font-weight: 700;
+    }
+  }
+
+  .text-success {
+    color: #4ade80;
+  }
+
+  .icon-spin {
+    animation: spin 1s linear infinite;
+  }
+
   &:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
     background: rgba(229, 193, 88, 0.15);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 

@@ -164,21 +164,29 @@
         </div>
       </section>
 
-      <!-- Fila de 3 Botones de Acción Rápida -->
+      <!-- Fila de 2 Botones de Acción Rápida: Añadir algo más y Llamar al Garzón -->
       <div class="action-grid-row">
-        <button class="action-grid-btn" (click)="compartirRecibo()">
-          <lucide-icon name="receipt" [size]="22" class="grid-btn-icon"></lucide-icon>
-          <span>Compartir recibo</span>
-        </button>
-
-        <button class="action-grid-btn gold" (click)="anadirAlgoMas()">
+        <button class="action-grid-btn gold" (click)="anadirAlgoMas()" id="btn-anadir-mas">
           <lucide-icon name="plus-circle" [size]="22" class="grid-btn-icon"></lucide-icon>
           <span>Añadir algo más</span>
         </button>
 
-        <button class="action-grid-btn" (click)="llamarRestaurante()">
-          <lucide-icon name="phone-call" [size]="22" class="grid-btn-icon"></lucide-icon>
-          <span>Llamar al restaurante</span>
+        <button 
+          class="action-grid-btn" 
+          [class.success]="carritoService.meseroLlamadoStatus() === 'success'"
+          (click)="llamarMesero()"
+          id="btn-llamar-garzon"
+        >
+          @if (carritoService.meseroLlamadoStatus() === 'calling') {
+            <lucide-icon name="clock" [size]="22" class="grid-btn-icon icon-spin"></lucide-icon>
+            <span>Llamando...</span>
+          } @else if (carritoService.meseroLlamadoStatus() === 'success') {
+            <lucide-icon name="check-circle" [size]="22" class="grid-btn-icon text-success"></lucide-icon>
+            <span class="text-success">¡Garzón avisado!</span>
+          } @else {
+            <lucide-icon name="bell" [size]="22" class="grid-btn-icon"></lucide-icon>
+            <span>Llamar al Garzón</span>
+          }
         </button>
       </div>
 
@@ -193,12 +201,12 @@
 
   <!-- Caso B: Edición y Resumen Pre-Envío del Carrito -->
   @else {
-    <!-- Cabecera "Tu Pedido" con botón atrás -->
+    <!-- Cabecera "Mi Pedido" con botón atrás -->
     <header class="drawer-header">
       <button class="drawer-back-btn" (click)="cerrarDrawer()" aria-label="Volver">
         <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
       </button>
-      <h2 class="drawer-title">Tu Pedido</h2>
+      <h2 class="drawer-title">Mi Pedido</h2>
       <div class="drawer-header-spacer"></div>
     </header>
 
@@ -226,12 +234,12 @@
         } @else {
           <div class="empty-screen">
             <div class="empty-icon-box">
-              <lucide-icon name="shopping-bag" [size]="48" class="empty-icon-svg"></lucide-icon>
+              <lucide-icon name="utensils" [size]="44" class="empty-icon-svg"></lucide-icon>
             </div>
-            <h3>Tu carrito está vacío</h3>
-            <p>Añade deliciosos platos de nuestra carta para iniciar tu pedido.</p>
+            <h3>Tu comanda está vacía</h3>
+            <p>Añade deliciosos platos tradicionales de nuestra carta para iniciar tu orden.</p>
             <button class="empty-btn" (click)="cerrarDrawer()">
-              Ver Menú
+              Explorar Nuestra Carta
             </button>
           </div>
         }
