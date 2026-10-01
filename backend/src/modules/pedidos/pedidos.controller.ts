@@ -73,31 +73,42 @@ export class PedidosController {
   }
 
   /**
-   * Confirma y registra un pedido autónomo por IA.
+   * Confirma y registra un pedido autónomo por IA o pedido público desde el menú digital interactivo.
    * Crea la transacción en PostgreSQL, actualiza la mesa y dispara WebSockets.
    */
   @Post('ia/confirmar')
   async confirmarPedidoIA(@Body() dto: ConfirmarPedidoIaDto) {
-    this.logger.log(`🤖 Confirmando pedido IA para Mesa ${dto.mesaNumero}`);
+    const origenFinal = dto.canalOrigen || 'IA_DON_BETO';
+    const esIA = origenFinal === 'IA_DON_BETO';
+
+    this.logger.log(
+      esIA
+        ? `🤖 Confirmando pedido IA para Mesa ${dto.mesaNumero}`
+        : `📱 Confirmando pedido digital interactivo para Mesa ${dto.mesaNumero}`
+    );
 
     const mesa = await this.iaPedidosService.resolverMesa(dto.mesaNumero);
     const meseroResponsableId = await this.iaPedidosService.resolverMeseroResponsable(mesa);
 
-    // Reutilizar el flujo transaccional existente con flag esIA=true y canalOrigen IA_DON_BETO
+    // Reutilizar el flujo transaccional existente con flags y canalOrigen adecuados
     const pedido = await this.pedidosService.crearPedido(
       meseroResponsableId,
       {
         mesaId: mesa.id,
         items: dto.items,
-        notas: `Pedido autónomo vía Asistente IA — Mesa ${dto.mesaNumero}`,
+        notas: dto.notas || (esIA
+          ? `Pedido autónomo vía Asistente IA — Mesa ${dto.mesaNumero}`
+          : `Pedido interactivo Carta Digital — Mesa ${dto.mesaNumero}`),
       },
-      true, // esIA: habilita multi-ronda
+      true, // habilita multi-ronda
       false, // esAdmin
-      'IA_DON_BETO', // canalOrigen explícito
+      origenFinal, // canalOrigen explícito
     );
 
-    // Emitir evento especial para toast de IA en el admin
-    this.gateway.broadcastPedidoIA(pedido, mesa.numero);
+    // Emitir evento especial para toast de IA en el admin solo si realmente proviene de IA
+    if (esIA) {
+      this.gateway.broadcastPedidoIA(pedido, mesa.numero);
+    }
 
     const codigoCmd = `CMD-${pedido.id.substring(0, 4).toUpperCase()}`;
 
@@ -106,6 +117,67 @@ export class PedidosController {
       codigo: codigoCmd,
       mesaNumero: mesa.numero,
     };
+  }
+
+  /**
+   * Endpoint específico para pedidos confirmados directamente desde el menú digital interactivo.
+   */
+  @Post('publica/confirmar')
+  async confirmarPedidoClienteDigital(@Body() dto: ConfirmarPedidoIaDto) {
+    dto.canalOrigen = 'CLIENTE_DIGITAL';
+    return this.confirmarPedidoIA(dto);
+  }
+
+  /**
+   * Solicitud de la cuenta desde la app del cliente o mesa.
+   */
+  @Post('solicitar-cuenta')
+  solicitarCuenta(@Body() dto: { mesaNumero: string; metodoPago?: string; montoPagaCon?: number }) {
+    this.logger.log(`🧾 Solicitud formal de cuenta para Mesa ${dto.mesaNumero}`);
+    return this.pedidosService.solicitarCuenta(dto.mesaNumero, dto.metodoPago, dto.montoPagaCon);
+  }
+
+  /**
+   * Notificación de pago en efectivo con billete/monto con el que paga el comensal.
+   */
+  @Post('notificar-pago-efectivo')
+  notificarPagoEfectivo(@Body() dto: { mesaNumero: string; montoPagaCon: number }) {
+    this.logger.log(`💵 Mesa ${dto.mesaNumero} pagará en efectivo con Bs. ${dto.montoPagaCon}`);
+    return this.pedidosService.notificarPagoEfectivo(dto.mesaNumero, dto.montoPagaCon);
+  }
+
+  /**
+   * Endpoint estrictamente protegido para que el Garzón o Cajero confirme la entrega física de la cuenta.
+   * Desbloquea de forma segura las opciones de cobro en el dispositivo del cliente.
+   */
+  @Post('entregar-cuenta')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'MESERO', 'CAJERO')
+  entregarCuenta(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('nombre') userName: string,
+    @Body() dto: { mesaNumero: string; meseroNombre?: string },
+  ) {
+    const nombre = dto.meseroNombre || userName || 'Personal de Salón';
+    this.logger.log(`🏃‍♂️ Cuenta entregada a Mesa ${dto.mesaNumero} por ${nombre}`);
+    return this.pedidosService.entregarCuenta(dto.mesaNumero, nombre, userId);
+  }
+
+  /**
+   * Endpoint protegido para que el Garzón o Administrador desbloquee y reabra una comanda.
+   * Cancela la solicitud de cuenta y permite a los comensales ordenar platos adicionales.
+   */
+  @Post('reabrir-comanda')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'MESERO', 'CAJERO')
+  reabrirComanda(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('nombre') userName: string,
+    @Body() dto: { mesaNumero: string; motivo?: string },
+  ) {
+    const nombre = userName || 'Personal de Salón';
+    this.logger.log(`🔓 Reapertura de comanda para Mesa ${dto.mesaNumero} solicitada por ${nombre}`);
+    return this.pedidosService.reabrirComanda(dto.mesaNumero, nombre, userId, dto.motivo);
   }
 
   /**

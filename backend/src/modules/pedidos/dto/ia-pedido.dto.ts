@@ -77,4 +77,12 @@ export class ConfirmarPedidoIaDto {
   @ValidateNested({ each: true })
   @Type(() => ConfirmarPedidoIaItemDto)
   items: ConfirmarPedidoIaItemDto[];
+
+  @IsString()
+  @IsOptional()
+  canalOrigen?: 'MESERO_POS' | 'IA_DON_BETO' | 'CLIENTE_DIGITAL';
+
+  @IsString()
+  @IsOptional()
+  notas?: string;
 }

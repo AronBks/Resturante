@@ -84,6 +84,297 @@ export class PedidosService {
   }
 
   /**
+   * Helper privado para resolver una mesa por número flexible ('M01', '1', 'Mesa 1')
+   */
+  private async buscarMesaPorNumero(mesaNumero: string) {
+    let mesa = await this.prisma.mesa.findUnique({
+      where: { numero: mesaNumero },
+      include: { meseroAsignado: { select: { id: true, nombre: true } } },
+    });
+
+    if (!mesa) {
+      const match = mesaNumero.match(/\d+/);
+      if (match) {
+        const num = String(parseInt(match[0], 10)).padStart(2, '0');
+        mesa = await this.prisma.mesa.findFirst({
+          where: {
+            OR: [
+              { numero: `M${num}` },
+              { numero: match[0] },
+              { numero: `Mesa ${match[0]}` },
+              { numero: `Mesa ${num}` },
+            ],
+          },
+          include: { meseroAsignado: { select: { id: true, nombre: true } } },
+        });
+      }
+    }
+    return mesa;
+  }
+
+  /**
+   * Solicitar la cuenta desde la app del comensal o mesero (Persistencia Real en DB).
+   * Pone la mesa en POR_COBRAR, sella el timestamp cuentaSolicitadaAt y alerta al salón.
+   */
+  async solicitarCuenta(mesaNumero: string, metodoPago?: string, montoPagaCon?: number) {
+    const mesa = await this.buscarMesaPorNumero(mesaNumero);
+    if (!mesa) {
+      throw new NotFoundException(`La mesa ${mesaNumero} no existe`);
+    }
+
+    const pedido = await this.prisma.pedido.findFirst({
+      where: {
+        mesaId: mesa.id,
+        estado: {
+          in: [
+            EstadoPedido.ABIERTO,
+            EstadoPedido.EN_COCINA,
+            EstadoPedido.LISTO,
+            EstadoPedido.ENTREGADO,
+          ],
+        },
+        transacciones: { none: {} },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const now = new Date();
+
+    if (pedido) {
+      await (this.prisma.pedido as any).update({
+        where: { id: pedido.id },
+        data: {
+          cuentaSolicitadaAt: now,
+          metodoPagoPreferido: metodoPago || (pedido as any).metodoPagoPreferido || null,
+          montoPagaCon: montoPagaCon ? new Prisma.Decimal(montoPagaCon) : (pedido as any).montoPagaCon,
+        },
+      });
+    }
+
+    if (mesa.estado !== EstadoMesa.POR_COBRAR) {
+      await this.prisma.mesa.update({
+        where: { id: mesa.id },
+        data: { estado: EstadoMesa.POR_COBRAR },
+      });
+      this.gateway.broadcastMesaEstado(mesa.id, EstadoMesa.POR_COBRAR);
+    }
+
+    let motivo = `Solicitud de Cuenta en Mesa ${mesa.numero}`;
+    if (metodoPago?.toUpperCase() === 'EFECTIVO' && montoPagaCon && pedido) {
+      const cambio = Math.max(0, montoPagaCon - Number(pedido.total));
+      motivo = `💵 Mesa ${mesa.numero} solicita cuenta en EFECTIVO con Bs. ${montoPagaCon} (Llevar Bs. ${cambio.toFixed(2)} de cambio)`;
+    }
+
+    await this.registrarLlamadaMesero(mesa.numero, motivo, mesa.id);
+    this.gateway.broadcastLlamarMesero(mesa.numero, motivo);
+    this.cartaGateway.broadcastCuentaSolicitada(mesa.numero);
+
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'SOLICITUD_CUENTA',
+      mesaId: mesa.id,
+      mesaNumero: mesa.numero,
+      canalOrigen: 'CLIENTE_DIGITAL',
+      descripcion: `Comensal solicitó la cuenta en Mesa ${mesa.numero}: ${motivo}`,
+      metadata: { metodoPago, montoPagaCon },
+    });
+
+    return {
+      exito: true,
+      mensaje: `Cuenta solicitada correctamente para Mesa ${mesa.numero}`,
+      cuentaSolicitadaAt: now,
+    };
+  }
+
+  /**
+   * Entrega física de cuenta por parte del garzón (Endpoint Protegido).
+   * Persiste cuentaEntregadaAt en DB y emite 'cuenta:entregada' al cliente para habilitar opciones de pago.
+   */
+  async entregarCuenta(mesaNumero: string, meseroNombre?: string, usuarioId?: string) {
+    const mesa = await this.buscarMesaPorNumero(mesaNumero);
+    if (!mesa) {
+      throw new NotFoundException(`La mesa ${mesaNumero} no existe`);
+    }
+
+    const pedido = await this.prisma.pedido.findFirst({
+      where: {
+        mesaId: mesa.id,
+        estado: {
+          in: [
+            EstadoPedido.ABIERTO,
+            EstadoPedido.EN_COCINA,
+            EstadoPedido.LISTO,
+            EstadoPedido.ENTREGADO,
+          ],
+        },
+        transacciones: { none: {} },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const now = new Date();
+
+    if (pedido) {
+      await (this.prisma.pedido as any).update({
+        where: { id: pedido.id },
+        data: {
+          cuentaEntregadaAt: now,
+          cuentaSolicitadaAt: (pedido as any).cuentaSolicitadaAt || now,
+        },
+      });
+    }
+
+    // Al entregar la cuenta, remover la llamada pendiente
+    await this.removerLlamadaMesero(mesa.numero, meseroNombre);
+
+    // Broadcast al cliente público (desbloquea Efectivo / QR en la pantalla)
+    this.cartaGateway.broadcastCuentaEntregada(mesa.numero);
+
+    // Broadcast a los paneles administrativos del restaurante
+    this.gateway.broadcastCuentaEntregada(mesa.numero, meseroNombre);
+
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'CUENTA_ENTREGADA',
+      mesaId: mesa.id,
+      mesaNumero: mesa.numero,
+      usuarioId,
+      usuarioNombre: meseroNombre || 'Personal de Salón',
+      descripcion: `Personal ${meseroNombre || 'de salón'} entregó la cuenta físicamente a la Mesa ${mesa.numero}`,
+      metadata: { mesaNumero: mesa.numero, meseroNombre },
+    });
+
+    return {
+      exito: true,
+      mensaje: `Cuenta entregada a Mesa ${mesa.numero}`,
+      cuentaEntregadaAt: now,
+    };
+  }
+
+  /**
+   * Reabre la comanda de una mesa que estaba por cobrar.
+   * Restablece la mesa a OCUPADA, borra cuentaSolicitadaAt y cuentaEntregadaAt,
+   * y desbloquea el menú digital del cliente para que pueda ordenar más ítems.
+   */
+  async reabrirComanda(mesaNumero: string, meseroNombre?: string, usuarioId?: string, motivo?: string) {
+    const mesa = await this.buscarMesaPorNumero(mesaNumero);
+    if (!mesa) {
+      throw new NotFoundException(`La mesa ${mesaNumero} no existe`);
+    }
+
+    const pedido = await this.prisma.pedido.findFirst({
+      where: {
+        mesaId: mesa.id,
+        estado: {
+          in: [
+            EstadoPedido.ABIERTO,
+            EstadoPedido.EN_COCINA,
+            EstadoPedido.LISTO,
+            EstadoPedido.ENTREGADO,
+          ],
+        },
+        transacciones: { none: {} },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (pedido) {
+      await (this.prisma.pedido as any).update({
+        where: { id: pedido.id },
+        data: {
+          cuentaSolicitadaAt: null,
+          cuentaEntregadaAt: null,
+          metodoPagoPreferido: null,
+          montoPagaCon: null,
+        },
+      });
+    }
+
+    // Regresar mesa a estado OCUPADA
+    await this.prisma.mesa.update({
+      where: { id: mesa.id },
+      data: { estado: EstadoMesa.OCUPADA },
+    });
+
+    // Remover llamadas pendientes de mesero
+    await this.removerLlamadaMesero(mesa.numero, meseroNombre);
+
+    // Broadcast a la app cliente (desbloquea comanda y redirige a la carta)
+    this.cartaGateway.broadcastComandaReabierta(mesa.numero);
+
+    // Broadcast al salón
+    this.gateway.broadcastMesaEstado(mesa.id, EstadoMesa.OCUPADA);
+    this.gateway.broadcastComandaReabierta(mesa.numero, meseroNombre);
+
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'COMANDA_REABIERTA',
+      mesaId: mesa.id,
+      mesaNumero: mesa.numero,
+      usuarioId,
+      usuarioNombre: meseroNombre || 'Personal de Salón',
+      descripcion: `Personal ${meseroNombre || 'de salón'} reabrió la comanda de la Mesa ${mesa.numero} (${motivo || 'cliente continuará ordenando'})`,
+      metadata: { mesaNumero: mesa.numero, meseroNombre, motivo },
+    });
+
+    return {
+      exito: true,
+      mensaje: `Comanda de Mesa ${mesa.numero} reabierta con éxito. La mesa vuelve a estar editable.`,
+      estadoMesa: EstadoMesa.OCUPADA,
+    };
+  }
+
+  /**
+   * Notificación rápida del comensal indicando que pagará en efectivo y con qué billete.
+   * Calcula el cambio exacto para que el garzón acuda con el dinero exacto en un solo viaje.
+   */
+  async notificarPagoEfectivo(mesaNumero: string, montoPagaCon: number) {
+    const mesa = await this.buscarMesaPorNumero(mesaNumero);
+    if (!mesa) {
+      throw new NotFoundException(`La mesa ${mesaNumero} no existe`);
+    }
+
+    const pedido = await this.prisma.pedido.findFirst({
+      where: {
+        mesaId: mesa.id,
+        estado: {
+          in: [
+            EstadoPedido.ABIERTO,
+            EstadoPedido.EN_COCINA,
+            EstadoPedido.LISTO,
+            EstadoPedido.ENTREGADO,
+          ],
+        },
+        transacciones: { none: {} },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!pedido) {
+      throw new BadRequestException(`No hay comanda activa para la Mesa ${mesaNumero}`);
+    }
+
+    await (this.prisma.pedido as any).update({
+      where: { id: pedido.id },
+      data: {
+        metodoPagoPreferido: 'EFECTIVO',
+        montoPagaCon: new Prisma.Decimal(montoPagaCon),
+      },
+    });
+
+    const total = Number(pedido.total);
+    const cambio = Math.max(0, montoPagaCon - total);
+    const motivo = `💵 Mesa ${mesa.numero} paga en EFECTIVO con Bs. ${montoPagaCon} — Llevar Bs. ${cambio.toFixed(2)} de cambio`;
+
+    await this.registrarLlamadaMesero(mesa.numero, motivo, mesa.id);
+    this.gateway.broadcastLlamarMesero(mesa.numero, motivo);
+
+    return {
+      exito: true,
+      mensaje: `Preferencia de pago en efectivo registrada. Cambio estimado: Bs. ${cambio.toFixed(2)}`,
+      cambio,
+      montoPagaCon,
+    };
+  }
+
+  /**
    * Crea un nuevo pedido para una mesa libre y cambia su estado a ocupada.
    * Si la mesa ya está OCUPADA, agrega los items al pedido activo existente
    * (soporte multi-ronda para pedidos autónomos por IA y pedidos POS).
@@ -358,6 +649,14 @@ export class PedidosService {
       orderBy: { createdAt: 'desc' },
     });
 
+    // ── CONGELAMIENTO ESTRICTO DE COMANDA ──
+    // Si la cuenta ya fue solicitada o entregada, la comanda queda congelada (no se permiten más ítems)
+    if (pedidoActivo && ((pedidoActivo as any).cuentaSolicitadaAt || (pedidoActivo as any).cuentaEntregadaAt)) {
+      throw new BadRequestException(
+        'La comanda de esta mesa se encuentra congelada en proceso de cobro. No es posible agregar más ítems mientras la cuenta esté solicitada o entregada.',
+      );
+    }
+
     // Si la mesa está ocupada pero no tenía pedido activo, creamos uno directamente
     if (!pedidoActivo) {
       pedidoActivo = await tx.pedido.create({
@@ -593,26 +892,7 @@ export class PedidosService {
    * Consulta el pedido activo de una mesa usando su identificador visible (ej: "M01", "1", "mesa-1") para la Carta Digital
    */
   async obtenerPedidoActivoPorNumeroMesa(mesaNumero: string) {
-    let mesa = await this.prisma.mesa.findUnique({
-      where: { numero: mesaNumero },
-    });
-
-    if (!mesa) {
-      const match = mesaNumero.match(/\d+/);
-      if (match) {
-        const num = String(parseInt(match[0], 10)).padStart(2, '0');
-        mesa = await this.prisma.mesa.findFirst({
-          where: {
-            OR: [
-              { numero: `M${num}` },
-              { numero: match[0] },
-              { numero: `Mesa ${match[0]}` },
-              { numero: `Mesa ${num}` },
-            ],
-          },
-        });
-      }
-    }
+    const mesa = await this.buscarMesaPorNumero(mesaNumero);
 
     if (!mesa || mesa.estado === EstadoMesa.LIBRE) {
       return null;
@@ -671,6 +951,13 @@ export class PedidosService {
       createdAt: pedido.createdAt,
       total: Number(pedido.total),
       subtotal: Number(pedido.subtotal),
+      cuentaSolicitada: !!(pedido as any).cuentaSolicitadaAt || mesa.estado === EstadoMesa.POR_COBRAR,
+      cuentaSolicitadaAt: (pedido as any).cuentaSolicitadaAt || null,
+      cuentaEntregada: !!(pedido as any).cuentaEntregadaAt,
+      cuentaEntregadaAt: (pedido as any).cuentaEntregadaAt || null,
+      metodoPagoPreferido: (pedido as any).metodoPagoPreferido || null,
+      montoPagaCon: (pedido as any).montoPagaCon ? Number((pedido as any).montoPagaCon) : null,
+      meseroAsignadoNombre: mesa.meseroAsignado?.nombre || null,
       items: pedido.detalles.map((d) => ({
         id: d.id,
         platoId: d.platoId,

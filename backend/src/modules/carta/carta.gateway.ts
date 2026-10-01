@@ -109,6 +109,48 @@ export class CartaGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Emite a la app cliente que la cuenta fue solicitada al personal de salón.
+   */
+  broadcastCuentaSolicitada(mesaNumero: string) {
+    this.server.emit('cuenta:solicitada', {
+      mesaNumero,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(
+      `🧾 Broadcast público: Cuenta solicitada para Mesa ${mesaNumero}`,
+    );
+  }
+
+  /**
+   * Emite a la app cliente que el garzón ya entregó la cuenta en mesa, desbloqueando opciones de pago.
+   */
+  broadcastCuentaEntregada(mesaNumero: string) {
+    this.server.emit('cuenta:entregada', {
+      mesaNumero,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(
+      `🧾 Broadcast público: Cuenta entregada para Mesa ${mesaNumero}`,
+    );
+  }
+
+  /**
+   * Emite a la app cliente que la comanda fue desbloqueada y reabierta por el personal.
+   */
+  broadcastComandaReabierta(mesaNumero: string) {
+    this.server.emit('comanda:reabierta', {
+      mesaNumero,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.logger.log(
+      `🔓 Broadcast público: Comanda reabierta para Mesa ${mesaNumero}`,
+    );
+  }
+
+  /**
    * Emite a la app cliente que la cuenta de su mesa ya fue cobrada y confirmada en caja.
    * Desbloquea la factura digital oficial descargable.
    */

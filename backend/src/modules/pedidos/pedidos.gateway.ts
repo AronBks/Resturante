@@ -178,6 +178,34 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
   }
 
   /**
+   * Emite al personal de salón y caja que la cuenta fue entregada en mesa
+   */
+  broadcastCuentaEntregada(mesaNumero: string, meseroNombre?: string) {
+    const payload = {
+      mesaNumero,
+      meseroNombre,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.emit('cuenta:entregada', payload);
+    this.logger.log(`🧾 Evento 'cuenta:entregada' emitido para Mesa ${mesaNumero} por ${meseroNombre || 'Garzón'}`);
+  }
+
+  /**
+   * Emite al personal de salón que la comanda fue reabierta
+   */
+  broadcastComandaReabierta(mesaNumero: string, meseroNombre?: string) {
+    const payload = {
+      mesaNumero,
+      meseroNombre,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.emit('comanda:reabierta', payload);
+    this.logger.log(`🔓 Evento 'comanda:reabierta' emitido para Mesa ${mesaNumero} por ${meseroNombre || 'Garzón'}`);
+  }
+
+  /**
    * Emite la creación de una nueva transacción en tiempo real
    */
   broadcastTransaccionCreada(transaccion: any) {

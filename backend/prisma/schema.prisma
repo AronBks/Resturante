@@ -147,6 +147,10 @@ model Pedido {
   subtotal    Decimal      @default(0) @db.Decimal(10, 2)
   total       Decimal      @default(0) @db.Decimal(10, 2)
   notas       String?      @db.VarChar(500)
+  cuentaSolicitadaAt DateTime? @map("cuenta_solicitada_at")
+  cuentaEntregadaAt  DateTime? @map("cuenta_entregada_at")
+  metodoPagoPreferido String?   @map("metodo_pago_preferido") @db.VarChar(20)
+  montoPagaCon        Decimal?  @map("monto_paga_con") @db.Decimal(10, 2)
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
