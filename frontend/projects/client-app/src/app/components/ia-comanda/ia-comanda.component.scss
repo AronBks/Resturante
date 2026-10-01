@@ -30,13 +30,14 @@
 // ─────────────────────────────────────────────
 
 .chat-header {
-  height: 64px;
+  height: 58px;
   background: #140f0b;
   border-bottom: 1px solid rgba(212, 175, 55, 0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 12px;
+  gap: 8px;
   z-index: 20;
   flex-shrink: 0;
   backdrop-filter: blur(12px);
@@ -45,7 +46,9 @@
   .header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
 
     .btn-back {
       background: transparent;
@@ -59,6 +62,7 @@
       cursor: pointer;
       text-decoration: none;
       transition: all 0.2s ease;
+      flex-shrink: 0;
 
       &:hover {
         color: #e5c158;
@@ -68,18 +72,19 @@
 
     .avatar-container {
       position: relative;
+      flex-shrink: 0;
 
       .avatar-circle {
         position: relative;
-        width: 42px;
-        height: 42px;
+        width: 36px;
+        height: 36px;
         background: linear-gradient(135deg, #2a2016 0%, #171109 100%);
         border: 1.5px solid #d4af37;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
 
         .gold-icon {
           color: #e5c158;
@@ -90,10 +95,10 @@
 
         .status-dot {
           position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 11px;
-          height: 11px;
+          bottom: -1px;
+          right: -1px;
+          width: 10px;
+          height: 10px;
           background: #22c55e;
           border: 2px solid #140f0b;
           border-radius: 50%;
@@ -111,34 +116,47 @@
     .header-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
+      min-width: 0;
+      flex: 1;
+
+      .name-badge-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+      }
 
       .mesero-name {
         margin: 0;
-        font-size: 0.98rem;
+        font-size: 0.92rem;
         font-weight: 700;
         color: #f3ebe2;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-        .badge-role {
-          font-size: 0.62rem;
-          font-weight: 700;
-          background: rgba(212, 175, 55, 0.15);
-          color: #d4af37;
-          border: 1px solid rgba(212, 175, 55, 0.35);
-          padding: 1px 7px;
-          border-radius: 10px;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-        }
+      .badge-role {
+        font-size: 0.58rem;
+        font-weight: 800;
+        background: rgba(212, 175, 55, 0.16);
+        color: #e5c158;
+        border: 1px solid rgba(212, 175, 55, 0.38);
+        padding: 1px 5px;
+        border-radius: 6px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        flex-shrink: 0;
       }
 
       .mesero-status {
         margin: 0;
-        font-size: 0.74rem;
+        font-size: 0.68rem;
         color: #8c8277;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
         .status-typing {
           color: #e5c158;
@@ -151,20 +169,22 @@
   .header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-shrink: 0;
 
     .btn-carta-toggle {
       background: rgba(212, 175, 55, 0.12);
       border: 1px solid rgba(212, 175, 55, 0.35);
       color: #f3ebe2;
-      padding: 6px 12px;
-      border-radius: 20px;
+      padding: 5px 9px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       cursor: pointer;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 700;
+      white-space: nowrap;
       transition: all 0.2s ease;
 
       lucide-icon {
@@ -181,17 +201,18 @@
     }
 
     .btn-ticket-toggle {
-      background: rgba(212, 175, 55, 0.1);
-      border: 1px solid rgba(212, 175, 55, 0.3);
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.35);
       color: #e5c158;
-      padding: 6px 12px;
-      border-radius: 20px;
+      padding: 5px 9px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       cursor: pointer;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 700;
+      white-space: nowrap;
       transition: all 0.2s ease;
 
       lucide-icon {
@@ -208,10 +229,11 @@
       .t-badge {
         background: #d4af37;
         color: #120c05;
-        border-radius: 10px;
-        padding: 1px 6px;
-        font-size: 0.68rem;
+        border-radius: 8px;
+        padding: 1px 5px;
+        font-size: 0.62rem;
         font-weight: 800;
+        line-height: 1;
       }
     }
   }
@@ -223,9 +245,9 @@
 
 .chat-stream-section {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: calc(100% - 64px);
   background: #090705;
   position: relative;
   overflow: hidden;
@@ -714,23 +736,24 @@
 }
 
 .confirmed-bottom-banner {
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #182414 0%, #0d1609 100%);
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #162413 0%, #0d170b 100%);
   border-top: 1.5px solid rgba(34, 197, 94, 0.4);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   z-index: 15;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
 
   .confirmed-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 
     .check-icon-box {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       background: rgba(34, 197, 94, 0.15);
       border: 1px solid rgba(34, 197, 94, 0.35);
       color: #86efac;
@@ -743,62 +766,71 @@
     .confirmed-text-group {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       flex: 1;
+      min-width: 0;
 
       .confirmed-title-row {
         display: flex;
         align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
+        gap: 6px;
+        flex-wrap: nowrap;
 
         strong {
           color: #86efac;
-          font-size: 0.95rem;
+          font-size: 0.85rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .status-chip-live {
           display: inline-flex;
           align-items: center;
-          padding: 2px 7px;
-          border-radius: 6px;
+          padding: 1px 6px;
+          border-radius: 5px;
           background: rgba(34, 197, 94, 0.2);
           border: 1px solid rgba(34, 197, 94, 0.4);
           color: #a7f3d0;
-          font-size: 0.72rem;
-          font-weight: 600;
+          font-size: 0.65rem;
+          font-weight: 700;
+          flex-shrink: 0;
+          white-space: nowrap;
         }
       }
 
       p {
-        margin: 2px 0 0 0;
-        font-size: 0.78rem;
+        margin: 0;
+        font-size: 0.72rem;
         color: #a3998e;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
   }
 
   .btn-pagar-cta {
     width: 100%;
-    padding: 10px 16px;
-    border-radius: 12px;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 10px;
     background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
     color: #0c0804;
     border: none;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
+    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     transition: all 0.2s ease;
 
-    &:hover {
+    &:active {
+      transform: scale(0.98);
       background: linear-gradient(135deg, #e5c158 0%, #c89518 100%);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(212, 175, 55, 0.45);
     }
   }
 }
@@ -2124,3 +2156,91 @@
   cursor: not-allowed;
   opacity: 0.8;
 }
+
+// ─────────────────────────────────────────────
+// RESPONSIVE REFINEMENTS PARA MÓVILES
+// ─────────────────────────────────────────────
+
+@media (max-width: 420px) {
+  .chat-header {
+    padding: 0 10px;
+    gap: 6px;
+
+    .header-left {
+      gap: 6px;
+
+      .btn-back {
+        padding: 4px;
+      }
+
+      .avatar-container .avatar-circle {
+        width: 32px;
+        height: 32px;
+      }
+
+      .header-info {
+        .mesero-name {
+          font-size: 0.86rem;
+        }
+        .badge-role {
+          font-size: 0.54rem;
+          padding: 1px 4px;
+        }
+        .mesero-status {
+          font-size: 0.64rem;
+        }
+      }
+    }
+
+    .header-right {
+      gap: 5px;
+
+      .btn-carta-toggle,
+      .btn-ticket-toggle {
+        padding: 4px 7px;
+        font-size: 0.68rem;
+        gap: 3px;
+      }
+    }
+  }
+
+  .chat-stream-section .chat-messages-scroll {
+    padding: 12px 10px;
+  }
+
+  .chat-input-bar {
+    padding: 8px 10px;
+
+    .input-container {
+      padding: 3px 5px 3px 12px;
+      gap: 8px;
+
+      .input-chat {
+        font-size: 0.86rem;
+      }
+
+      .btn-send {
+        width: 34px;
+        height: 34px;
+      }
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .chat-header {
+    padding: 0 6px;
+    gap: 4px;
+
+    .header-right {
+      gap: 4px;
+
+      .btn-carta-toggle,
+      .btn-ticket-toggle {
+        padding: 4px 5px;
+        font-size: 0.65rem;
+      }
+    }
+  }
+}
+

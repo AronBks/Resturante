@@ -1012,8 +1012,12 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
   }
 
   irAPagar(): void {
+    const mesa = this.mesaBackend();
+    this.carritoService.solicitarCuenta(mesa).subscribe({
+      next: () => console.log('Cuenta solicitada desde Don Beto para mesa', mesa),
+    });
     this.router.navigate(['/cierre-cuenta'], {
-      queryParams: { mesa: this.mesaBackend() },
+      queryParams: { mesa },
     });
   }
 

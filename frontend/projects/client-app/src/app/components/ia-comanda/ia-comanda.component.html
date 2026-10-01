@@ -19,10 +19,10 @@
       </div>
 
       <div class="header-info">
-        <h1 class="mesero-name">
-          Don Beto
-          <span class="badge-role">Mesero IA</span>
-        </h1>
+        <div class="name-badge-row">
+          <h1 class="mesero-name">Don Beto</h1>
+          <span class="badge-role">IA</span>
+        </div>
         <p class="mesero-status">
           @if (cargando()) {
             <span class="status-typing">Anotando pedido...</span>
@@ -256,8 +256,8 @@
           </div>
         </div>
         <button class="btn-pagar-cta" (click)="irAPagar()" id="btn-ir-a-pagar">
-          <lucide-icon name="credit-card" [size]="16"></lucide-icon>
-          <span>Pagar Cuenta (QR / Efectivo)</span>
+          <lucide-icon name="receipt" [size]="16"></lucide-icon>
+          <span>Pedir la Cuenta al Garzón</span>
         </button>
       </div>
     }
@@ -440,8 +440,8 @@
 
             @if (pedidoActivoBackend()) {
               <button class="btn-pagar-drawer" (click)="irAPagar()" id="btn-pagar-drawer-cta">
-                <lucide-icon name="credit-card" [size]="16"></lucide-icon>
-                <span>Pagar Cuenta (QR / Efectivo)</span>
+                <lucide-icon name="receipt" [size]="16"></lucide-icon>
+                <span>Pedir la Cuenta al Garzón</span>
               </button>
             }
           </div>
