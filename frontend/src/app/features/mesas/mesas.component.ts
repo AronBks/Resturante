@@ -146,6 +146,61 @@ export class MesasComponent implements OnInit, OnDestroy {
     });
   }
 
+  esCuentaEntregada(mesa: Mesa): boolean {
+    return !!(mesa.pedidos?.[0] as any)?.cuentaEntregadaAt;
+  }
+
+  entregarCuentaMesa(mesa: Mesa, ev: MouseEvent) {
+    ev.stopPropagation();
+    const meseroNombre = this.authService.currentUserSignal()?.nombre || 'Garzón';
+    this.http
+      .post<any>(`${this.baseUrl}/pedidos/entregar-cuenta`, {
+        mesaNumero: mesa.numero,
+        meseroNombre,
+      })
+      .subscribe({
+        next: () => {
+          this.agregarEvento({
+            tipo: 'CUENTA',
+            titulo: `Mesa ${mesa.numero}: Cuenta entregada`,
+            descripcion: `Entregada por ${meseroNombre}. Opciones de pago habilitadas en el móvil del comensal.`,
+          });
+          this.cargarMesas();
+        },
+        error: (err) => {
+          console.error('Error al entregar cuenta', err);
+          alert('No se pudo marcar la cuenta como entregada.');
+        },
+      });
+  }
+
+  reabrirComandaMesa(mesa: Mesa, ev: MouseEvent) {
+    ev.stopPropagation();
+    if (!confirm(`¿Deseas reabrir la comanda de la Mesa ${mesa.numero}? La mesa volverá a estar OCUPADA y los comensales podrán ordenar platos adicionales.`)) {
+      return;
+    }
+    const meseroNombre = this.authService.currentUserSignal()?.nombre || 'Personal de Salón';
+    this.http
+      .post<any>(`${this.baseUrl}/pedidos/reabrir-comanda`, {
+        mesaNumero: mesa.numero,
+        motivo: 'Comensales desean ordenar ítems adicionales',
+      })
+      .subscribe({
+        next: () => {
+          this.agregarEvento({
+            tipo: 'COMANDA',
+            titulo: `Mesa ${mesa.numero}: Comanda reabierta`,
+            descripcion: `Reabierta por ${meseroNombre}. La comanda vuelve a estar editable para nuevos platos.`,
+          });
+          this.cargarMesas();
+        },
+        error: (err) => {
+          console.error('Error al reabrir comanda', err);
+          alert('No se pudo reabrir la comanda.');
+        },
+      });
+  }
+
   cerrarMenuContextual() {
     this.selectedMesa.set(null);
   }
@@ -443,7 +498,35 @@ export class MesasComponent implements OnInit, OnDestroy {
         this.cargarMesas();
       });
 
-    this.subs.push(subMesa, subMesaLiberada, subPedido, subMeseroLlamado, subMeseroAtendido, subPagoConf, subStock);
+    const subCuentaEntregada = this.socketService
+      .onEvent<{ mesaNumero: string; meseroNombre?: string }>('cuenta:entregada')
+      .subscribe((data) => {
+        const mesaNum = data?.mesaNumero;
+        if (mesaNum) {
+          this.agregarEvento({
+            tipo: 'CUENTA',
+            titulo: `Mesa ${mesaNum}: Cuenta entregada`,
+            descripcion: `Personal ${data.meseroNombre || 'de salón'} entregó la cuenta físicamente.`,
+          });
+          this.cargarMesas();
+        }
+      });
+
+    const subComandaReabierta = this.socketService
+      .onEvent<{ mesaNumero: string; meseroNombre?: string }>('comanda:reabierta')
+      .subscribe((data) => {
+        const mesaNum = data?.mesaNumero;
+        if (mesaNum) {
+          this.agregarEvento({
+            tipo: 'COMANDA',
+            titulo: `Mesa ${mesaNum}: Comanda reabierta`,
+            descripcion: `Personal ${data.meseroNombre || 'de salón'} reabrió la comanda.`,
+          });
+          this.cargarMesas();
+        }
+      });
+
+    this.subs.push(subMesa, subMesaLiberada, subPedido, subMeseroLlamado, subMeseroAtendido, subPagoConf, subStock, subCuentaEntregada, subComandaReabierta);
   }
 
   private agregarEvento(ev: { tipo: 'ALERTA' | 'COMANDA' | 'CUENTA' | 'APERTURA'; titulo: string; descripcion: string }) {

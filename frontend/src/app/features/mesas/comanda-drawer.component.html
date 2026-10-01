@@ -74,16 +74,11 @@
         </section>
       }
 
-      <!-- ── 4 BOTONES DE ACCIONES RÁPIDAS ── -->
+      <!-- ── 3 BOTONES DE ACCIONES RÁPIDAS ── -->
       <section class="quick-actions-bar">
         <button class="qa-btn" (click)="abrirCatalogoAgregar()" title="Añadir platos a la orden">
           <lucide-icon name="plus-circle" [size]="18" class="qa-icon"></lucide-icon>
           <span>Añadir</span>
-        </button>
-
-        <button class="qa-btn" (click)="imprimirPrecuenta()" title="Emitir pre-cuenta">
-          <lucide-icon name="printer" [size]="18" class="qa-icon"></lucide-icon>
-          <span>Pre-cuenta</span>
         </button>
 
         <button class="qa-btn" (click)="llamarMesero()" title="Llamar al garzón">
@@ -615,7 +610,7 @@
 </aside>
 
 <!-- ═══════════════════════════════════════════════════════
-     MODAL DE CAJA & COMPROBANTE
+     MODAL DE CAJA
      ═══════════════════════════════════════════════════════ -->
 <app-caja-cobro
   *ngIf="showCajaModal() && pedidoParaCobro()"
@@ -624,10 +619,3 @@
   (close)="onCajaCerrar()"
   (pagado)="onPagoCompletado($event)"
 ></app-caja-cobro>
-
-<app-comprobante
-  *ngIf="showComprobante() && datosRecibo()"
-  [isOpen]="showComprobante()"
-  [datos]="datosRecibo()!"
-  (close)="onComprobanteCerrar()"
-></app-comprobante>

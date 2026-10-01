@@ -203,12 +203,6 @@
                   <lucide-icon name="chevron-down" [size]="10" class="arrow-down"></lucide-icon>
                 }
               </button>
-
-              @if (mesa.pedidos?.[0]?.canalOrigen === 'IA_DON_BETO') {
-                <span class="badge-origen-ia" title="Pedido autónomo procesado por Don Beto IA">
-                  🤖 IA
-                </span>
-              }
             </div>
 
             <!-- ── CUERPO DE TARJETA SEGÚN ESTADO ── -->
@@ -288,7 +282,7 @@
 
               }
 
-              <!-- CASO 2: POR COBRAR (TOTAL GRANDE + PROCESAR PAGO) -->
+              <!-- CASO 2: POR COBRAR (CONTROL DE CUENTA ENTREGADA Y PROCESAR PAGO) -->
               @else if (mesa.estado === 'POR_COBRAR') {
                 
                 <div class="por-cobrar-body-box">
@@ -297,13 +291,53 @@
                     <strong class="total-cobrar-amount">Bs. {{ getMesaSubtotal(mesa) | number:'1.2-2' }}</strong>
                   </div>
 
+                  <!-- Detalle de llamada o solicitud de efectivo/cambio informado por el cliente -->
+                  @if (llamadasDetalle()[mesa.numero]) {
+                    <div class="cash-change-pill" title="Detalle informado desde la mesa">
+                      <lucide-icon name="info" [size]="12"></lucide-icon>
+                      <span class="cash-change-text">{{ llamadasDetalle()[mesa.numero].motivo }}</span>
+                    </div>
+                  }
+
+                  <div class="por-cobrar-btn-group">
+                    <!-- Si la cuenta física no ha sido entregada, mostrar botón operativo para el mesero -->
+                    @if (!esCuentaEntregada(mesa)) {
+                      <button
+                        type="button"
+                        class="btn-entregar-cuenta-mesa"
+                        (click)="entregarCuentaMesa(mesa, $event)"
+                        title="Confirmar entrega de cuenta física al comensal"
+                      >
+                        <lucide-icon name="receipt" [size]="13"></lucide-icon>
+                        <span>Entregar Cuenta</span>
+                      </button>
+                    } @else {
+                      <span class="badge-cuenta-entregada-ok" title="Cuenta entregada a los comensales">
+                        <lucide-icon name="check-check" [size]="12"></lucide-icon>
+                        <span>Cuenta Entregada</span>
+                      </span>
+                    }
+
+                    <button
+                      type="button"
+                      class="btn-procesar-pago"
+                      (click)="onCobroDirecto(mesa, $event)"
+                      title="Registrar cobro oficial en caja"
+                    >
+                      <lucide-icon name="credit-card" [size]="14"></lucide-icon>
+                      <span>Cobrar</span>
+                    </button>
+                  </div>
+
+                  <!-- Acción Operativa: Reabrir Comanda para permitir ordenar más ítems -->
                   <button
-                    class="btn-procesar-pago"
-                    (click)="onCobroDirecto(mesa, $event)"
-                    title="Cobrar cuenta de mesa"
+                    type="button"
+                    class="btn-reabrir-comanda-mesa"
+                    (click)="reabrirComandaMesa(mesa, $event)"
+                    title="Desbloquear comanda si los clientes desean pedir platos o bebidas adicionales"
                   >
-                    <lucide-icon name="credit-card" [size]="14"></lucide-icon>
-                    <span>Procesar Pago</span>
+                    <lucide-icon name="rotate-ccw" [size]="12"></lucide-icon>
+                    <span>Reabrir Comanda</span>
                   </button>
                 </div>
 

@@ -656,67 +656,34 @@ input[type=number] {
   border-radius: 2px;
 }
 
-/* ── Tarjeta de Seguridad y Auditoría de Salón ── */
-.caja-security-audit-card {
-  background: rgba(229, 193, 88, 0.04) !important;
-  border: 1px solid rgba(229, 193, 88, 0.22) !important;
-  border-radius: 12px !important;
-  padding: 12px 14px !important;
-  margin: 14px 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
+/* ── Mesero Asignado ── */
+.caja-mesero-row {
+  background: rgba(229, 193, 88, 0.05);
+  border: 1px solid rgba(229, 193, 88, 0.18);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 12px 0 8px 0;
+  display: flex;
+  align-items: center;
 
-  .csa-header {
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    font-size: 0.76rem !important;
-    font-weight: 800 !important;
-    color: #E5C158 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.4px !important;
-    border-bottom: 1px solid rgba(229, 193, 88, 0.12) !important;
-    padding-bottom: 6px !important;
-  }
+  .mesero-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-  .csa-details {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 5px !important;
-  }
-
-  .csa-row {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    font-size: 0.74rem !important;
-
-    .csa-lbl {
-      color: #9E9484 !important;
+    .icon-gold {
+      color: #E5C158;
     }
 
-    .csa-val {
-      color: #FFFFFF !important;
-      font-weight: 700 !important;
+    .mesero-lbl {
+      color: #9E9484;
+      font-size: 0.8rem;
     }
 
-    .csa-status-ok {
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 4px !important;
-      color: #4ade80 !important;
-      font-weight: 700 !important;
-    }
-
-    .csa-audit-tag {
-      background: rgba(59, 130, 246, 0.12) !important;
-      border: 1px solid rgba(59, 130, 246, 0.3) !important;
-      color: #93c5fd !important;
-      padding: 2px 6px !important;
-      border-radius: 4px !important;
-      font-size: 0.68rem !important;
-      font-weight: 700 !important;
+    .mesero-val {
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 0.84rem;
     }
   }
 }

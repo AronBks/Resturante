@@ -46,66 +46,15 @@
         </div>
       </div>
 
-      <!-- Control y Auditoría de Seguridad Humana -->
-      <div class="caja-security-audit-card">
-        <div class="csa-header">
-          <lucide-icon name="shield-check" class="icon-sm icon-gold"></lucide-icon>
-          <span>Control y Auditoría de Salón</span>
-        </div>
-        <div class="csa-details">
-          <div class="csa-row">
-            <span class="csa-lbl">Mesero Responsable:</span>
-            <strong class="csa-val">{{ pedido?.meseroNombre || 'Carlos Condori' }}</strong>
-          </div>
-          <div class="csa-row">
-            <span class="csa-lbl">Verificación en Mesa:</span>
-            <span class="csa-status-ok">
-              <lucide-icon name="check" class="icon-xs"></lucide-icon>
-              <span>Atención Presencial de Salón</span>
-            </span>
-          </div>
-          <div class="csa-row">
-            <span class="csa-lbl">Seguridad Operativa:</span>
-            <span class="csa-audit-tag">Auditoría Sincronizada en BD</span>
-          </div>
+      <!-- Mesero Responsable -->
+      <div class="caja-mesero-row">
+        <div class="mesero-info">
+          <lucide-icon name="user" class="icon-sm icon-gold"></lucide-icon>
+          <span class="mesero-lbl">Mesero:</span>
+          <strong class="mesero-val">{{ pedido?.meseroNombre || 'Carlos Condori' }}</strong>
         </div>
       </div>
 
-      <!-- Facturación opcional (NIT / Razón Social) con Switch iOS -->
-      <div class="caja-facturacion-toggle-panel">
-        <label class="factura-toggle-lbl">
-          <span class="switch-toggle">
-            <input type="checkbox" [checked]="facturaRequerida()" (change)="toggleFactura($event)" />
-            <span class="slider round"></span>
-          </span>
-          <span class="toggle-text">¿Requiere Factura / NIT?</span>
-        </label>
-        
-        <div class="factura-inputs-anim" *ngIf="facturaRequerida()">
-          <div class="fact-input-row">
-            <div class="fact-input-col">
-              <label for="nit-ci-input">NIT / CI</label>
-              <input
-                id="nit-ci-input"
-                type="text"
-                placeholder="Ej. 1234567"
-                [value]="nit()"
-                (input)="onNitInput($any($event.target).value)"
-              />
-            </div>
-            <div class="fact-input-col">
-              <label for="razon-social-input">Razón Social</label>
-              <input
-                id="razon-social-input"
-                type="text"
-                placeholder="Ej. Juan Pérez"
-                [value]="razonSocial()"
-                (input)="onRazonSocialInput($any($event.target).value)"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Totales -->
       <div class="resumen-totals">
@@ -229,7 +178,7 @@
       (click)="confirmarPago()"
     >
       <span *ngIf="!isProcessing()" class="btn-content-flex">
-        <lucide-icon name="send" class="icon-md"></lucide-icon> Finalizar Pago y Emitir Recibo
+        <lucide-icon name="check-circle-2" class="icon-md"></lucide-icon> Finalizar Cobro
       </span>
       <span *ngIf="isProcessing()" class="processing-spinner">
         <span class="spinner-mini"></span> Procesando...

@@ -14,7 +14,6 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { CajaCobroComponent, PedidoParaCobro } from './caja-cobro.component';
-import { ComprobanteComponent, DatosRecibo } from './comprobante.component';
 import { LucideAngularModule } from 'lucide-angular';
 
 interface Mesa {
@@ -94,7 +93,6 @@ const CLOUDINARY_DISHES_MAP: Record<string, string> = {
     CommonModule,
     FormsModule,
     CajaCobroComponent,
-    ComprobanteComponent,
     LucideAngularModule,
   ],
   templateUrl: './comanda-drawer.component.html',
@@ -139,11 +137,9 @@ export class ComandaDrawerComponent implements OnChanges {
   activeSentItems = signal<any[]>([]);
   tiempoTranscurridoText = signal<string>('En curso');
 
-  // Caja & Comprobante
+  // Caja
   showCajaModal = signal(false);
-  showComprobante = signal(false);
   pedidoParaCobro = signal<PedidoParaCobro | null>(null);
-  datosRecibo = signal<DatosRecibo | null>(null);
 
   esSolicitudPago(): boolean {
     if (this.mesa?.estado === 'POR_COBRAR') return true;
@@ -867,41 +863,6 @@ export class ComandaDrawerComponent implements OnChanges {
     }
   }
 
-  imprimirPrecuenta() {
-    if (!this.mesa) return;
-    const sent = this.activeSentItems();
-    if (sent.length === 0) {
-      alert('Esta mesa no tiene una comanda activa para emitir pre-cuenta.');
-      return;
-    }
-
-    const items = sent.map((i) => ({
-      nombre: i.nombre,
-      cantidad: i.cantidad,
-      precioUnitario: i.precio,
-      subtotal: i.precio * i.cantidad,
-      notas: i.notas || '',
-    }));
-
-    const datos: DatosRecibo = {
-      transaccionId: `PRE-${Date.now()}`,
-      nroRecibo: `PRE-${this.mesa.numero}-${Date.now().toString().slice(-4)}`,
-      fecha: new Date().toISOString(),
-      mesa: { numero: this.mesa.numero },
-      mesero: { nombre: this.activeMeseroNombre() || 'Don Roberto (Mesero)' },
-      cajero: { nombre: 'Pre-Cuenta' },
-      items,
-      subtotal: this.getComandaTotal(),
-      total: this.getComandaTotal(),
-      metodoPago: 'EFECTIVO',
-      montoRecibido: this.getComandaTotal(),
-      cambio: 0,
-    };
-
-    this.datosRecibo.set(datos);
-    this.showComprobante.set(true);
-  }
-
   abrirCajaModal() {
     if (!this.mesa) return;
     const sent = this.activeSentItems();
@@ -936,14 +897,7 @@ export class ComandaDrawerComponent implements OnChanges {
 
   onPagoCompletado(datosTransaccion: any) {
     this.showCajaModal.set(false);
-    this.datosRecibo.set(datosTransaccion as DatosRecibo);
-    this.showComprobante.set(true);
     this.saved.emit();
-  }
-
-  onComprobanteCerrar() {
-    this.showComprobante.set(false);
-    this.datosRecibo.set(null);
     this.close.emit();
   }
 }

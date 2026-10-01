@@ -59,11 +59,6 @@ export class CajaCobroComponent {
   isProcessing = signal(false);
   errorMsg = signal('');
 
-  // Facturación opcional
-  facturaRequerida = signal<boolean>(false);
-  nit = signal<string>('');
-  razonSocial = signal<string>('');
-
   // ── Computed Signals ──
   totalConDescuento = computed(() => {
     return this.pedidoSignal()?.subtotal ?? 0;
@@ -92,37 +87,11 @@ export class CajaCobroComponent {
 
 
 
-  toggleFactura(event: any) {
-    this.facturaRequerida.set(event.target.checked);
-    if (!event.target.checked) {
-      this.nit.set('');
-      this.razonSocial.set('');
-    }
-  }
-
-  onNitInput(value: string) {
-    this.nit.set(value);
-  }
-
-  onRazonSocialInput(value: string) {
-    this.razonSocial.set(value);
-  }
-
   confirmarPago() {
     if (!this.pedido) return;
     if (!this.esMontoSuficiente()) {
       this.errorMsg.set('El monto recibido es insuficiente.');
       return;
-    }
-    if (this.facturaRequerida()) {
-      if (!this.nit().trim()) {
-        this.errorMsg.set('Por favor, ingrese el NIT o CI.');
-        return;
-      }
-      if (!this.razonSocial().trim()) {
-        this.errorMsg.set('Por favor, ingrese la Razón Social.');
-        return;
-      }
     }
 
     this.isProcessing.set(true);
@@ -134,8 +103,8 @@ export class CajaCobroComponent {
       montoRecibido: this.metodoPago() === 'EFECTIVO'
         ? this.montoRecibido()
         : this.totalConDescuento(),
-      nit: this.facturaRequerida() ? this.nit().trim() : null,
-      razonSocial: this.facturaRequerida() ? this.razonSocial().trim() : null,
+      nit: null,
+      razonSocial: null,
     };
 
     this.http.post<any>(`${this.baseUrl}/caja/registrar-pago`, payload).subscribe({
@@ -162,9 +131,6 @@ export class CajaCobroComponent {
   private resetState() {
     this.metodoPago.set('EFECTIVO');
     this.montoRecibido.set(0);
-    this.facturaRequerida.set(false);
-    this.nit.set('');
-    this.razonSocial.set('');
     this.errorMsg.set('');
   }
 }
