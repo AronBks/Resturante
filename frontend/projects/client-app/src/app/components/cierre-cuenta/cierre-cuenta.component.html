@@ -1,39 +1,141 @@
-﻿<!-- ==========================================================================
-     CIERRE DE CUENTA — Peña Restaurant Tukuypaj — Cochabamba, Bolivia
+<!-- ==========================================================================
+     CIERRE DE CUENTA SEGURO — Peña Restaurant Tukuypaj — Cochabamba, Bolivia
+     Flujo tradicional de restaurante con control estricto de mesero y caja
      ========================================================================== -->
 
 <div class="cierre-layout">
 
-  <!-- ═══════════════════════════════════════════
-       PANTALLA 1: RESUMEN Y SOLICITUD DE PAGO
-       ═══════════════════════════════════════════ -->
-  @if (pantallaActual() === 'pago') {
+  <!-- ══════════════════════════════════════════════════════════
+       PANTALLA 1: CUENTA SOLICITADA (ESPERANDO ENTREGA DEL GARZÓN)
+       ══════════════════════════════════════════════════════════ -->
+  @if (pantallaActual() === 'esperando-cuenta') {
+    <div class="esperando-screen animate-in">
+
+      <!-- Header -->
+      <header class="cierre-header">
+        <div class="header-brand">
+          <h1>Tukuypaj</h1>
+        </div>
+      </header>
+
+      <!-- Cuerpo -->
+      <div class="cierre-body">
+
+        <!-- Tarjeta de Estado del Salón -->
+        <div class="status-hero-card">
+          <div class="hero-icon-pulse">
+            <lucide-icon name="receipt" [size]="46" class="icon-gold"></lucide-icon>
+          </div>
+
+          <h2 class="status-hero-title">Cuenta Solicitada</h2>
+          <p class="status-hero-desc">
+            Hemos avisado a nuestro equipo de salón. Tu garzón asignado está preparando tu cuenta y se acerca a tu mesa con el desglose.
+          </p>
+
+          <div class="garzon-pill-card">
+            <div class="garzon-avatar">
+              <lucide-icon name="user-check" [size]="20"></lucide-icon>
+            </div>
+            <div class="garzon-details">
+              <span class="garzon-label">GARZÓN ASIGNADO A TU MESA</span>
+              <strong class="garzon-name">{{ meseroAsignado() }}</strong>
+            </div>
+          </div>
+
+          <div class="status-badge-live">
+            <span class="pulse-dot"></span>
+            <span>GARZÓN PREPARANDO TU CUENTA 🏃‍♂️</span>
+          </div>
+        </div>
+
+        <!-- Pre-visualización del Consumo -->
+        <section class="resumen-pedido-card">
+          <div class="resumen-card__bg-overlay"></div>
+          <div class="resumen-card__content">
+            <div class="resumen-header-row">
+              <h3 class="resumen-card__title">Tu Consumo en Mesa {{ mesaNumero() }}</h3>
+              <span class="pre-cuenta-badge">Pre-cuenta</span>
+            </div>
+
+            <div class="resumen-items">
+              @if (pedido(); as p) {
+                @for (item of p.items; track $index) {
+                  <div class="resumen-item-row">
+                    <div class="resumen-item-left">
+                      <span class="resumen-item-name">{{ item.nombre }}</span>
+                      <span class="resumen-item-qty">x{{ item.cantidad }}</span>
+                    </div>
+                    <span class="resumen-item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="resumen-divider"></div>
+
+            <div class="resumen-subtotal-row">
+              <span>Subtotal Acumulado</span>
+              <strong class="text-gold">Bs. {{ subtotal() | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bloque de Seguridad del Restaurante -->
+        <div class="protocol-security-box">
+          <div class="security-icon-wrap">
+            <lucide-icon name="shield-alert" [size]="22" class="text-gold"></lucide-icon>
+          </div>
+          <div class="security-text">
+            <strong>Protocolo Tradicional de Salón:</strong>
+            <p>
+              Por políticas de control y seguridad, el garzón debe entregarte la cuenta impresa en mesa.
+              En cuanto tu garzón registre la entrega física, se desbloquearán las opciones para pagar en <strong>Efectivo</strong> o con <strong>Código QR</strong>.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer: Reintentar llamado si hay demora -->
+      <footer class="cierre-footer">
+        <button class="btn-llamar-nuevo" (click)="llamarGarzonNuevamente()" id="btn-re-notificar-garzon">
+          <lucide-icon name="bell" [size]="18"></lucide-icon>
+          <span>Avisar de nuevo al Garzón</span>
+        </button>
+      </footer>
+
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════
+       PANTALLA 2: CUENTA ENTREGADA (SELECCIÓN EFECTIVO O QR)
+       ══════════════════════════════════════════════════════════ -->
+  @if (pantallaActual() === 'cuenta-entregada') {
 
     <!-- Header -->
     <header class="cierre-header">
-      <button class="header-back" (click)="volver()" id="btn-cierre-back">
-        <lucide-icon name="arrow-left" [size]="20"></lucide-icon>
-      </button>
       <div class="header-brand">
         <h1>Tukuypaj</h1>
       </div>
-      <div class="header-spacer"></div>
     </header>
 
     <!-- Cuerpo con scroll -->
     <div class="cierre-body">
 
-      <!-- Título Principal -->
-      <section class="cierre-title-section">
-        <h2 class="cierre-heading">Cierre de Cuenta</h2>
-        <p class="cierre-subheading">Revisa tu pedido y elige cómo pagar.</p>
-      </section>
+      <!-- Alerta Destacada: Cuenta Entregada -->
+      <div class="cuenta-entregada-banner">
+        <lucide-icon name="check-circle" [size]="22" class="text-gold"></lucide-icon>
+        <div class="banner-text">
+          <strong>¡Tu cuenta ha sido entregada!</strong>
+          <span>Elige a continuación cómo deseas realizar el pago.</span>
+        </div>
+      </div>
 
       <!-- Resumen del Pedido -->
       <section class="resumen-pedido-card" id="resumen-card">
         <div class="resumen-card__bg-overlay"></div>
         <div class="resumen-card__content">
-          <h3 class="resumen-card__title">Resumen del Pedido</h3>
+          <h3 class="resumen-card__title">Detalle de la Cuenta</h3>
 
           <div class="resumen-items">
             @if (pedido(); as p) {
@@ -46,21 +148,6 @@
                   <span class="resumen-item-price">Bs. {{ (item.precioUnitario * item.cantidad) | number:'1.2-2' }}</span>
                 </div>
               }
-            } @else {
-              <div class="resumen-item-row">
-                <div class="resumen-item-left">
-                  <span class="resumen-item-name">Chicharrón de Cerdo</span>
-                  <span class="resumen-item-qty">x1</span>
-                </div>
-                <span class="resumen-item-price">Bs. 85.00</span>
-              </div>
-              <div class="resumen-item-row">
-                <div class="resumen-item-left">
-                  <span class="resumen-item-name">Mocochinchi</span>
-                  <span class="resumen-item-qty">x2</span>
-                </div>
-                <span class="resumen-item-price">Bs. 20.00</span>
-              </div>
             }
           </div>
 
@@ -73,7 +160,7 @@
         </div>
       </section>
 
-      <!-- Selector de Propina -->
+      <!-- Selector de Propina Voluntaria -->
       <section class="propina-section">
         <h4 class="section-label">PROPINA (VOLUNTARIA)</h4>
         <div class="propina-chips">
@@ -88,23 +175,23 @@
             [class.active]="propinaPorcentaje() === 5"
             (click)="seleccionarPropina(5)"
             id="propina-5"
-          >5%</button>
+          >5% (Bs. {{ (subtotal() * 0.05) | number:'1.1-1' }})</button>
           <button
             class="propina-chip"
             [class.active]="propinaPorcentaje() === 10"
             (click)="seleccionarPropina(10)"
             id="propina-10"
-          >10%</button>
+          >10% (Bs. {{ (subtotal() * 0.10) | number:'1.1-1' }})</button>
         </div>
 
-        <!-- Total a Pagar (con propina) -->
+        <!-- Total a Pagar -->
         <div class="total-pagar-row">
-          <span class="total-pagar-label">Total a Pagar</span>
+          <span class="total-pagar-label">Total a Cancelar:</span>
           <strong class="total-pagar-amount">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
         </div>
       </section>
 
-      <!-- Método de Pago -->
+      <!-- Selector de Método de Pago -->
       <section class="metodo-pago-section">
         <h4 class="section-label">MÉTODO DE PAGO</h4>
         <div class="metodo-pago-grid">
@@ -114,8 +201,9 @@
             (click)="seleccionarMetodo('efectivo')"
             id="btn-efectivo"
           >
-            <lucide-icon name="banknote" [size]="24" class="metodo-icon"></lucide-icon>
-            <span>Efectivo</span>
+            <lucide-icon name="banknote" [size]="26" class="metodo-icon"></lucide-icon>
+            <span class="metodo-name">Efectivo</span>
+            <span class="metodo-desc">Pago presencial al garzón</span>
           </button>
 
           <button
@@ -124,15 +212,122 @@
             (click)="seleccionarMetodo('qr')"
             id="btn-qr"
           >
-            <lucide-icon name="grid" [size]="24" class="metodo-icon"></lucide-icon>
-            <span>Pago QR</span>
+            <lucide-icon name="qr-code" [size]="26" class="metodo-icon"></lucide-icon>
+            <span class="metodo-name">Pago QR</span>
+            <span class="metodo-desc">Transferencia Simple móvil</span>
           </button>
         </div>
       </section>
 
+      <!-- ── CASO A: SI ELIGE EFECTIVO (SELECTOR DE BILLETE Y CAMBIO) ── -->
+      @if (metodoPago() === 'efectivo') {
+        <section class="efectivo-selector-card animate-in">
+          <div class="efectivo-header">
+            <lucide-icon name="coins" [size]="18" class="text-gold"></lucide-icon>
+            <h4>¿Con cuánto vas a pagar?</h4>
+          </div>
+          <p class="efectivo-help">
+            Indica tu billete para que tu garzón traiga tu cambio exacto en un solo viaje:
+          </p>
+
+          <div class="billetes-grid">
+            <!-- Monto Exacto -->
+            <button
+              type="button"
+              class="billete-chip"
+              [class.active]="opcionEfectivoSeleccionada() === 'exacto'"
+              (click)="seleccionarOpcionEfectivo('exacto')"
+            >
+              <span>Monto Exacto</span>
+              <small>Bs. {{ totalConPropina() | number:'1.2-2' }}</small>
+            </button>
+
+            <!-- Billetes comunes sugeridos -->
+            @for (b of billetesSugeridos(); track b) {
+              <button
+                type="button"
+                class="billete-chip"
+                [class.active]="opcionEfectivoSeleccionada() === b.toString()"
+                (click)="seleccionarOpcionEfectivo(b.toString())"
+              >
+                <span>Billete de</span>
+                <strong>Bs. {{ b }}</strong>
+              </button>
+            }
+
+            <!-- Otro billete -->
+            <button
+              type="button"
+              class="billete-chip"
+              [class.active]="opcionEfectivoSeleccionada() === 'otro'"
+              (click)="seleccionarOpcionEfectivo('otro')"
+            >
+              <span>Otro monto...</span>
+            </button>
+          </div>
+
+          <!-- Input si elige 'otro' -->
+          @if (opcionEfectivoSeleccionada() === 'otro') {
+            <div class="input-otro-monto animate-in">
+              <label>Ingresa con cuánto vas a pagar (Bs.):</label>
+              <input
+                type="number"
+                [min]="totalConPropina()"
+                step="5"
+                placeholder="Ej. 150"
+                [value]="montoEfectivoPersonalizado() || ''"
+                (input)="onMontoPersonalizadoInput($event)"
+              />
+            </div>
+          }
+
+          <!-- Desglose de Cambio a devolver -->
+          <div class="cambio-preview-box">
+            <div class="cambio-row">
+              <span>Pagas con:</span>
+              <strong>Bs. {{ montoPagaConFinal() | number:'1.2-2' }}</strong>
+            </div>
+            <div class="cambio-row highlight">
+              <span>Tu garzón te traerá de cambio:</span>
+              <strong class="cambio-monto">Bs. {{ cambioEstimado() | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- ── CASO B: SI ELIGE PAGO QR (CÓDIGO QR REAL DINÁMICO) ── -->
+      @if (metodoPago() === 'qr') {
+        <section class="qr-display-card animate-in">
+          <div class="qr-title-box">
+            <lucide-icon name="smartphone" [size]="18" class="text-gold"></lucide-icon>
+            <h4>Código QR Simple Oficial</h4>
+          </div>
+          <p class="qr-subtitle">Válido para cualquier entidad bancaria en Bolivia</p>
+
+          <div class="qr-image-wrapper">
+            <img [src]="qrCodeUrl()" alt="Código QR de Pago Tukuypaj" class="qr-code-img" />
+          </div>
+
+          <div class="qr-meta-box">
+            <div class="meta-line">
+              <span>Monto a Transferir:</span>
+              <strong class="text-gold">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
+            </div>
+            <div class="meta-line">
+              <span>Mesa / Referencia:</span>
+              <span>Mesa {{ mesaNumero() }} • Peña Tukuypaj</span>
+            </div>
+          </div>
+
+          <p class="qr-bank-note">
+            Abre tu aplicación bancaria móvil (Banco Unión, BCP, BNB, Banco Sol, FIE, etc.) y escanea el código. Tu cobro será validado por caja.
+          </p>
+        </section>
+      }
+
     </div>
 
-    <!-- Pie: Botón Llamar Garzón -->
+    <!-- Footer: Confirmar Notificación al Garzón / Caja -->
     <footer class="cierre-footer">
       @if (errorPago()) {
         <div class="error-banner">
@@ -149,20 +344,23 @@
       >
         @if (confirmandoPago()) {
           <span class="loader-spinner"></span>
-          <span>NOTIFICANDO A CAJA...</span>
+          <span>AVISANDO AL PERSONAL...</span>
+        } @else if (metodoPago() === 'efectivo') {
+          <lucide-icon name="hand-coins" [size]="20"></lucide-icon>
+          <span>CONFIRMAR PAGO EN EFECTIVO</span>
         } @else {
-          <lucide-icon name="bell-ring" [size]="20"></lucide-icon>
-          <span>LLAMAR AL GARZÓN</span>
+          <lucide-icon name="check-circle-2" [size]="20"></lucide-icon>
+          <span>HE REALIZADO EL PAGO QR</span>
         }
       </button>
     </footer>
 
   }
 
-  <!-- ═══════════════════════════════════════════
-       PANTALLA 2: ESPERANDO CONFIRMACIÓN DE CAJA
-       ═══════════════════════════════════════════ -->
-  @if (pantallaActual() === 'notificacion-efectivo') {
+  <!-- ══════════════════════════════════════════════════════════
+       PANTALLA 3: ESPERANDO CONFIRMACIÓN EN CAJA (BLOQUEO SEGURO)
+       ══════════════════════════════════════════════════════════ -->
+  @if (pantallaActual() === 'esperando-confirmacion-caja') {
     <div class="notif-efectivo-screen animate-in">
 
       <!-- Header -->
@@ -179,14 +377,25 @@
             <lucide-icon name="bell-ring" [size]="44" class="notif-gold-icon"></lucide-icon>
           </div>
 
-          <h2 class="notif-title">¡Garzón Notificado!</h2>
+          <h2 class="notif-title">
+            @if (metodoPago() === 'efectivo') {
+              ¡Garzón en Camino!
+            } @else {
+              ¡Pago QR Notificado!
+            }
+          </h2>
+
           <p class="notif-subtext">
-            Hemos avisado a nuestro equipo. Un garzón se dirige a tu mesa para atender tu cuenta.
+            @if (metodoPago() === 'efectivo') {
+              Tu garzón <strong>{{ meseroAsignado() }}</strong> se acerca a tu mesa para recibir tu dinero y entregarte tu cambio.
+            } @else {
+              Caja está verificando la acreditación de tu pago QR en el sistema.
+            }
           </p>
 
           <div class="notif-status-badge">
             <span class="pulse-dot"></span>
-            <span>GARZÓN EN CAMINO 🏃‍♂️</span>
+            <span>ESPERANDO CONFIRMACIÓN OFICIAL EN CAJA 🔒</span>
           </div>
 
           <div class="notif-details-box">
@@ -199,13 +408,23 @@
               <span class="detail-val">{{ (metodoPago() || 'Efectivo') | uppercase }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Total:</span>
+              <span class="detail-label">Total a Cancelar:</span>
               <span class="detail-val gold">Bs. {{ totalConPropina() | number:'1.2-2' }}</span>
             </div>
+            @if (metodoPago() === 'efectivo') {
+              <div class="detail-row">
+                <span class="detail-label">Pagas con:</span>
+                <span class="detail-val">Bs. {{ montoPagaConFinal() | number:'1.2-2' }}</span>
+              </div>
+              <div class="detail-row highlight-change">
+                <span class="detail-label">Cambio a recibir:</span>
+                <span class="detail-val gold">Bs. {{ cambioEstimado() | number:'1.2-2' }}</span>
+              </div>
+            }
           </div>
 
           <div class="notif-tip-box">
-            <p>🔒 Tu sesión permanece activa hasta que el pago sea confirmado por caja.</p>
+            <p>🔒 Por seguridad de la mesa, esta pantalla se actualizará automáticamente con tu recibo en cuanto caja registre el pago.</p>
           </div>
         </div>
       </div>
@@ -214,15 +433,15 @@
       <footer class="qr-footer">
         <div class="waiting-payment-box">
           <span class="loader-spinner gold"></span>
-          <span>ESPERANDO CONFIRMACIÓN DE CAJA...</span>
+          <span>SINCRONIZANDO CON CAJA CENTRAL EN VIVO...</span>
         </div>
       </footer>
     </div>
   }
 
-  <!-- ═══════════════════════════════════════════
-       PANTALLA 3: PAGO CONFIRMADO — TICKET SIMPLE
-       ═══════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════
+       PANTALLA 4: PAGO CONFIRMADO — TICKET DIGITAL OFICIAL
+       ══════════════════════════════════════════════════════════ -->
   @if (pantallaActual() === 'recibo-digital') {
 
     <div class="recibo-screen animate-in">
@@ -318,21 +537,42 @@
         </article>
       </div>
 
-      <!-- Pie con opciones -->
+      <!-- Pie con seguridad y finalización -->
       <footer class="recibo-footer">
-        <div class="evaluation-prompt-card">
-          <h4 class="prompt-title">¿Deseas calificar tu experiencia?</h4>
-          <p class="prompt-sub">Tu opinión nos ayuda a mejorar cada día.</p>
-          <div class="prompt-actions-row">
-            <button class="prompt-btn-rate" (click)="irAFeedback()" id="btn-ir-feedback">
-              <lucide-icon name="star" [size]="18"></lucide-icon>
-              <span>Calificar</span>
+        <div class="cierre-seguridad-card">
+          <div class="cs-badge-row">
+            <span class="cs-badge-ok">
+              <lucide-icon name="check-circle-2" [size]="14"></lucide-icon>
+              <span>Cuenta Saldada y Cerrada</span>
+            </span>
+            @if (segundosAutoCierre() > 0) {
+              <span class="cs-timer">
+                <lucide-icon name="lock" [size]="12"></lucide-icon>
+                <span>Cierre seguro en {{ segundosAutoCierre() }}s</span>
+              </span>
+            }
+          </div>
+
+          <h4 class="cs-title">¡Muchas gracias por su visita!</h4>
+          <p class="cs-sub">
+            La atención en la <strong>Mesa {{ mesaNumero() }}</strong> ha finalizado con éxito.
+          </p>
+
+          <div class="cs-actions-row">
+            <button class="cs-btn-nuevo" (click)="iniciarNuevaAtencion()" id="btn-nueva-atencion">
+              <lucide-icon name="utensils" [size]="17"></lucide-icon>
+              <span>Iniciar Nuevo Pedido</span>
             </button>
-            <button class="prompt-btn-finish" (click)="finalizarDirecto()" id="btn-finalizar-directo">
-              <span>Volver a la Carta</span>
-              <lucide-icon name="arrow-right" [size]="18"></lucide-icon>
+            <button class="cs-btn-salir" (click)="finalizarYSalir()" id="btn-finalizar-salir">
+              <lucide-icon name="log-out" [size]="17"></lucide-icon>
+              <span>Finalizar Sesión</span>
             </button>
           </div>
+
+          <p class="cs-hint">
+            <lucide-icon name="shield-check" [size]="13"></lucide-icon>
+            Por seguridad de salón, los pedidos anteriores se purgan de este dispositivo.
+          </p>
         </div>
       </footer>
 
@@ -340,132 +580,30 @@
 
   }
 
-  <!-- ═══════════════════════════════════════════
-       PANTALLA 4: CALIFICACIÓN Y FEEDBACK (OPCIONAL)
-       ═══════════════════════════════════════════ -->
-  @if (pantallaActual() === 'feedback') {
-
-    <div class="feedback-screen animate-in">
-
-      <!-- Ícono Premium -->
-      <div class="feedback-hero-icon">
-        <lucide-icon name="utensils-crossed" [size]="42"></lucide-icon>
-      </div>
-
-      <h2 class="feedback-title">¡Gracias por su visita!</h2>
-      <p class="feedback-desc">
-        Esperamos que haya disfrutado de la auténtica experiencia Tukuypaj. ¿Qué le pareció su velada?
-      </p>
-
-      <!-- Tarjeta de Calificación General con Estrellas -->
-      <section class="rating-card">
-        <h3 class="rating-card-title">Calificación General</h3>
-        <div class="stars-row">
-          @for (star of [1, 2, 3, 4, 5]; track star) {
-            <button
-              class="star-btn"
-              [class.active]="estrellas() >= star"
-              (click)="seleccionarEstrellas(star)"
-              [id]="'star-' + star"
-            >
-              <svg viewBox="0 0 24 24" class="star-svg">
-                <polygon
-                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                  [attr.fill]="estrellas() >= star ? '#e5c158' : 'none'"
-                  [attr.stroke]="estrellas() >= star ? '#e5c158' : '#6e665e'"
-                  stroke-width="1.5"
-                />
-              </svg>
-            </button>
-          }
-        </div>
-      </section>
-
-      <!-- Su Asistente -->
-      <section class="mesero-section">
-        <div class="mesero-avatar-box">
-          <div class="mesero-avatar-circle">
-            <lucide-icon name="user" [size]="28"></lucide-icon>
-          </div>
-        </div>
-        <div class="mesero-info">
-          <span class="mesero-label">SU ASISTENTE IA</span>
-          <span class="mesero-nombre">Don Beto</span>
-        </div>
-      </section>
-
-      <!-- Evaluación Rápida -->
-      <section class="eval-rapida-grid">
-        <button
-          class="eval-btn"
-          [class.active]="calificacionRapida() === 'excelente'"
-          (click)="seleccionarCalificacion('excelente')"
-          id="eval-excelente"
-        >
-          <lucide-icon name="thumbs-up" [size]="22" class="eval-icon"></lucide-icon>
-          <span class="eval-label">EXCELENTE</span>
-        </button>
-
-        <button
-          class="eval-btn"
-          [class.active]="calificacionRapida() === 'regular'"
-          (click)="seleccionarCalificacion('regular')"
-          id="eval-regular"
-        >
-          <lucide-icon name="smile" [size]="22" class="eval-icon"></lucide-icon>
-          <span class="eval-label">REGULAR</span>
-        </button>
-
-        <button
-          class="eval-btn"
-          [class.active]="calificacionRapida() === 'a-mejorar'"
-          (click)="seleccionarCalificacion('a-mejorar')"
-          id="eval-a-mejorar"
-        >
-          <lucide-icon name="thumbs-down" [size]="22" class="eval-icon"></lucide-icon>
-          <span class="eval-label">A MEJORAR</span>
-        </button>
-      </section>
-
-      <!-- Botones de Enviar y Omitir -->
-      <footer class="feedback-footer">
-        <button
-          class="enviar-feedback-btn"
-          [disabled]="enviandoFeedback()"
-          (click)="enviarFeedback()"
-          id="btn-enviar-feedback"
-        >
-          @if (enviandoFeedback()) {
-            <span class="loader-spinner"></span>
-            <span>ENVIANDO...</span>
-          } @else {
-            <span>ENVIAR CALIFICACIÓN</span>
-          }
-        </button>
-
-        <button class="omitir-feedback-btn" (click)="finalizarDirecto()" type="button" id="btn-omitir-feedback">
-          Omitir y Volver a la Carta
-        </button>
-      </footer>
-
-    </div>
-
-  }
-
-  <!-- ═══════════════════════════════════════════
-       PANTALLA 5: CONFIRMACIÓN FINAL
-       ═══════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════
+       PANTALLA: SESIÓN FINALIZADA & MESA LIBERADA
+       ══════════════════════════════════════════════════════════ -->
   @if (pantallaActual() === 'completado') {
 
     <div class="completado-screen animate-in">
       <div class="completado-icon-box">
-        <lucide-icon name="check-circle-2" [size]="56"></lucide-icon>
+        <lucide-icon name="shield-check" [size]="54" class="icon-gold"></lucide-icon>
       </div>
-      <h2 class="completado-title">¡Hasta pronto!</h2>
+      <h2 class="completado-title">Sesión de Mesa Concluida</h2>
       <p class="completado-desc">
-        Tu cuenta ha sido cerrada exitosamente. Gracias por elegir <strong>Peña Restaurant Tukuypaj</strong>.
+        La cuenta de la <strong>Mesa {{ mesaNumero() }}</strong> ha sido cancelada y la mesa se encuentra liberada.
       </p>
-      <p class="completado-redirect">Volviendo a la carta...</p>
+      <div class="completado-badge-secure">
+        <lucide-icon name="lock" [size]="14"></lucide-icon>
+        <span>Sesión limpia y protegida contra manipulaciones</span>
+      </div>
+
+      <div class="completado-actions">
+        <button class="btn-completado-carta" (click)="iniciarNuevaAtencion()" id="btn-completado-nuevo">
+          <lucide-icon name="utensils" [size]="18"></lucide-icon>
+          <span>Iniciar Nueva Orden</span>
+        </button>
+      </div>
     </div>
 
   }

@@ -1803,9 +1803,46 @@
   font-family: var(--font-sans);
   font-size: 0.95rem;
   color: var(--text-muted);
-  max-width: 320px;
-  margin: 0 0 24px;
+  max-width: 340px;
+  margin: 0 0 20px;
   line-height: 1.5;
+}
+
+.completado-badge-secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  color: #86efac;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 26px;
+}
+
+.btn-completado-carta {
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 14px;
+  background: var(--gold-primary);
+  color: #12100d;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px var(--gold-glow);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #eed47d;
+    transform: translateY(-2px);
+  }
 }
 
 .completado-redirect {
@@ -2032,36 +2069,72 @@
   letter-spacing: 0.8px;
 }
 
-.evaluation-prompt-card {
-  background: #181511;
-  border: 1px solid var(--gold-border);
+.cierre-seguridad-card {
+  background: #16120d;
+  border: 1px solid rgba(229, 193, 88, 0.35);
   border-radius: 20px;
-  padding: 20px 16px;
+  padding: 20px 18px;
   text-align: center;
   margin-top: 10px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
 
-  .prompt-title {
+  .cs-badge-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+
+    .cs-badge-ok {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .cs-timer {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      background: rgba(229, 193, 88, 0.12);
+      border: 1px solid rgba(229, 193, 88, 0.3);
+      color: #e5c158;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+  }
+
+  .cs-title {
     font-family: var(--font-serif);
-    font-size: 1.15rem;
+    font-size: 1.25rem;
     color: var(--gold-primary);
     margin: 0 0 6px;
     font-weight: 700;
   }
 
-  .prompt-sub {
+  .cs-sub {
     font-family: var(--font-sans);
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     color: var(--text-muted);
     margin: 0 0 16px;
+    line-height: 1.45;
   }
 
-  .prompt-actions-row {
+  .cs-actions-row {
     display: flex;
     flex-direction: column;
     gap: 10px;
 
-    .prompt-btn-rate {
+    .cs-btn-nuevo {
       width: 100%;
       height: 48px;
       border-radius: 14px;
@@ -2086,13 +2159,13 @@
       }
     }
 
-    .prompt-btn-finish {
+    .cs-btn-salir {
       width: 100%;
       height: 44px;
       border-radius: 14px;
       background: transparent;
-      border: 1px solid var(--gold-border);
-      color: #b5ad9e;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #cfc6b8;
       font-family: var(--font-sans);
       font-size: 0.85rem;
       font-weight: 700;
@@ -2104,10 +2177,20 @@
       transition: all 0.2s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.06);
         color: #ffffff;
       }
     }
+  }
+
+  .cs-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 14px 0 0 0;
+    font-size: 0.72rem;
+    color: #8c8277;
   }
 }
 
@@ -2323,3 +2406,466 @@
     }
   }
 }
+
+/* ==========================================================================
+   ESTILOS ADICIONALES: FLUJO TRADICIONAL DE CUENTA Y COBRO SEGURO
+   ========================================================================== */
+
+/* ── Pantalla 1: Esperando Cuenta ── */
+.esperando-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.status-hero-card {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px;
+  background: radial-gradient(circle at top, rgba(229, 193, 88, 0.12) 0%, rgba(28, 24, 20, 0.95) 70%);
+  border: 1px solid rgba(229, 193, 88, 0.25);
+  border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.hero-icon-pulse {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(229, 193, 88, 0.12);
+  border: 2px solid rgba(229, 193, 88, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: pulseGlow 2.5s infinite;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(229, 193, 88, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 18px rgba(229, 193, 88, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 193, 88, 0);
+  }
+}
+
+.status-hero-title {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.5px;
+}
+
+.status-hero-desc {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 22px 0;
+  max-width: 400px;
+}
+
+.garzon-pill-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(35, 31, 26, 0.9);
+  border: 1px solid rgba(229, 193, 88, 0.2);
+  padding: 10px 18px;
+  border-radius: 30px;
+  margin-bottom: 20px;
+
+  .garzon-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(229, 193, 88, 0.18);
+    color: var(--gold-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .garzon-details {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+
+    .garzon-label {
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .garzon-name {
+      font-size: 0.95rem;
+      color: var(--gold-primary);
+    }
+  }
+}
+
+.status-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(229, 193, 88, 0.1);
+  border: 1px solid rgba(229, 193, 88, 0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold-primary);
+  letter-spacing: 0.5px;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #25d366;
+  box-shadow: 0 0 8px #25d366;
+  animation: blinkDot 1.4s infinite;
+}
+
+@keyframes blinkDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.resumen-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .pre-cuenta-badge {
+    background: rgba(229, 193, 88, 0.15);
+    color: var(--gold-primary);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+}
+
+.protocol-security-box {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  background: rgba(229, 193, 88, 0.05);
+  border: 1px dashed rgba(229, 193, 88, 0.3);
+  border-radius: 14px;
+
+  .security-icon-wrap {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .security-text {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+
+    strong {
+      display: block;
+      color: var(--gold-primary);
+      margin-bottom: 4px;
+      font-size: 0.86rem;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+}
+
+.btn-llamar-nuevo {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(229, 193, 88, 0.1);
+  border: 1px solid rgba(229, 193, 88, 0.35);
+  color: var(--gold-primary);
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:active {
+    background: rgba(229, 193, 88, 0.2);
+    transform: scale(0.98);
+  }
+}
+
+/* ── Banner de Cuenta Entregada ── */
+.cuenta-entregada-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(37, 211, 102, 0.1);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  border-radius: 14px;
+
+  .banner-text {
+    display: flex;
+    flex-direction: column;
+
+    strong {
+      color: #25d366;
+      font-size: 0.96rem;
+      margin-bottom: 2px;
+    }
+
+    span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  }
+}
+
+.metodo-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.metodo-desc {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ── Selector de Efectivo y Billetes ── */
+.efectivo-selector-card {
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid rgba(229, 193, 88, 0.2);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .efectivo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    h4 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+  }
+
+  .efectivo-help {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+}
+
+.billetes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.billete-chip {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-card-elevated);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  strong {
+    font-size: 1rem;
+    color: #ffffff;
+  }
+
+  small {
+    font-size: 0.8rem;
+    color: var(--gold-primary);
+    font-weight: 700;
+  }
+
+  &.active {
+    background: rgba(229, 193, 88, 0.15);
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 12px rgba(229, 193, 88, 0.25);
+
+    strong, span {
+      color: var(--gold-primary);
+    }
+  }
+}
+
+.input-otro-monto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  input {
+    height: 44px;
+    border-radius: 10px;
+    background: #110e0b;
+    border: 1px solid rgba(229, 193, 88, 0.35);
+    color: #ffffff;
+    font-size: 1rem;
+    padding: 0 14px;
+    outline: none;
+
+    &:focus {
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 8px rgba(229, 193, 88, 0.3);
+    }
+  }
+}
+
+.cambio-preview-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(229, 193, 88, 0.15);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .cambio-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+
+    &.highlight {
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+      padding-top: 8px;
+      color: #ffffff;
+
+      .cambio-monto {
+        font-size: 1.15rem;
+        color: #25d366;
+        font-weight: 800;
+      }
+    }
+  }
+}
+
+/* ── Tarjeta de Visualización QR Dinámico ── */
+.qr-display-card {
+  padding: 22px 20px;
+  background: var(--bg-card);
+  border: 1px solid rgba(229, 193, 88, 0.25);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+
+  .qr-title-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    h4 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 1.05rem;
+    }
+  }
+
+  .qr-subtitle {
+    margin: -6px 0 6px 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .qr-image-wrapper {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .qr-code-img {
+      width: 190px;
+      height: 190px;
+      display: block;
+    }
+  }
+
+  .qr-meta-box {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+
+    .meta-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 4px 0;
+    }
+  }
+
+  .qr-bank-note {
+    margin: 0;
+    font-size: 0.76rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+}
+
+.detail-row.highlight-change {
+  border-top: 1px dashed rgba(229, 193, 88, 0.2);
+  padding-top: 8px;
+  margin-top: 4px;
+
+  .detail-val {
+    color: #25d366 !important;
+    font-weight: 800;
+  }
+}
+
