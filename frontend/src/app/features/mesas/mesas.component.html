@@ -300,32 +300,14 @@
                   }
 
                   <div class="por-cobrar-btn-group">
-                    <!-- Si la cuenta física no ha sido entregada, mostrar botón operativo para el mesero -->
-                    @if (!esCuentaEntregada(mesa)) {
-                      <button
-                        type="button"
-                        class="btn-entregar-cuenta-mesa"
-                        (click)="entregarCuentaMesa(mesa, $event)"
-                        title="Confirmar entrega de cuenta física al comensal"
-                      >
-                        <lucide-icon name="receipt" [size]="13"></lucide-icon>
-                        <span>Entregar Cuenta</span>
-                      </button>
-                    } @else {
-                      <span class="badge-cuenta-entregada-ok" title="Cuenta entregada a los comensales">
-                        <lucide-icon name="check-check" [size]="12"></lucide-icon>
-                        <span>Cuenta Entregada</span>
-                      </span>
-                    }
-
                     <button
                       type="button"
-                      class="btn-procesar-pago"
+                      class="btn-cobrar-full"
                       (click)="onCobroDirecto(mesa, $event)"
-                      title="Registrar cobro oficial en caja"
+                      title="Registrar cobro oficial en caja y liberar mesa"
                     >
-                      <lucide-icon name="credit-card" [size]="14"></lucide-icon>
-                      <span>Cobrar</span>
+                      <lucide-icon name="wallet" [size]="15"></lucide-icon>
+                      <span>Cobrar Mesa</span>
                     </button>
                   </div>
 

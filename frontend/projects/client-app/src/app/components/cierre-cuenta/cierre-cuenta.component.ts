@@ -35,7 +35,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   private readonly baseUrl = 'http://localhost:3000/api';
 
   // ── Estado de la Pantalla ──
-  pantallaActual = signal<PantallaActual>('esperando-cuenta');
+  pantallaActual = signal<PantallaActual>('cuenta-entregada');
 
   // ── Mesa ──
   mesaNumero = signal<string>('M01');
@@ -173,11 +173,14 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       // 3. Consultar estado activo persistido en DB
       this.carritoService.consultarPedidoActivoMesa(mesa).subscribe((p) => {
         if (p) {
-          if (p.cuentaEntregada) {
-            this.pantallaActual.set('cuenta-entregada');
-          } else {
-            this.pantallaActual.set('esperando-cuenta');
-          }
+          this.pantallaActual.set('cuenta-entregada');
+        } else {
+          // Mesa ya saldada y liberada en caja (o recarga de página tras cobro)
+          this.pagoConfirmado.set(true);
+          this.detenerPolling();
+          this.pantallaActual.set('recibo-digital');
+          this.iniciarAutoCierre();
+          this.limpiarSesionMesaSegura(false);
         }
       });
     });
@@ -261,7 +264,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
               this.pagoConfirmado.set(true);
               this.detenerPolling();
               this.pantallaActual.set('recibo-digital');
-              this.carritoService.limpiarCarrito();
+              this.iniciarAutoCierre();
+              this.limpiarSesionMesaSegura(false);
             }
             return;
           }
@@ -274,8 +278,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // Si estábamos esperando que el mesero entregue la cuenta y ya la entregó:
-          if (st === 'esperando-cuenta' && p.cuentaEntregada) {
+          if (st === 'esperando-cuenta') {
             this.pantallaActual.set('cuenta-entregada');
           }
         },
@@ -382,7 +385,6 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
    * pueda manipular o consultar la comanda de la persona que ya pagó.
    */
   limpiarSesionMesaSegura(limpiarMesaAsignada = false): void {
-    this.detenerAutoCierre();
     this.detenerPolling();
     this.carritoService.limpiarCarrito();
 
@@ -407,14 +409,23 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
    * Cierra definitivamente la sesión del comensal y muestra pantalla segura de mesa liberada
    */
   finalizarYSalir(): void {
+    this.detenerAutoCierre();
     this.limpiarSesionMesaSegura(false);
     this.pantallaActual.set('completado');
+
+    // Redirigir a la carta limpia tras 3 segundos
+    setTimeout(() => {
+      this.router.navigate(['/carta'], {
+        queryParams: { mesa: this.mesaNumero() },
+      });
+    }, 3000);
   }
 
   /**
    * Inicia una nueva atención 100% limpia para un nuevo cliente en la misma mesa
    */
   iniciarNuevaAtencion(): void {
+    this.detenerAutoCierre();
     const mesa = this.mesaNumero();
     this.limpiarSesionMesaSegura(false);
     this.router.navigate(['/carta'], {

@@ -537,65 +537,31 @@
   width: 100%;
 }
 
-.btn-entregar-cuenta-mesa {
-  height: 38px;
+.btn-cobrar-full {
+  width: 100%;
+  height: 40px;
   border-radius: 10px;
-  background: rgba(229, 193, 88, 0.15);
-  border: 1.5px solid rgba(229, 193, 88, 0.6);
-  color: #e5c158;
-  font-size: 0.76rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #e5c158;
-    color: #14110e;
-    box-shadow: 0 4px 12px rgba(229, 193, 88, 0.35);
-    transform: translateY(-1px);
-  }
-}
-
-.badge-cuenta-entregada-ok {
-  height: 38px;
-  border-radius: 10px;
-  background: rgba(37, 211, 102, 0.15);
-  border: 1px solid rgba(37, 211, 102, 0.4);
-  color: #25d366;
-  font-size: 0.72rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.btn-procesar-pago {
-  height: 38px;
-  border-radius: 10px;
-  background: transparent;
-  border: 1.5px solid rgba(244, 63, 94, 0.6);
-  color: #ffffff;
-  font-size: 0.8rem;
+  background: linear-gradient(135deg, #e5c158 0%, #c89518 100%);
+  border: none;
+  color: #120e0a;
+  font-size: 0.85rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
+  box-shadow: 0 4px 14px rgba(229, 193, 88, 0.35);
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f43f5e;
-    border-color: #f43f5e;
-    box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
+    background: linear-gradient(135deg, #eed47d 0%, #d8a528 100%);
+    box-shadow: 0 6px 18px rgba(229, 193, 88, 0.5);
     transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 }
 
