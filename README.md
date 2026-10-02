@@ -158,6 +158,11 @@ En la operativa tradicional de un restaurante, el proceso de cobro suele sufrir 
 
 **SGGI elimina por completo este cuello de botella**, sincronizando en tiempo real la intención del comensal con el **Garzón Designado** y la **Caja Central**:
 
+- **Declaración Inmediata de Intención (Viaje Único)**: Al momento de pulsar **"Pedir la Cuenta"** en su móvil, el comensal selecciona de inmediato su método de pago (**Efectivo con billete** o **QR**).
+- **Cálculo de Cambio Anticipado**: El backend calcula el cambio exacto al instante y emite la alerta tanto al garzón como a caja central **antes de que el garzón se desplace**.
+- **Un Solo Viaje a la Mesa**: El garzón acude a la mesa una sola vez llevando ya la pre-cuenta física y el cambio exacto preparado en mano, cobra el importe y entrega el cambio en el acto.
+- **Flexibilidad Operativa**: Si el establecimiento prefiere que el garzón entregue primero la cuenta impresa física (`POST /api/pedidos/entregar-cuenta`), el comensal puede confirmar o ratificar su billete en ese instante y el cobro se completa ahí mismo sin viajes redundantes.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -166,38 +171,30 @@ sequenceDiagram
     participant SGGI as Backend SGGI (WebSockets)
     actor X as Caja Central (Estación de Pago)
 
-    Note over C: Comensal termina de consumir y pide la cuenta
-    C->>SGGI: POST /api/pedidos/solicitar-cuenta { mesaNumero: 'M01' }
-    SGGI-->>G: WS 'pago:solicitado' (Mesa M01 parpadea dorada 'POR_COBRAR')
-    SGGI-->>X: Alerta visual: Mesa M01 solicita cuenta
-    SGGI-->>C: Pantalla 'esperando-cuenta' (Garzón preparando cuenta física)
-
-    Note over G: Garzón acude a la mesa con la pre-cuenta impresa
-    G->>SGGI: POST /api/pedidos/entregar-cuenta { mesaNumero: 'M01' }
-    SGGI-->>C: WS 'cuenta:entregada' (Se desbloquean opciones de pago en el móvil)
-
-    alt CASO A: PAGO EN EFECTIVO (Aviso Anticipado de Billete y Cambio)
-        Note over C: Comensal indica con qué billete pagará (Ej: Billete de Bs. 100)
-        C->>SGGI: POST /api/pedidos/notificar-pago-efectivo { montoPagaCon: 100 }
+    Note over C: Comensal termina de consumir, pulsa "Pedir la Cuenta"<br/>y declara su método de pago al instante
+    alt CASO A: PAGO EN EFECTIVO (Declaración de Billete y Cambio Anticipado)
+        C->>SGGI: POST /api/pedidos/solicitar-cuenta { mesaNumero: 'M01', metodoPago: 'EFECTIVO', montoPagaCon: 100 }
         
         rect rgb(28, 24, 18)
-            Note over SGGI,G: NOTIFICACIÓN EN TIEMPO REAL AL GARZÓN Y CAJA:<br/>"Mesa M01 paga con Bs. 100 — Total: Bs. 85 — Cambio a devolver: Bs. 15"
+            Note over SGGI,G: CÁLCULO Y NOTIFICACIÓN INSTANTÁNEA EN SALÓN Y CAJA:<br/>"Mesa M01 paga con Bs. 100 — Total: Bs. 85 — Cambio exacto: Bs. 15"
         end
 
-        SGGI-->>G: Alerta: "M01 Efectivo Bs. 100 (Cambio: Bs. 15)"
-        SGGI-->>X: Alerta en monitor de Caja: "M01 Efectivo en camino"
-        SGGI-->>C: Pantalla: "¡Garzón en camino con tu cambio de Bs. 15!"
+        SGGI-->>G: WS 'pago:solicitado' ("M01 Efectivo Bs. 100 — Llevar cambio: Bs. 15")
+        SGGI-->>X: Alerta monitor Caja: "M01 Efectivo en camino — Total Bs. 85 — Cambio Bs. 15"
+        SGGI-->>C: Pantalla móvil: "¡Garzón en camino con tu cuenta y cambio de Bs. 15!"
 
-        Note over G: EL GARZÓN HACE UN SOLO VIAJE OPTIMIZADO:<br/>1. Sabe de antemano el cambio exacto (Bs. 15).<br/>2. Acude a la mesa, recibe los Bs. 100 y entrega el cambio.<br/>3. Lleva los Bs. 85 directamente a Caja Central.
-        G->>X: Entrega el efectivo recaudado en Caja
+        rect rgb(30, 25, 20)
+            Note over G: EL GARZÓN HACE UN SOLO VIAJE OPTIMIZADO A LA MESA:<br/>1. Ya sabe el consumo (Bs. 85) y cambio exacto a llevar (Bs. 15).<br/>2. Acude con la pre-cuenta física y los Bs. 15 de cambio en mano.<br/>3. Recibe los Bs. 100 del comensal y entrega el cambio en el mismo acto.<br/>(Opcional: Si entrega pre-cuenta primero vía 'entregar-cuenta', cobra de inmediato).<br/>4. Camina directamente a Caja Central con los Bs. 85 recaudados.
+        end
+
+        G->>X: Entrega el efectivo recaudado en Caja Central
         X->>SGGI: POST /api/caja/registrar-pago { metodoPago: 'EFECTIVO', montoRecibido: 100 }
 
     else CASO B: PAGO POR CÓDIGO QR SIMPLE / BANCO MÓVIL
-        Note over C: Comensal selecciona "Pago QR"
-        C->>SGGI: Solicita QR de la mesa
+        C->>SGGI: POST /api/pedidos/solicitar-cuenta { mesaNumero: 'M01', metodoPago: 'QR' }
         SGGI-->>C: Renderiza Código QR oficial de Mesa M01 con monto exacto (Bs. 85.00)
-        SGGI-->>G: Notifica al Garzón: "Mesa M01 pagando por QR bancario"
-        SGGI-->>X: Notifica a Caja: "Mesa M01 esperando verificación QR"
+        SGGI-->>G: WS 'pago:solicitado' ("Mesa M01 pide cuenta — Pago por QR")
+        SGGI-->>X: Alerta monitor Caja: "Mesa M01 esperando verificación QR"
 
         Note over C: Comensal escanea desde su app bancaria (Banco Unión, BCP, BNB, etc.) y transfiere
         C->>SGGI: Pulsa "He realizado el pago QR"
@@ -220,8 +217,8 @@ sequenceDiagram
 
 | Actor | Lo que ve en su pantalla | Acción u Obligación que ejecuta |
 |---|---|---|
-| **Comensal (Móvil)** | Pre-cuenta ➔ Selector de billete (Exacto, Bs. 50, 100, 200) o QR ➔ Desglose del cambio que recibirá ➔ Recibo oficial cancelado | Escoge cómo pagará e indica el billete con el que cancelará para que el mesero no tenga que adivinar. |
-| **Garzón Designado (Salón)** | Tarjeta de mesa parpadeando en dorado con aviso: *"Mesa 01: Paga con Bs. 100 — Llevar cambio: Bs. 15"* | Realiza un **viaje único**: se acerca sabiendo cuánto cobrar y cuánto devolver, recibe el dinero y lo entrega a caja. |
+| **Comensal (Móvil)** | Pre-cuenta ➔ Selector de billete (Exacto, Bs. 50, 100, 200) o QR ➔ Desglose del cambio que recibirá ➔ Recibo oficial cancelado | Escoge cómo pagará e indica el billete con el que cancelará al presionar "Pedir Cuenta" para que el mesero no tenga que adivinar. |
+| **Garzón Designado (Salón)** | Tarjeta de mesa parpadeando en dorado con aviso: *"Mesa 01: Paga con Bs. 100 — Llevar cambio: Bs. 15"* | Realiza un **viaje único**: se acerca a la mesa con el cambio y la pre-cuenta en mano, recibe el dinero y lo entrega a caja. |
 | **Caja Central (Estación)** | Monitor de comandas en vivo que indica qué mesero está cobrando qué mesa y por qué método (Efectivo o QR) | Recibe el dinero físico del mesero o verifica la transferencia QR bancaria, confirma en el sistema y emite el recibo final. |
 
 ---
@@ -796,7 +793,13 @@ JWT_REFRESH_EXPIRATION=7d
 # ── Puertos de Servicios ──
 BACKEND_PORT=3000
 FRONTEND_PORT=4200
+CLIENT_APP_PORT=4201
 NODE_ENV=development
+
+# ── Multimedia CDN (Cloudinary) ──
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_cloudinary_api_key
+CLOUDINARY_API_SECRET=tu_cloudinary_api_secret
 
 # ── Inteligencia Artificial Culinaria ──
 GEMINI_API_KEY=tu_api_key_de_google_gemini_aqui
