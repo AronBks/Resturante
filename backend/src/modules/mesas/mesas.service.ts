@@ -27,6 +27,10 @@ export class MesasService {
             canalOrigen: true,
             total: true,
             subtotal: true,
+            metodoPagoPreferido: true,
+            montoPagaCon: true,
+            cuentaSolicitadaAt: true,
+            cuentaEntregadaAt: true,
             mesero: { select: { id: true, nombre: true } },
             createdAt: true,
             detalles: {
@@ -62,7 +66,7 @@ export class MesasService {
           select: { id: true, nombre: true, rol: true, email: true },
         },
         pedidos: {
-          where: { estado: { in: ['ABIERTO', 'EN_COCINA', 'LISTO'] } },
+          where: { estado: { in: ['ABIERTO', 'EN_COCINA', 'LISTO', 'ENTREGADO'] } },
           include: {
             detalles: {
               include: { plato: { select: { nombre: true } } },

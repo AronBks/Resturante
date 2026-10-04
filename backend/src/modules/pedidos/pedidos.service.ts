@@ -79,8 +79,59 @@ export class PedidosService {
     });
   }
 
-  obtenerLlamadasMeseroPendientes() {
-    return Array.from(this.llamadasMeseroPendientes.values());
+  async obtenerLlamadasMeseroPendientes() {
+    const map = new Map<string, { mesaNumero: string; motivo: string; timestamp: string }>();
+
+    // 1. Agregar las llamadas en memoria activa
+    for (const [k, v] of this.llamadasMeseroPendientes.entries()) {
+      map.set(k, v);
+    }
+
+    // 2. Reconstruir desde DB para mesas POR_COBRAR para resiliencia total ante reinicios
+    try {
+      const mesasPorCobrar = await this.prisma.mesa.findMany({
+        where: { estado: EstadoMesa.POR_COBRAR, activa: true },
+        include: {
+          pedidos: {
+            where: {
+              estado: {
+                in: [
+                  EstadoPedido.ABIERTO,
+                  EstadoPedido.EN_COCINA,
+                  EstadoPedido.LISTO,
+                  EstadoPedido.ENTREGADO,
+                ],
+              },
+            },
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
+
+      for (const m of mesasPorCobrar) {
+        if (!map.has(m.numero)) {
+          const ped = m.pedidos?.[0];
+          let motivo = `Solicitud de Cuenta en Mesa ${m.numero}`;
+          if (ped?.metodoPagoPreferido === 'EFECTIVO' && ped?.montoPagaCon) {
+            const cambio = Math.max(0, Number(ped.montoPagaCon) - Number(ped.total));
+            motivo = `💵 Mesa ${m.numero} paga en EFECTIVO con Bs. ${ped.montoPagaCon} — Llevar Bs. ${cambio.toFixed(2)} de cambio`;
+          } else if (ped?.metodoPagoPreferido === 'QR') {
+            motivo = `📱 Mesa ${m.numero} pide cuenta — Pago por QR`;
+          }
+
+          map.set(m.numero, {
+            mesaNumero: m.numero,
+            motivo,
+            timestamp: (ped as any)?.cuentaSolicitadaAt ? new Date((ped as any).cuentaSolicitadaAt).toISOString() : new Date().toISOString(),
+          });
+        }
+      }
+    } catch (e) {
+      // Fallback a mapa en memoria si hay error de consulta
+    }
+
+    return Array.from(map.values());
   }
 
   /**
@@ -141,12 +192,20 @@ export class PedidosService {
     const now = new Date();
 
     if (pedido) {
+      const nuevoMetodo = metodoPago || (pedido as any).metodoPagoPreferido || null;
+      let nuevoMonto = (pedido as any).montoPagaCon;
+      if (metodoPago?.toUpperCase() === 'QR') {
+        nuevoMonto = null;
+      } else if (montoPagaCon) {
+        nuevoMonto = new Prisma.Decimal(montoPagaCon);
+      }
+
       await (this.prisma.pedido as any).update({
         where: { id: pedido.id },
         data: {
           cuentaSolicitadaAt: now,
-          metodoPagoPreferido: metodoPago || (pedido as any).metodoPagoPreferido || null,
-          montoPagaCon: montoPagaCon ? new Prisma.Decimal(montoPagaCon) : (pedido as any).montoPagaCon,
+          metodoPagoPreferido: nuevoMetodo,
+          montoPagaCon: nuevoMonto,
         },
       });
     }
@@ -160,9 +219,14 @@ export class PedidosService {
     }
 
     let motivo = `Solicitud de Cuenta en Mesa ${mesa.numero}`;
-    if (metodoPago?.toUpperCase() === 'EFECTIVO' && montoPagaCon && pedido) {
-      const cambio = Math.max(0, montoPagaCon - Number(pedido.total));
-      motivo = `💵 Mesa ${mesa.numero} solicita cuenta en EFECTIVO con Bs. ${montoPagaCon} (Llevar Bs. ${cambio.toFixed(2)} de cambio)`;
+    const metPref = metodoPago?.toUpperCase() || (pedido as any)?.metodoPagoPreferido?.toUpperCase();
+    const pagCon = (metodoPago?.toUpperCase() === 'QR') ? null : (montoPagaCon || ((pedido as any)?.montoPagaCon ? Number((pedido as any).montoPagaCon) : null));
+
+    if (metPref === 'EFECTIVO' && pagCon && pedido) {
+      const cambio = Math.max(0, pagCon - Number(pedido.total));
+      motivo = `💵 Mesa ${mesa.numero} paga en EFECTIVO con Bs. ${pagCon} — Llevar Bs. ${cambio.toFixed(2)} de cambio`;
+    } else if (metPref === 'QR') {
+      motivo = `📱 Mesa ${mesa.numero} pide cuenta — Pago por QR`;
     }
 
     await this.registrarLlamadaMesero(mesa.numero, motivo, mesa.id);
@@ -365,6 +429,7 @@ export class PedidosService {
 
     await this.registrarLlamadaMesero(mesa.numero, motivo, mesa.id);
     this.gateway.broadcastLlamarMesero(mesa.numero, motivo);
+    this.gateway.broadcastMesaEstado(mesa.id, EstadoMesa.POR_COBRAR);
 
     return {
       exito: true,

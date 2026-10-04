@@ -206,6 +206,19 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
   }
 
   /**
+   * Emite la confirmación de pago al salón (Meseros y Administradores)
+   */
+  broadcastPagoConfirmado(mesaNumero: string, transaccion: any) {
+    const payload = {
+      mesaNumero,
+      transaccion,
+      timestamp: new Date().toISOString(),
+    };
+    this.server.emit('pago:confirmado', payload);
+    this.logger.log(`💳 Evento 'pago:confirmado' emitido al salón para Mesa ${mesaNumero}`);
+  }
+
+  /**
    * Emite la creación de una nueva transacción en tiempo real
    */
   broadcastTransaccionCreada(transaccion: any) {
