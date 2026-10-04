@@ -41,7 +41,6 @@
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
       </div>
     </div>
 
@@ -99,13 +98,6 @@
           <h2 class="kpi-val text-gold">Bs. {{ ventasQr() | number:'1.2-2' }}</h2>
           <span class="kpi-sub">Transferencias directas</span>
         </div>
-
-        <!-- Ventas Tarjeta -->
-        <div class="kpi-card glass-panel">
-          <span class="kpi-label">VENTAS TARJETA</span>
-          <h2 class="kpi-val text-blue">Bs. {{ ventasTarjeta() | number:'1.2-2' }}</h2>
-          <span class="kpi-sub">Pasarela de débito/crédito</span>
-        </div>
       </div>
 
       <!-- Balance de Efectivo Físico Esperado -->
@@ -113,7 +105,7 @@
         <div class="balance-info">
           <span class="label-warm">EFECTIVO FÍSICO ESPERADO EN CAJA</span>
           <h1 class="amount-gold-large">Bs. {{ balanceTeorico() | number:'1.2-2' }}</h1>
-          <p class="desc-warm">Suma teórica: Monto de Apertura (Bs. {{ montoApertura() | number:'1.2-2' }}) + Ventas en Efectivo (Bs. {{ ventasEfectivo() | number:'1.2-2' }}). Tarjetas y Transferencias QR no forman parte del efectivo físico.</p>
+          <p class="desc-warm">Suma teórica: Monto de Apertura (Bs. {{ montoApertura() | number:'1.2-2' }}) + Ventas en Efectivo (Bs. {{ ventasEfectivo() | number:'1.2-2' }}). Las transferencias por código QR no forman parte del efectivo físico en gaveta.</p>
         </div>
         <div class="balance-actions">
           <button 
@@ -155,7 +147,6 @@
             <option value="TODOS">Todos</option>
             <option value="EFECTIVO">EFECTIVO</option>
             <option value="QR">QR</option>
-            <option value="TARJETA">TARJETA</option>
           </select>
         </div>
 
