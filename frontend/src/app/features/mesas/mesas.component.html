@@ -282,45 +282,96 @@
 
               }
 
-              <!-- CASO 2: POR COBRAR (CONTROL DE CUENTA ENTREGADA Y PROCESAR PAGO) -->
+              <!-- CASO 2: POR COBRAR (ESTADO DE COBRO Y ATENCIÓN) -->
               @else if (mesa.estado === 'POR_COBRAR') {
                 
                 <div class="por-cobrar-body-box">
+                  <!-- Bloque Financiero: Total a Cobrar -->
                   <div class="total-cobrar-inner">
                     <span class="total-cobrar-label">Total a cobrar</span>
                     <strong class="total-cobrar-amount">Bs. {{ getMesaSubtotal(mesa) | number:'1.2-2' }}</strong>
                   </div>
 
-                  <!-- Detalle de llamada o solicitud de efectivo/cambio informado por el cliente -->
-                  @if (llamadasDetalle()[mesa.numero]) {
-                    <div class="cash-change-pill" title="Detalle informado desde la mesa">
-                      <lucide-icon name="info" [size]="12"></lucide-icon>
-                      <span class="cash-change-text">{{ llamadasDetalle()[mesa.numero].motivo }}</span>
+                  <!-- Desglose de Intención de Pago Inteligente -->
+                  @if (getMesaInfoCobro(mesa); as cobro) {
+                    <div class="cobro-intent-card" [class.cobro-qr]="cobro.metodo === 'QR'" [class.cobro-efectivo]="cobro.metodo === 'EFECTIVO'">
+                      <div class="cobro-intent-header">
+                        @if (cobro.metodo === 'EFECTIVO') {
+                          <span class="cobro-badge badge-cash">
+                            <lucide-icon name="banknote" [size]="12"></lucide-icon>
+                            <span>EFECTIVO</span>
+                          </span>
+                        } @else if (cobro.metodo === 'QR') {
+                          <span class="cobro-badge badge-qr">
+                            <lucide-icon name="qr-code" [size]="12"></lucide-icon>
+                            <span>PAGO QR</span>
+                          </span>
+                        } @else {
+                          <span class="cobro-badge badge-cuenta">
+                            <lucide-icon name="receipt" [size]="12"></lucide-icon>
+                            <span>PRE-CUENTA</span>
+                          </span>
+                        }
+                      </div>
+
+                      <!-- Si es Efectivo y declaró billete -->
+                      @if (cobro.metodo === 'EFECTIVO' && cobro.pagaCon !== null) {
+                        <div class="cobro-cash-breakdown">
+                          <div class="cash-stat">
+                            <span class="stat-lbl">Paga con</span>
+                            <strong class="stat-val">Bs. {{ cobro.pagaCon | number:'1.0-2' }}</strong>
+                          </div>
+                          <div class="cash-stat highlight-change">
+                            <span class="stat-lbl">Llevar cambio</span>
+                            <strong class="stat-val change-val">Bs. {{ cobro.cambio | number:'1.2-2' }}</strong>
+                          </div>
+                        </div>
+                      } @else if (cobro.metodo === 'QR') {
+                        <div class="cobro-qr-note">
+                          <span>Comensal transfiriendo por QR. Validar en Caja Central.</span>
+                        </div>
+                      } @else {
+                        <div class="cobro-generic-note">
+                          <span>{{ cobro.motivoTexto }}</span>
+                        </div>
+                      }
                     </div>
                   }
 
-                  <div class="por-cobrar-btn-group">
+                  <!-- Acciones Operativas Limpias -->
+                  <div class="por-cobrar-actions-stack">
+                    @if (puedeCobrar()) {
+                      <button
+                        type="button"
+                        class="btn-ver-comanda-por-cobrar btn-cobrar-caja"
+                        (click)="onCobroDirecto(mesa, $event)"
+                        title="Abrir terminal de cobro y facturación oficial en caja"
+                      >
+                        <lucide-icon name="credit-card" [size]="14"></lucide-icon>
+                        <span>Cobrar en Caja</span>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn-ver-comanda-por-cobrar"
+                        (click)="abrirComandaInformativa(mesa, $event)"
+                        title="Consultar comanda informativa y platos de la mesa"
+                      >
+                        <lucide-icon name="file-text" [size]="14"></lucide-icon>
+                        <span>Ver Comanda</span>
+                      </button>
+                    }
+
                     <button
                       type="button"
-                      class="btn-cobrar-full"
-                      (click)="onCobroDirecto(mesa, $event)"
-                      title="Registrar cobro oficial en caja y liberar mesa"
+                      class="btn-reabrir-comanda-mesa"
+                      (click)="reabrirComandaMesa(mesa, $event)"
+                      title="Desbloquear comanda si los clientes desean pedir platos o bebidas adicionales"
                     >
-                      <lucide-icon name="wallet" [size]="15"></lucide-icon>
-                      <span>Cobrar Mesa</span>
+                      <lucide-icon name="rotate-ccw" [size]="12"></lucide-icon>
+                      <span>Reabrir Comanda</span>
                     </button>
                   </div>
-
-                  <!-- Acción Operativa: Reabrir Comanda para permitir ordenar más ítems -->
-                  <button
-                    type="button"
-                    class="btn-reabrir-comanda-mesa"
-                    (click)="reabrirComandaMesa(mesa, $event)"
-                    title="Desbloquear comanda si los clientes desean pedir platos o bebidas adicionales"
-                  >
-                    <lucide-icon name="rotate-ccw" [size]="12"></lucide-icon>
-                    <span>Reabrir Comanda</span>
-                  </button>
                 </div>
 
               }

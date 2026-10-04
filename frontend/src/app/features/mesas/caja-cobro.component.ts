@@ -18,6 +18,8 @@ export interface PedidoParaCobro {
   meseroNombre: string;
   items: { nombre: string; precio: number; cantidad: number; notas: string }[];
   subtotal: number;
+  metodoPagoPreferido?: string;
+  montoPagaCon?: number;
 }
 
 import { LucideAngularModule } from 'lucide-angular';
@@ -43,7 +45,17 @@ export class CajaCobroComponent {
   @Input() set pedido(val: PedidoParaCobro | null) {
     this.pedidoSignal.set(val);
     if (val) {
-      this.montoRecibido.set(val.subtotal); // Pre-cargar el subtotal como monto recibido sugerido
+      if (val.metodoPagoPreferido?.toUpperCase() === 'QR') {
+        this.metodoPago.set('QR');
+      } else {
+        this.metodoPago.set('EFECTIVO');
+      }
+
+      if (val.montoPagaCon && Number(val.montoPagaCon) >= val.subtotal) {
+        this.montoRecibido.set(Number(val.montoPagaCon));
+      } else {
+        this.montoRecibido.set(val.subtotal);
+      }
     }
   }
   get pedido() {
@@ -54,7 +66,7 @@ export class CajaCobroComponent {
   @Output() pagado = new EventEmitter<any>();
 
   // ── Signals de Estado ──
-  metodoPago = signal<'EFECTIVO' | 'TARJETA' | 'QR'>('EFECTIVO');
+  metodoPago = signal<'EFECTIVO' | 'QR'>('EFECTIVO');
   montoRecibido = signal<number>(0);
   isProcessing = signal(false);
   errorMsg = signal('');
@@ -76,7 +88,7 @@ export class CajaCobroComponent {
 
 
   // ── Acciones ──
-  seleccionarMetodo(metodo: 'EFECTIVO' | 'TARJETA' | 'QR') {
+  seleccionarMetodo(metodo: 'EFECTIVO' | 'QR') {
     this.metodoPago.set(metodo);
     this.errorMsg.set('');
   }

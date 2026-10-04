@@ -509,55 +509,142 @@
   }
 }
 
-.cash-change-pill {
+.cobro-intent-card {
+  background: rgba(30, 24, 20, 0.85);
+  border: 1px solid rgba(229, 193, 88, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
   display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(37, 211, 102, 0.12);
-  border: 1px solid rgba(37, 211, 102, 0.3);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 0.74rem;
-  color: #25d366;
-  font-weight: 700;
-  line-height: 1.3;
-  margin-bottom: 4px;
+  flex-direction: column;
+  gap: 8px;
 
-  .cash-change-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
+  &.cobro-efectivo {
+    background: rgba(18, 30, 20, 0.9);
+    border-color: rgba(37, 211, 102, 0.4);
+    box-shadow: 0 4px 14px rgba(37, 211, 102, 0.08);
+  }
+
+  &.cobro-qr {
+    background: rgba(18, 25, 38, 0.9);
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.08);
   }
 }
 
-.por-cobrar-btn-group {
+.cobro-intent-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.cobro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+
+  &.badge-cash {
+    background: rgba(37, 211, 102, 0.18);
+    color: #25d366;
+    border: 1px solid rgba(37, 211, 102, 0.4);
+  }
+
+  &.badge-qr {
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+  }
+
+  &.badge-cuenta {
+    background: rgba(229, 193, 88, 0.18);
+    color: #e5c158;
+    border: 1px solid rgba(229, 193, 88, 0.4);
+  }
+}
+
+.cobro-cash-breakdown {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  padding: 8px 10px;
+
+  .cash-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .stat-lbl {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      color: #9e9484;
+      font-weight: 600;
+    }
+
+    .stat-val {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #f3ede2;
+    }
+
+    &.highlight-change {
+      background: rgba(37, 211, 102, 0.12);
+      border-radius: 6px;
+      padding: 4px 6px;
+
+      .stat-lbl {
+        color: #25d366;
+      }
+
+      .change-val {
+        color: #25d366;
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+    }
+  }
+}
+
+.cobro-qr-note, .cobro-generic-note {
+  font-size: 0.72rem;
+  color: #a8a090;
+  line-height: 1.3;
+}
+
+.por-cobrar-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   width: 100%;
 }
 
-.btn-cobrar-full {
+.btn-ver-comanda-por-cobrar {
   width: 100%;
-  height: 40px;
+  height: 38px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #e5c158 0%, #c89518 100%);
-  border: none;
-  color: #120e0a;
-  font-size: 0.85rem;
-  font-weight: 800;
+  background: rgba(229, 193, 88, 0.12);
+  border: 1px solid rgba(229, 193, 88, 0.35);
+  color: #e5c158;
+  font-size: 0.82rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(229, 193, 88, 0.35);
   transition: all 0.2s ease;
 
   &:hover {
-    background: linear-gradient(135deg, #eed47d 0%, #d8a528 100%);
-    box-shadow: 0 6px 18px rgba(229, 193, 88, 0.5);
+    background: rgba(229, 193, 88, 0.22);
+    border-color: #e5c158;
+    color: #ffffff;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(229, 193, 88, 0.2);
   }
 
   &:active {

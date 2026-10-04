@@ -59,17 +59,24 @@
               <span class="sp-pill-metodo">{{ getMetodoPagoSolicitado() }}</span>
             </div>
             <strong class="sp-headline">
-              {{ llamadaActiva?.motivo || 'Mesa pendiente de cobro en caja' }}
+              {{ getDetalleCobroDrawer() }}
             </strong>
             <p class="sp-sub">
-              {{ llamadaActiva ? 'El comensal ha solicitado la cuenta desde el menú digital • Acércate a la mesa o procesa en caja.' : 'Mesa pendiente de cobro • Acércate a la mesa con la cuenta o procesa el cobro en caja.' }}
+              {{ getSubtextoCobroDrawer() }}
             </p>
           </div>
           <div class="sp-action-col">
-            <button class="btn-cobrar-directo-banner" (click)="abrirCajaModal()" title="Abrir terminal de cobro">
-              <lucide-icon name="credit-card" [size]="14"></lucide-icon>
-              <span>Cobrar</span>
-            </button>
+            @if (puedeCobrar()) {
+              <button class="btn-cobrar-directo-banner" (click)="abrirCajaModal()" title="Abrir terminal de cobro oficial">
+                <lucide-icon name="credit-card" [size]="14"></lucide-icon>
+                <span>Cobrar</span>
+              </button>
+            } @else {
+              <span class="badge-cobro-caja-waiter" title="El cobro oficial y factura lo emite el cajero en Caja">
+                <lucide-icon name="shield" [size]="12"></lucide-icon>
+                <span>Cobro en Caja</span>
+              </span>
+            }
           </div>
         </section>
       }
@@ -306,14 +313,21 @@
         </div>
 
         @if (activeSentItems().length > 0) {
-          <button
-            class="btn-proceder-pago"
-            [class.pulse-cobro]="mesa?.estado === 'POR_COBRAR' || esSolicitudPago()"
-            (click)="abrirCajaModal()"
-          >
-            <span>Cerrar Mesa / Cobrar</span>
-            <lucide-icon name="wallet" [size]="18"></lucide-icon>
-          </button>
+          @if (puedeCobrar()) {
+            <button
+              class="btn-proceder-pago"
+              [class.pulse-cobro]="mesa?.estado === 'POR_COBRAR' || esSolicitudPago()"
+              (click)="abrirCajaModal()"
+            >
+              <span>Cerrar Mesa / Cobrar</span>
+              <lucide-icon name="wallet" [size]="18"></lucide-icon>
+            </button>
+          } @else {
+            <div class="waiter-readonly-caja-banner">
+              <lucide-icon name="info" [size]="16" class="text-gold"></lucide-icon>
+              <span>El cobro oficial y facturación lo procesa Caja Central.</span>
+            </div>
+          }
         } @else {
           <button class="btn-proceder-pago" (click)="abrirCatalogoAgregar()">
             <lucide-icon name="plus" [size]="16"></lucide-icon>

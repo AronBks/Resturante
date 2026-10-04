@@ -100,7 +100,7 @@ const CLOUDINARY_DISHES_MAP: Record<string, string> = {
 })
 export class ComandaDrawerComponent implements OnChanges {
   private http = inject(HttpClient);
-  private authService = inject(AuthService);
+  public readonly authService = inject(AuthService);
   private readonly baseUrl = 'http://localhost:3000/api';
 
   @Input() mesa: Mesa | null = null;
@@ -111,6 +111,12 @@ export class ComandaDrawerComponent implements OnChanges {
 
   @Output() close = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
+
+  // Permiso para liquidar / cobrar en caja
+  puedeCobrar = computed(() => {
+    const rol = this.authService.userRole();
+    return rol === 'ADMIN' || rol === 'CAJERO';
+  });
 
   // Signals
   platosSignal = signal<Plato[]>([]);
@@ -151,10 +157,40 @@ export class ComandaDrawerComponent implements OnChanges {
 
   getMetodoPagoSolicitado(): string {
     const l = this.llamadaActiva;
-    if (!l?.motivo) return 'EFECTIVO';
-    const m = l.motivo.toLowerCase();
-    if (m.includes('qr')) return 'QR';
+    if (l?.motivo) {
+      const m = l.motivo.toLowerCase();
+      if (m.includes('qr')) return 'QR';
+      if (m.includes('efectivo')) return 'EFECTIVO';
+    }
+    const pref = (this.mesa as any)?.pedidos?.[0]?.metodoPagoPreferido;
+    if (pref) return pref.toUpperCase();
     return 'EFECTIVO';
+  }
+
+  getDetalleCobroDrawer(): string {
+    if (this.llamadaActiva?.motivo) return this.llamadaActiva.motivo;
+    const p = (this.mesa as any)?.pedidos?.[0];
+    if (p?.metodoPagoPreferido?.toUpperCase() === 'EFECTIVO' && p?.montoPagaCon) {
+      const cambio = Math.max(0, Number(p.montoPagaCon) - this.getComandaTotal());
+      return `💵 Paga en EFECTIVO con Bs. ${Number(p.montoPagaCon).toFixed(2)} — Llevar Bs. ${cambio.toFixed(2)} de cambio`;
+    }
+    if (p?.metodoPagoPreferido?.toUpperCase() === 'QR') {
+      return `📱 Pago por Código QR Simple`;
+    }
+    return `Mesa pendiente de cobro en caja`;
+  }
+
+  getSubtextoCobroDrawer(): string {
+    const p = (this.mesa as any)?.pedidos?.[0];
+    if (p?.metodoPagoPreferido?.toUpperCase() === 'EFECTIVO' && p?.montoPagaCon) {
+      return `El comensal declaró su billete desde su teléfono. Acércate con la pre-cuenta y el cambio preparado en mano.`;
+    }
+    if (p?.metodoPagoPreferido?.toUpperCase() === 'QR') {
+      return `El comensal solicitó pagar por QR. Valida la transferencia bancaria y confirma el cobro.`;
+    }
+    return this.llamadaActiva
+      ? 'El comensal ha solicitado la cuenta desde el menú digital • Acércate a la mesa o procesa en caja.'
+      : 'Mesa pendiente de cobro • Acércate a la mesa con la cuenta o procesa el cobro en caja.';
   }
 
   atenderLlamadaDirecta() {
@@ -396,7 +432,7 @@ export class ComandaDrawerComponent implements OnChanges {
         this.cargarPedidoActivo();
       }
 
-      if (this.autoOpenCobro && this.mesa.estado === 'POR_COBRAR') {
+      if (this.autoOpenCobro && this.mesa.estado === 'POR_COBRAR' && this.puedeCobrar()) {
         setTimeout(() => this.abrirCajaModal(), 100);
       }
     }
@@ -864,6 +900,7 @@ export class ComandaDrawerComponent implements OnChanges {
   }
 
   abrirCajaModal() {
+    if (!this.puedeCobrar()) return;
     if (!this.mesa) return;
     const sent = this.activeSentItems();
 
@@ -880,12 +917,18 @@ export class ComandaDrawerComponent implements OnChanges {
       notas: i.notas || '',
     }));
 
+    const pedido = (this.mesa as any)?.pedidos?.[0];
+    const metodoPref = pedido?.metodoPagoPreferido?.toUpperCase() || (this.llamadaActiva?.motivo?.includes('QR') ? 'QR' : 'EFECTIVO');
+    const montoCon = pedido?.montoPagaCon ? Number(pedido.montoPagaCon) : undefined;
+
     this.pedidoParaCobro.set({
       pedidoId,
       mesaNumero: this.mesa.numero,
       meseroNombre: this.activeMeseroNombre() || 'Don Roberto',
       items,
       subtotal: this.getComandaTotal(),
+      metodoPagoPreferido: metodoPref,
+      montoPagaCon: montoCon,
     });
 
     this.showCajaModal.set(true);

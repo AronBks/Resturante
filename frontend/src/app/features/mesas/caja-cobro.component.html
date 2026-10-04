@@ -86,14 +86,6 @@
         </button>
         <button
           class="metodo-btn"
-          [class.active]="metodoPago() === 'TARJETA'"
-          (click)="seleccionarMetodo('TARJETA')"
-        >
-          <lucide-icon name="credit-card" class="icon-lg"></lucide-icon>
-          <span>Tarjeta</span>
-        </button>
-        <button
-          class="metodo-btn"
           [class.active]="metodoPago() === 'QR'"
           (click)="seleccionarMetodo('QR')"
         >
@@ -153,15 +145,6 @@
             <p>Titular: Peña Tukuypaj</p>
             <p class="qr-amount">Monto: <strong>Bs. {{ totalConDescuento().toFixed(2) }}</strong></p>
           </div>
-        </div>
-      </div>
-
-      <!-- Conditional: Card Payment View -->
-      <div class="card-section" *ngIf="metodoPago() === 'TARJETA'">
-        <div class="card-info-box">
-          <lucide-icon name="credit-card" class="icon-lg"></lucide-icon>
-          <p>Procesar cobro con POS</p>
-          <p class="card-amount">Bs. {{ totalConDescuento().toFixed(2) }}</p>
         </div>
       </div>
     </div>

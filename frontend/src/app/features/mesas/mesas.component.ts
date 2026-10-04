@@ -105,6 +105,12 @@ export class MesasComponent implements OnInit, OnDestroy {
   ocupadasCount = computed(() => this.mesas().filter((m) => m.estado === 'OCUPADA').length);
   porCobrarCount = computed(() => this.mesas().filter((m) => m.estado === 'POR_COBRAR').length);
 
+  // ── Permisos de Liquidación / Cobro Oficial ──
+  puedeCobrar = computed(() => {
+    const rol = this.authService.userRole();
+    return rol === 'ADMIN' || rol === 'CAJERO';
+  });
+
   // ── Mesas Filtradas por Estado y por Mesero Designado ──
   mesasFiltradas = computed(() => {
     let result = this.mesas();
@@ -582,17 +588,30 @@ export class MesasComponent implements OnInit, OnDestroy {
     if (event) event.stopPropagation();
     this.selectedMesa.set(mesa);
 
-    if (mesa.estado === 'POR_COBRAR') {
+    // Solo abrir directamente la terminal de cobro si el usuario autenticado tiene rol CAJERO o ADMIN
+    if (mesa.estado === 'POR_COBRAR' && this.puedeCobrar()) {
       this.autoOpenCobro.set(true);
       this.activeDrawer.set('COBRO');
     } else {
+      // Para mesero o mesas ocupadas: abre exclusivamente la comanda informativa
       this.autoOpenCobro.set(false);
       this.activeDrawer.set('COMANDA');
     }
   }
 
+  abrirComandaInformativa(mesa: Mesa, event: Event) {
+    event.stopPropagation();
+    this.selectedMesa.set(mesa);
+    this.autoOpenCobro.set(false);
+    this.activeDrawer.set('COMANDA');
+  }
+
   onCobroDirecto(mesa: Mesa, event: Event) {
     event.stopPropagation();
+    if (!this.puedeCobrar()) {
+      this.abrirComandaInformativa(mesa, event);
+      return;
+    }
     this.selectedMesa.set(mesa);
     this.autoOpenCobro.set(true);
     this.activeDrawer.set('COBRO');
@@ -622,7 +641,92 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   getLlamadaMesa(mesa: Mesa | null): { motivo: string; timestamp: string } | null {
     if (!mesa) return null;
-    return this.llamadasDetalle()[mesa.numero] || null;
+    const l = this.llamadasDetalle()[mesa.numero];
+    if (l?.motivo) return l;
+
+    const p = mesa.pedidos?.[0];
+    if (p?.metodoPagoPreferido) {
+      if (p.metodoPagoPreferido.toUpperCase() === 'EFECTIVO' && p.montoPagaCon) {
+        const cambio = Math.max(0, Number(p.montoPagaCon) - this.getMesaSubtotal(mesa));
+        return {
+          motivo: `💵 Paga con Bs. ${Number(p.montoPagaCon).toFixed(2)} — Cambio: Bs. ${cambio.toFixed(2)}`,
+          timestamp: (p as any).cuentaSolicitadaAt || (p as any).createdAt || new Date().toISOString(),
+        };
+      } else if (p.metodoPagoPreferido.toUpperCase() === 'QR') {
+        return {
+          motivo: `📱 Pago por QR`,
+          timestamp: (p as any).cuentaSolicitadaAt || (p as any).createdAt || new Date().toISOString(),
+        };
+      }
+    }
+
+    if (mesa.estado === 'POR_COBRAR') {
+      return {
+        motivo: `Solicitud de Cuenta en Mesa ${mesa.numero}`,
+        timestamp: (p as any)?.cuentaSolicitadaAt || new Date().toISOString(),
+      };
+    }
+
+    return null;
+  }
+
+  getMesaDetallePago(mesa: Mesa): string | null {
+    const llamada = this.getLlamadaMesa(mesa);
+    return llamada?.motivo || null;
+  }
+
+  getMesaInfoCobro(mesa: Mesa): {
+    metodo: 'EFECTIVO' | 'QR' | null;
+    pagaCon: number | null;
+    cambio: number | null;
+    motivoTexto: string;
+  } | null {
+    if (mesa.estado !== 'POR_COBRAR' && !this.mesasLlamando().has(mesa.numero)) {
+      return null;
+    }
+
+    const p = mesa.pedidos?.[0];
+    const l = this.llamadasDetalle()[mesa.numero];
+    const subtotal = this.getMesaSubtotal(mesa);
+
+    let metodo: 'EFECTIVO' | 'QR' | null = null;
+    if (p?.metodoPagoPreferido?.toUpperCase() === 'EFECTIVO') metodo = 'EFECTIVO';
+    else if (p?.metodoPagoPreferido?.toUpperCase() === 'QR') metodo = 'QR';
+    else if (l?.motivo?.toLowerCase().includes('qr')) metodo = 'QR';
+    else if (l?.motivo?.toLowerCase().includes('efectivo')) metodo = 'EFECTIVO';
+
+    let pagaCon: number | null = null;
+    if (p?.montoPagaCon) {
+      pagaCon = Number(p.montoPagaCon);
+    } else if (l?.motivo) {
+      const match = l.motivo.match(/Bs\.?\s*(\d+(?:\.\d+)?)/i);
+      if (match) pagaCon = parseFloat(match[1]);
+    }
+
+    let cambio: number | null = null;
+    if (metodo === 'EFECTIVO' && pagaCon !== null) {
+      cambio = Math.max(0, pagaCon - subtotal);
+    }
+
+    let motivoTexto = 'Pre-cuenta solicitada';
+    if (metodo === 'EFECTIVO') {
+      if (pagaCon && cambio !== null) {
+        motivoTexto = `Pago en efectivo • Billete Bs. ${pagaCon.toFixed(2)}`;
+      } else {
+        motivoTexto = 'Pago en efectivo (monto exacto)';
+      }
+    } else if (metodo === 'QR') {
+      motivoTexto = 'Pago por código QR Simple';
+    } else if (l?.motivo) {
+      motivoTexto = l.motivo;
+    }
+
+    return {
+      metodo,
+      pagaCon,
+      cambio,
+      motivoTexto,
+    };
   }
 
   closeDrawer() {

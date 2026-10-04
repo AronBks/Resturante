@@ -2121,3 +2121,39 @@
     border-color: rgba(255, 255, 255, 0.1);
   }
 }
+
+.badge-cobro-caja-waiter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(229, 193, 88, 0.08);
+  border: 1px solid rgba(229, 193, 88, 0.25);
+  color: #e5c158;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.waiter-readonly-caja-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(229, 193, 88, 0.06);
+  border: 1px solid rgba(229, 193, 88, 0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #c4b59d;
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  width: 100%;
+  box-sizing: border-box;
+
+  lucide-icon {
+    flex-shrink: 0;
+  }
+}
+
