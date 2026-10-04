@@ -160,34 +160,11 @@
         </div>
       </section>
 
-      <!-- Selector de Propina Voluntaria -->
-      <section class="propina-section">
-        <h4 class="section-label">PROPINA (VOLUNTARIA)</h4>
-        <div class="propina-chips">
-          <button
-            class="propina-chip"
-            [class.active]="propinaPorcentaje() === 0"
-            (click)="seleccionarPropina(0)"
-            id="propina-0"
-          >Sin propina</button>
-          <button
-            class="propina-chip"
-            [class.active]="propinaPorcentaje() === 5"
-            (click)="seleccionarPropina(5)"
-            id="propina-5"
-          >5% (Bs. {{ (subtotal() * 0.05) | number:'1.1-1' }})</button>
-          <button
-            class="propina-chip"
-            [class.active]="propinaPorcentaje() === 10"
-            (click)="seleccionarPropina(10)"
-            id="propina-10"
-          >10% (Bs. {{ (subtotal() * 0.10) | number:'1.1-1' }})</button>
-        </div>
-
-        <!-- Total a Pagar -->
+      <!-- Total a Cancelar -->
+      <section class="total-cancelar-card">
         <div class="total-pagar-row">
           <span class="total-pagar-label">Total a Cancelar:</span>
-          <strong class="total-pagar-amount">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
+          <strong class="total-pagar-amount">Bs. {{ subtotal() | number:'1.2-2' }}</strong>
         </div>
       </section>
 
@@ -426,6 +403,19 @@
           <div class="notif-tip-box">
             <p>🔒 Por seguridad de la mesa, esta pantalla se actualizará automáticamente con tu recibo en cuanto caja registre el pago.</p>
           </div>
+
+          <!-- Botón para modificar o cambiar método si el cliente lo necesita -->
+          <div class="modificar-pago-wrapper">
+            <button
+              type="button"
+              class="btn-modificar-pago"
+              (click)="modificarMetodoPago()"
+              id="btn-modificar-pago"
+            >
+              <lucide-icon name="pencil" [size]="14"></lucide-icon>
+              <span>Cambiar billete o método de pago</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -506,19 +496,9 @@
 
             <!-- Totales -->
             <div class="ticket-totals-box">
-              <div class="ticket-calc-row">
-                <span>SUBTOTAL</span>
-                <span>Bs. {{ subtotal() | number:'1.2-2' }}</span>
-              </div>
-              @if (propinaMonto() > 0) {
-                <div class="ticket-calc-row tip">
-                  <span>PROPINA VOLUNTARIA</span>
-                  <span>Bs. {{ propinaMonto() | number:'1.2-2' }}</span>
-                </div>
-              }
               <div class="ticket-total-row">
                 <span class="total-label">TOTAL CANCELADO</span>
-                <strong class="total-value">Bs. {{ totalConPropina() | number:'1.2-2' }}</strong>
+                <strong class="total-value">Bs. {{ subtotal() | number:'1.2-2' }}</strong>
               </div>
             </div>
 

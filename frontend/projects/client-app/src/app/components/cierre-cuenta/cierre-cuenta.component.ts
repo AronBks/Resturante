@@ -34,21 +34,60 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   private readonly socketPublico = inject(SocketPublicoService);
   private readonly baseUrl = 'http://localhost:3000/api';
 
-  // ── Estado de la Pantalla ──
-  pantallaActual = signal<PantallaActual>('cuenta-entregada');
+  // Helper para resolver la mesa inicial de manera síncrona
+  private static getMesaInicial(): string {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('mesa') || localStorage.getItem('tukuypaj_mesa_asignada') || 'M01';
+    } catch {
+      return 'M01';
+    }
+  }
 
   // ── Mesa ──
-  mesaNumero = signal<string>('M01');
+  mesaNumero = signal<string>(CierreCuentaComponent.getMesaInicial());
 
-  // ── Propina ──
-  propinaPorcentaje = signal<number>(0);
+  // ── Estado de la Pantalla (Inicializado con persistencia segura en F5) ──
+  pantallaActual = signal<PantallaActual>((() => {
+    try {
+      const mesa = CierreCuentaComponent.getMesaInicial();
+      const esperando = localStorage.getItem(`tukuypaj_esperando_caja_${mesa}`) === 'true';
+      return esperando ? 'esperando-confirmacion-caja' : 'cuenta-entregada';
+    } catch {
+      return 'cuenta-entregada';
+    }
+  })());
 
   // ── Método de Pago ──
-  metodoPago = signal<MetodoPago>('efectivo');
+  metodoPago = signal<MetodoPago>((() => {
+    try {
+      const mesa = CierreCuentaComponent.getMesaInicial();
+      const m = localStorage.getItem(`tukuypaj_metodo_pago_${mesa}`);
+      return m === 'qr' ? 'qr' : 'efectivo';
+    } catch {
+      return 'efectivo';
+    }
+  })());
 
   // ── Selección Rápida de Efectivo y Cambio ──
-  opcionEfectivoSeleccionada = signal<string>('exacto'); // 'exacto' | '50' | '100' | '200' | 'otro'
-  montoEfectivoPersonalizado = signal<number | null>(null);
+  opcionEfectivoSeleccionada = signal<string>((() => {
+    try {
+      const mesa = CierreCuentaComponent.getMesaInicial();
+      return localStorage.getItem(`tukuypaj_paga_con_${mesa}`) || 'exacto';
+    } catch {
+      return 'exacto';
+    }
+  })());
+
+  montoEfectivoPersonalizado = signal<number | null>((() => {
+    try {
+      const mesa = CierreCuentaComponent.getMesaInicial();
+      const v = localStorage.getItem(`tukuypaj_paga_con_${mesa}`);
+      return v ? parseFloat(v) || null : null;
+    } catch {
+      return null;
+    }
+  })());
 
   // ── Confirmación ──
   confirmandoPago = signal(false);
@@ -56,8 +95,8 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   errorPago = signal<string | null>(null);
   notificacionEnviada = signal(false);
 
-  // ── Auto-Cierre de Seguridad ──
-  segundosAutoCierre = signal<number>(45);
+  // ── Auto-Cierre de Seguridad (solo tras confirmación de caja) ──
+  segundosAutoCierre = signal<number>(60);
   private autoCierreTimer: any = null;
 
   // ── Calificación (Legacy / Opcional) ──
@@ -93,20 +132,18 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     if (p && p.total) return p.total;
     const cartTotal = this.carritoService.totalAcumulado();
     if (cartTotal > 0) return cartTotal;
-    return 80;
+    return 0;
   });
 
-  propinaMonto = computed(() => {
-    return Math.round(this.subtotal() * this.propinaPorcentaje() / 100 * 100) / 100;
-  });
-
-  totalConPropina = computed(() => {
-    return this.subtotal() + this.propinaMonto();
-  });
+  total = computed(() => this.subtotal());
+  totalConPropina = computed(() => this.subtotal());
+  propinaMonto = computed(() => 0);
+  propinaPorcentaje = signal<number>(0);
 
   // Billetes bolivianos sugeridos mayores o iguales al total
   billetesSugeridos = computed(() => {
-    const tot = Math.ceil(this.totalConPropina());
+    const tot = Math.ceil(this.subtotal());
+    if (tot <= 0) return [50, 100, 200];
     const opciones: number[] = [];
     const billetesDisponibles = [50, 100, 200];
     for (const b of billetesDisponibles) {
@@ -115,7 +152,6 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       }
     }
     if (opciones.length === 0) {
-      // Si el total supera 200, sugerir múltiplos
       const siguienteCien = Math.ceil(tot / 100) * 100;
       opciones.push(siguienteCien);
       opciones.push(siguienteCien + 100);
@@ -126,23 +162,23 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
   // Monto final con el que pagará en efectivo
   montoPagaConFinal = computed(() => {
     const op = this.opcionEfectivoSeleccionada();
-    const total = this.totalConPropina();
+    const tot = this.subtotal();
     if (op === 'exacto') {
-      return total;
+      return tot;
     }
     if (op === 'otro') {
       const custom = this.montoEfectivoPersonalizado();
-      return custom && custom >= total ? custom : total;
+      return custom && custom >= tot ? custom : tot;
     }
     const valorNum = parseFloat(op);
-    return !isNaN(valorNum) && valorNum >= total ? valorNum : total;
+    return !isNaN(valorNum) && valorNum >= tot ? valorNum : tot;
   });
 
   // Cambio a devolver calculado en tiempo real
   cambioEstimado = computed(() => {
     const pagaCon = this.montoPagaConFinal();
-    const total = this.totalConPropina();
-    return Math.max(0, Math.round((pagaCon - total) * 100) / 100);
+    const tot = this.subtotal();
+    return Math.max(0, Math.round((pagaCon - tot) * 100) / 100);
   });
 
   // URL del QR Dinámico oficial
@@ -164,23 +200,57 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
       }
       this.mesaNumero.set(mesa);
 
-      // 2. Solicitar automáticamente la cuenta al backend al entrar si no estaba solicitada
-      this.carritoService.solicitarCuenta(mesa).subscribe({
-        next: () => console.log('Cuenta solicitada al servidor para', mesa),
-        error: (err) => console.warn('Aviso de solicitud de cuenta:', err),
-      });
+      // Verificar si ya estaba en estado de espera en caja persistido en localStorage
+      const yaEsperandoEnCaja = localStorage.getItem(`tukuypaj_esperando_caja_${mesa}`) === 'true';
+      const metodoGuardado = (localStorage.getItem(`tukuypaj_metodo_pago_${mesa}`) as MetodoPago) || null;
+      const pagaConGuardado = localStorage.getItem(`tukuypaj_paga_con_${mesa}`);
+
+      if (metodoGuardado) {
+        this.metodoPago.set(metodoGuardado);
+      }
+      if (pagaConGuardado) {
+        this.opcionEfectivoSeleccionada.set(pagaConGuardado);
+        this.montoEfectivoPersonalizado.set(parseFloat(pagaConGuardado) || null);
+      }
+
+      if (yaEsperandoEnCaja) {
+        this.pantallaActual.set('esperando-confirmacion-caja');
+      }
+
+      // 2. Solo solicitar automáticamente la cuenta al backend si NO estaba ya esperando en caja
+      if (!yaEsperandoEnCaja) {
+        this.carritoService.solicitarCuenta(mesa).subscribe({
+          next: () => console.log('Cuenta solicitada al servidor para', mesa),
+          error: (err) => console.warn('Aviso de solicitud de cuenta:', err),
+        });
+      }
 
       // 3. Consultar estado activo persistido en DB
       this.carritoService.consultarPedidoActivoMesa(mesa).subscribe((p) => {
         if (p) {
-          this.pantallaActual.set('cuenta-entregada');
-        } else {
-          // Mesa ya saldada y liberada en caja (o recarga de página tras cobro)
-          this.pagoConfirmado.set(true);
-          this.detenerPolling();
-          this.pantallaActual.set('recibo-digital');
-          this.iniciarAutoCierre();
-          this.limpiarSesionMesaSegura(false);
+          const tieneMetodoDB = !!p.metodoPagoPreferido;
+          const sigueEsperando = yaEsperandoEnCaja || tieneMetodoDB;
+
+          if (sigueEsperando) {
+            if (p.metodoPagoPreferido) {
+              const met = p.metodoPagoPreferido.toLowerCase() === 'qr' ? 'qr' : 'efectivo';
+              this.metodoPago.set(met);
+              if (p.montoPagaCon) {
+                this.opcionEfectivoSeleccionada.set(p.montoPagaCon.toString());
+                this.montoEfectivoPersonalizado.set(Number(p.montoPagaCon));
+              }
+              try {
+                localStorage.setItem(`tukuypaj_esperando_caja_${mesa}`, 'true');
+                localStorage.setItem(`tukuypaj_metodo_pago_${mesa}`, met);
+                if (p.montoPagaCon) {
+                  localStorage.setItem(`tukuypaj_paga_con_${mesa}`, p.montoPagaCon.toString());
+                }
+              } catch (e) {}
+            }
+            this.pantallaActual.set('esperando-confirmacion-caja');
+          } else {
+            this.pantallaActual.set('cuenta-entregada');
+          }
         }
       });
     });
@@ -189,8 +259,11 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     // 4. WebSocket: Escuchar cuando el garzón entrega físicamente la cuenta
     const subCuentaEntregada = this.socketPublico.onCuentaEntregada().subscribe((ev) => {
       const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || this.mesaNumero();
-      if (ev?.mesaNumero === currentMesa) {
-        this.pantallaActual.set('cuenta-entregada');
+      if (formatearMesaParaBackend(ev?.mesaNumero) === formatearMesaParaBackend(currentMesa)) {
+        // Solo pasar a cuenta-entregada si no está ya en espera de caja o en recibo
+        if (this.pantallaActual() !== 'esperando-confirmacion-caja' && this.pantallaActual() !== 'recibo-digital') {
+          this.pantallaActual.set('cuenta-entregada');
+        }
       }
     });
     this.subs.add(subCuentaEntregada);
@@ -198,7 +271,7 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     // 5. WebSocket: Escuchar confirmación oficial de cobro en caja
     const subPago = this.socketPublico.onPagoConfirmado().subscribe((evento) => {
       const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || this.mesaNumero();
-      if (evento?.mesaNumero === currentMesa) {
+      if (formatearMesaParaBackend(evento?.mesaNumero) === formatearMesaParaBackend(currentMesa)) {
         this.pagoConfirmado.set(true);
         this.detenerPolling();
         this.pantallaActual.set('recibo-digital');
@@ -211,9 +284,14 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     // 6. WebSocket: Escuchar si el garzón o admin reabrió la comanda
     const subReabierta = this.socketPublico.onComandaReabierta().subscribe((ev) => {
       const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || this.mesaNumero();
-      if (ev?.mesaNumero === currentMesa) {
+      if (formatearMesaParaBackend(ev?.mesaNumero) === formatearMesaParaBackend(currentMesa)) {
         this.detenerPolling();
         this.detenerAutoCierre();
+        try {
+          localStorage.removeItem(`tukuypaj_esperando_caja_${currentMesa}`);
+          localStorage.removeItem(`tukuypaj_metodo_pago_${currentMesa}`);
+          localStorage.removeItem(`tukuypaj_paga_con_${currentMesa}`);
+        } catch (e) {}
         alert('Tu garzón ha reabierto la comanda. Ya puedes continuar ordenando.');
         this.router.navigate(['/carta'], { queryParams: { mesa: currentMesa } });
       }
@@ -255,12 +333,16 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         return;
       }
 
-      this.http.get<any>(`${this.baseUrl}/pedidos/publica/mesa/${currentMesa}/activo`).subscribe({
+      const mesaBackend = formatearMesaParaBackend(currentMesa);
+      this.http.get<any>(`${this.baseUrl}/pedidos/publica/mesa/${mesaBackend}/activo`).subscribe({
         next: (res) => {
-          const p = res?.pedidoActivo;
+          // Extraer pedido correctamente tolerando envoltorio de NestJS { success: true, data: { pedidoActivo } }
+          const p = res?.data?.pedidoActivo ?? res?.pedidoActivo ?? (res?.id ? res : null);
           if (!p) {
-            // El pedido ya no está activo -> fue cobrado y liberado en caja
-            if (st === 'esperando-confirmacion-caja' || st === 'cuenta-entregada') {
+            // El pedido ya no existe como activo en el backend.
+            // OJO CRUCIAL: Solo darlo por pagado si el comensal YA NOTIFICÓ su método de pago y estaba esperando en caja.
+            // Si sigue en 'cuenta-entregada' eligiendo billete, NO pasar a recibo digital!
+            if (st === 'esperando-confirmacion-caja') {
               this.pagoConfirmado.set(true);
               this.detenerPolling();
               this.pantallaActual.set('recibo-digital');
@@ -294,9 +376,9 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Selección de Propina ──
+  // ── Selección de Propina (eliminada) ──
   seleccionarPropina(porcentaje: number): void {
-    this.propinaPorcentaje.set(porcentaje);
+    // Sin propina
   }
 
   // ── Selección de Método de Pago ──
@@ -335,6 +417,11 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
           this.confirmandoPago.set(false);
           this.notificacionEnviada.set(true);
           this.pantallaActual.set('esperando-confirmacion-caja');
+          try {
+            localStorage.setItem(`tukuypaj_esperando_caja_${mesa}`, 'true');
+            localStorage.setItem(`tukuypaj_metodo_pago_${mesa}`, 'efectivo');
+            localStorage.setItem(`tukuypaj_paga_con_${mesa}`, montoPagaCon.toString());
+          } catch (e) {}
         },
         error: () => {
           this.confirmandoPago.set(false);
@@ -348,6 +435,10 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
           this.confirmandoPago.set(false);
           this.notificacionEnviada.set(true);
           this.pantallaActual.set('esperando-confirmacion-caja');
+          try {
+            localStorage.setItem(`tukuypaj_esperando_caja_${mesa}`, 'true');
+            localStorage.setItem(`tukuypaj_metodo_pago_${mesa}`, 'qr');
+          } catch (e) {}
         },
         error: () => {
           this.confirmandoPago.set(false);
@@ -355,6 +446,17 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
         },
       });
     }
+  }
+
+  /**
+   * Permite al cliente volver a la pantalla de selección para corregir billete o método si lo necesita
+   */
+  modificarMetodoPago(): void {
+    const mesa = this.mesaNumero();
+    try {
+      localStorage.removeItem(`tukuypaj_esperando_caja_${mesa}`);
+    } catch (e) {}
+    this.pantallaActual.set('cuenta-entregada');
   }
 
   // ── Auto-Cierre de Seguridad y Limpieza de Mesa ──
@@ -394,6 +496,12 @@ export class CierreCuentaComponent implements OnInit, OnDestroy {
     try {
       localStorage.removeItem(`tukuypaj_pedido_activo_${mesa}`);
       localStorage.removeItem(`tukuypaj_pedido_activo_${mesaBackend}`);
+      localStorage.removeItem(`tukuypaj_esperando_caja_${mesa}`);
+      localStorage.removeItem(`tukuypaj_esperando_caja_${mesaBackend}`);
+      localStorage.removeItem(`tukuypaj_metodo_pago_${mesa}`);
+      localStorage.removeItem(`tukuypaj_metodo_pago_${mesaBackend}`);
+      localStorage.removeItem(`tukuypaj_paga_con_${mesa}`);
+      localStorage.removeItem(`tukuypaj_paga_con_${mesaBackend}`);
       localStorage.removeItem('tukuypaj_carrito');
       localStorage.removeItem(`tukuypaj_comanda_borrador_${mesa}`);
       localStorage.removeItem(`tukuypaj_comanda_borrador_${mesaBackend}`);

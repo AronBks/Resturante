@@ -1994,6 +1994,39 @@
   }
 }
 
+.modificar-pago-wrapper {
+  margin-top: 14px;
+  width: 100%;
+}
+
+.btn-modificar-pago {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px dashed rgba(229, 193, 88, 0.35);
+  color: var(--gold-primary);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+
+  &:hover {
+    background: rgba(229, 193, 88, 0.1);
+    border-color: var(--gold-primary);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
 /* ══════════════════════════════════════
    ANIMACIONES
    ══════════════════════════════════════ */
