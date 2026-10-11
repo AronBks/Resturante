@@ -1,9 +1,33 @@
 <div class="section-header animate-in">
+  <div class="top-header-bar">
+    <div class="breadcrumb">
+      <span class="brand">Tukuypaj</span>
+      <span class="sep">/</span>
+      <span class="current">Control de Caja</span>
+    </div>
+    <div class="system-status-pill">
+      <span class="pulse-dot"></span>
+      <span>Caja Central En Línea</span>
+    </div>
+  </div>
+
   <h1 class="page-title">
-    {{ activeTab() === 'caja' ? 'Auditoría & Control de Caja' : 'Historial de Transacciones (Hoy)' }}
+    @if (activeTab() === 'caja') {
+      Auditoría & Control de Caja
+    } @else if (activeTab() === 'historial') {
+      Historial de Transacciones (Hoy)
+    } @else {
+      Historial de Cierres de Turno (Auditoría)
+    }
   </h1>
   <p class="page-subtitle">
-    {{ activeTab() === 'caja' ? 'Monitoreo en tiempo real de ventas, arqueos de caja y flujo de caja inmutable de Peña Restaurant Tukuypaj.' : 'Registro detallado de todas las ventas y movimientos de caja del turno actual.' }}
+    @if (activeTab() === 'caja') {
+      Control inmutable de fondos, arqueos de gaveta, salidas de caja chica y cobros en vivo.
+    } @else if (activeTab() === 'historial') {
+      Registro correlativo de todas las ventas y cobranzas del día con comprobantes digitales.
+    } @else {
+      Bitácora de auditoría histórica de turnos cerrados, diferencias de arqueo y reportes de cierre Z.
+    }
   </p>
 </div>
 
@@ -28,6 +52,14 @@
       <lucide-icon name="history" class="icon-sm"></lucide-icon>
       <span>Historial de Ventas (Hoy)</span>
     </button>
+    <button 
+      class="tab-btn" 
+      [class.active]="activeTab() === 'cierres'" 
+      (click)="cambiarPestana('cierres')"
+    >
+      <lucide-icon name="file-text" class="icon-sm"></lucide-icon>
+      <span>Cierres Pasados (Auditoría)</span>
+    </button>
   </div>
 
   <!-- ═══════════════════════════════════════════
@@ -41,20 +73,67 @@
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
       </div>
     </div>
 
-    <!-- Sin Caja Activa -->
-    <div *ngIf="!loadingCaja() && !activeCaja()" class="no-data-panel glass-panel">
-      <div class="icon"><lucide-icon name="lock" class="icon-lg icon-muted"></lucide-icon></div>
-      <h3>No hay caja abierta actualmente</h3>
-      <p>El sistema abrirá una nueva caja automáticamente en el próximo cobro de mesa.</p>
-      <button class="btn-primary" (click)="cargarDatosCaja()">
-        <lucide-icon name="clock" class="icon-sm"></lucide-icon> Recargar Estado
-      </button>
+    <!-- ── CASO A: SIN CAJA ABIERTA (FORMULARIO DE APERTURA DE TURNO) ── -->
+    <div *ngIf="!loadingCaja() && !activeCaja()" class="apertura-caja-card glass-panel">
+      <div class="apertura-header">
+        <div class="apertura-icon-halo">
+          <lucide-icon name="wallet" class="icon-lg text-gold"></lucide-icon>
+        </div>
+        <div class="apertura-texts">
+          <h2>Apertura de Turno de Caja</h2>
+          <p>Para iniciar operaciones y cuadrar tu gaveta al final del día, declara tu fondo inicial de sencillo:</p>
+        </div>
+      </div>
+
+      <div class="apertura-body">
+        <label class="apertura-label">Fondo de Sencillo Inicial (Bs.):</label>
+        
+        <!-- Chips rápidos sugeridos -->
+        <div class="chips-fondos-rapidos">
+          <button type="button" class="chip-monto" [class.active]="montoAperturaInput() === 50" (click)="seleccionarFondoRapido(50)">Bs. 50</button>
+          <button type="button" class="chip-monto" [class.active]="montoAperturaInput() === 100" (click)="seleccionarFondoRapido(100)">Bs. 100</button>
+          <button type="button" class="chip-monto" [class.active]="montoAperturaInput() === 150" (click)="seleccionarFondoRapido(150)">Bs. 150</button>
+          <button type="button" class="chip-monto" [class.active]="montoAperturaInput() === 200" (click)="seleccionarFondoRapido(200)">Bs. 200</button>
+          <button type="button" class="chip-monto" [class.active]="montoAperturaInput() === 0" (click)="seleccionarFondoRapido(0)">Bs. 0 (Sin fondo)</button>
+        </div>
+
+        <div class="input-apertura-wrap">
+          <span class="currency-prefix">Bs.</span>
+          <input 
+            type="number" 
+            min="0" 
+            step="10"
+            [value]="montoAperturaInput()"
+            (input)="montoAperturaInput.set(+$any($event.target).value)"
+            placeholder="0.00"
+            class="input-apertura"
+          />
+        </div>
+
+        <p class="apertura-tip">
+          💡 Este fondo queda registrado como punto de partida. Al momento del arqueo final, el sistema lo sumará a tus cobros en efectivo para darte el total exacto que debe haber en gaveta.
+        </p>
+
+        <div class="error-banner" *ngIf="aperturaError()">
+          {{ aperturaError() }}
+        </div>
+
+        <button 
+          class="btn-iniciar-turno" 
+          [disabled]="isAbriendoCaja()" 
+          (click)="abrirTurno()"
+        >
+          <lucide-icon name="check-circle-2" class="icon-sm"></lucide-icon>
+          <span>{{ isAbriendoCaja() ? 'Abriendo Turno...' : 'Iniciar Turno de Caja' }}</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Detalles de la Caja Abierta -->
+    <!-- ── CASO B: CAJA ABIERTA ACTIVA ── -->
     <div *ngIf="!loadingCaja() && activeCaja()" class="caja-activa-wrapper">
       
       <!-- Encabezado del turno activo -->
@@ -76,47 +155,150 @@
         </div>
       </div>
 
-      <!-- Grid de KPIs (Consolidación de PostgreSQL) -->
+      <!-- Grid de KPIs (Desglose Exacto en 4 Columnas) -->
       <div class="kpis-grid">
-        <!-- Apertura -->
+        <!-- Fondo Apertura -->
         <div class="kpi-card glass-panel">
-          <span class="kpi-label">MONTO APERTURA</span>
+          <div class="kpi-top">
+            <span class="kpi-label">FONDO INICIAL</span>
+            <div class="kpi-icon-pill gold"><lucide-icon name="wallet" class="icon-sm"></lucide-icon></div>
+          </div>
           <h2 class="kpi-val text-white">Bs. {{ montoApertura() | number:'1.2-2' }}</h2>
-          <span class="kpi-sub">Fondo de sencillo inicial</span>
+          <span class="kpi-sub">Sencillo declarado al abrir</span>
         </div>
 
         <!-- Ventas Efectivo -->
         <div class="kpi-card glass-panel">
-          <span class="kpi-label">VENTAS EN EFECTIVO</span>
+          <div class="kpi-top">
+            <span class="kpi-label">COBRADO EN EFECTIVO (+)</span>
+            <div class="kpi-icon-pill green"><lucide-icon name="banknote" class="icon-sm"></lucide-icon></div>
+          </div>
           <h2 class="kpi-val text-success">Bs. {{ ventasEfectivo() | number:'1.2-2' }}</h2>
-          <span class="kpi-sub">Ingresos físicos recibidos</span>
+          <span class="kpi-sub">Dinero ingresado a gaveta</span>
         </div>
 
         <!-- Ventas QR -->
         <div class="kpi-card glass-panel">
-          <span class="kpi-label">VENTAS QR</span>
-          <h2 class="kpi-val text-gold">Bs. {{ ventasQr() | number:'1.2-2' }}</h2>
-          <span class="kpi-sub">Transferencias directas</span>
+          <div class="kpi-top">
+            <span class="kpi-label">TRANSFERENCIAS QR</span>
+            <div class="kpi-icon-pill blue"><lucide-icon name="qr-code" class="icon-sm"></lucide-icon></div>
+          </div>
+          <h2 class="kpi-val text-blue">Bs. {{ ventasQr() | number:'1.2-2' }}</h2>
+          <span class="kpi-sub">Directo en cuenta bancaria</span>
+        </div>
+
+        <!-- Egresos / Salidas -->
+        <div class="kpi-card glass-panel">
+          <div class="kpi-top">
+            <span class="kpi-label">SALIDAS / GASTOS (-)</span>
+            <div class="kpi-icon-pill red"><lucide-icon name="receipt" class="icon-sm"></lucide-icon></div>
+          </div>
+          <h2 class="kpi-val text-danger">-Bs. {{ totalEgresos() | number:'1.2-2' }}</h2>
+          <span class="kpi-sub">Gastos menores de caja chica</span>
         </div>
       </div>
 
-      <!-- Balance de Efectivo Físico Esperado -->
-      <div class="balance-sec glass-panel-proactive">
-        <div class="balance-info">
-          <span class="label-warm">EFECTIVO FÍSICO ESPERADO EN CAJA</span>
-          <h1 class="amount-gold-large">Bs. {{ balanceTeorico() | number:'1.2-2' }}</h1>
-          <p class="desc-warm">Suma teórica: Monto de Apertura (Bs. {{ montoApertura() | number:'1.2-2' }}) + Ventas en Efectivo (Bs. {{ ventasEfectivo() | number:'1.2-2' }}). Las transferencias por código QR no forman parte del efectivo físico en gaveta.</p>
+      <!-- Balance de Efectivo Físico Esperado en Gaveta (Executive Hero Card) -->
+      <div class="balance-sec hero-arqueo-card">
+        <div class="hero-left-content">
+          <div class="hero-badge-row">
+            <div class="balance-badge">
+              <span class="badge-icon-box">
+                <lucide-icon name="wallet" class="icon-xs text-gold"></lucide-icon>
+              </span>
+              <span class="badge-text">TOTAL FÍSICO ESPERADO EN GAVETA</span>
+            </div>
+            <div class="audit-status-pill">
+              <span class="pulse-dot-green"></span>
+              <span>Cuadre en Tiempo Real</span>
+            </div>
+          </div>
+
+          <div class="hero-amount-display">
+            <span class="currency-tag">Bs.</span>
+            <h1 class="amount-digits">{{ balanceTeorico() | number:'1.2-2' }}</h1>
+          </div>
+
+          <!-- Desglose Matemático Visual (Formula Strip) -->
+          <div class="formula-breakdown-strip">
+            <div class="formula-pill">
+              <span class="f-lbl">Fondo Inicial</span>
+              <span class="f-val">Bs. {{ montoApertura() | number:'1.2-2' }}</span>
+            </div>
+            <span class="f-op plus">+</span>
+            <div class="formula-pill accent-green">
+              <span class="f-lbl">Cobros Efectivo</span>
+              <span class="f-val">Bs. {{ ventasEfectivo() | number:'1.2-2' }}</span>
+            </div>
+            <span class="f-op minus">−</span>
+            <div class="formula-pill accent-red">
+              <span class="f-lbl">Gastos / Salidas</span>
+              <span class="f-val">-Bs. {{ totalEgresos() | number:'1.2-2' }}</span>
+            </div>
+            <span class="f-op equals">=</span>
+            <div class="formula-pill accent-gold highlighted">
+              <span class="f-lbl">Debe haber en caja</span>
+              <span class="f-val">Bs. {{ balanceTeorico() | number:'1.2-2' }}</span>
+            </div>
+          </div>
         </div>
-        <div class="balance-actions">
+
+        <div class="hero-actions-container">
           <button 
-            *ngIf="isAdmin()" 
-            class="btn-arqueo-action"
-            (click)="abrirCerrarCajaModal()"
+            type="button" 
+            class="btn-hero-action btn-egreso"
+            (click)="abrirEgresoModal()"
+            title="Registrar salida o gasto menor de caja chica"
           >
-            <lucide-icon name="lock" class="icon-sm"></lucide-icon> Realizar Arqueo y Cerrar Caja
+            <span class="btn-icon-wrapper red">
+              <lucide-icon name="minus" class="icon-sm"></lucide-icon>
+            </span>
+            <div class="btn-label-group">
+              <span class="btn-main-text">Registrar Salida de Dinero</span>
+              <span class="btn-sub-text">Caja chica, compras o pagos</span>
+            </div>
           </button>
-          <div *ngIf="!isAdmin()" class="cajero-warning">
-            <lucide-icon name="alert-circle" class="icon-sm icon-warning"></lucide-icon> Solo los administradores pueden realizar el arqueo final.
+
+          <button 
+            type="button" 
+            class="btn-hero-action btn-arqueo"
+            (click)="abrirCerrarCajaModal()"
+            title="Iniciar conteo de gaveta y finalizar turno"
+          >
+            <span class="btn-icon-wrapper gold">
+              <lucide-icon name="lock" class="icon-sm"></lucide-icon>
+            </span>
+            <div class="btn-label-group">
+              <span class="btn-main-text">Realizar Arqueo y Cerrar Caja</span>
+              <span class="btn-sub-text">Conteo de billetes y corte Z</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de Egresos de Caja Chica (Si Existen) -->
+      <div class="egresos-card glass-panel" *ngIf="egresosList().length > 0">
+        <div class="egresos-card-header">
+          <div class="egresos-title-wrap">
+            <lucide-icon name="receipt" class="icon-sm text-gold"></lucide-icon>
+            <h4>Salidas de Efectivo Registradas en este Turno ({{ egresosList().length }})</h4>
+          </div>
+          <span class="egresos-total-badge">-Bs. {{ totalEgresos() | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="egresos-list-table">
+          <div class="egreso-row" *ngFor="let eg of egresosList()">
+            <div class="egreso-time">
+              <lucide-icon name="clock" [size]="12"></lucide-icon>
+              <span>{{ formatearFechaHora(eg.hora) }}</span>
+            </div>
+            <div class="egreso-motivo">
+              <strong>{{ eg.motivo }}</strong>
+              <small>Retiró / Autorizó: {{ eg.autoriza }}</small>
+            </div>
+            <div class="egreso-monto text-danger">
+              -Bs. {{ eg.monto | number:'1.2-2' }}
+            </div>
           </div>
         </div>
       </div>
@@ -214,7 +396,8 @@
                 title="Visualizar Comprobante"
                 (click)="verRecibo(t)"
               >
-                <lucide-icon name="eye" class="icon-sm"></lucide-icon> Ver Recibo
+                <lucide-icon name="eye" class="icon-sm"></lucide-icon>
+                <span>Ver Recibo</span>
               </button>
             </td>
           </tr>
@@ -235,14 +418,162 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════
+       PESTAÑA 3: HISTORIAL DE CIERRES (AUDITORÍA)
+       ═══════════════════════════════════════════ -->
+  <div *ngIf="activeTab() === 'cierres'" class="tab-content">
+    
+    <div *ngIf="loadingCierres()" class="skeleton-container">
+      <div class="shimmer skeleton-table"></div>
+    </div>
+
+    <div *ngIf="!loadingCierres() && historialCajas().length === 0" class="no-data-panel glass-panel">
+      <div class="icon"><lucide-icon name="file-text" class="icon-lg icon-gold"></lucide-icon></div>
+      <h3>Sin cierres registrados</h3>
+      <p>Aún no se han ejecutado cierres de turno en el sistema.</p>
+    </div>
+
+    <div *ngIf="!loadingCierres() && historialCajas().length > 0" class="table-wrapper glass-panel">
+      <table class="premium-table">
+        <thead>
+          <tr>
+            <th>CIERRE / FECHA</th>
+            <th>CAJERO</th>
+            <th class="text-right">TOTAL FACTURADO</th>
+            <th class="text-right">VENTAS EFECTIVO</th>
+            <th class="text-right">EFECTIVO DECLARADO</th>
+            <th class="text-center">ARQUEO (DIFERENCIA)</th>
+            <th class="text-center">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of historialCajas()" class="table-row">
+            <td>
+              <strong class="d-block">{{ c.cierre | date:'mediumDate' }}</strong>
+              <small class="text-muted">{{ c.cierre | date:'shortTime' }}</small>
+            </td>
+            <td>{{ c.cajero }}</td>
+            <td class="text-right td-bold text-gold">
+              Bs. {{ c.totalVentas | number:'1.2-2' }}
+            </td>
+            <td class="text-right text-success">
+              Bs. {{ c.totalEfectivo | number:'1.2-2' }}
+            </td>
+            <td class="text-right td-bold text-white">
+              Bs. {{ c.montoCierre | number:'1.2-2' }}
+            </td>
+            <td class="text-center">
+              @let diff = c.montoCierre - (c.montoApertura + c.totalEfectivo);
+              @if (diff === 0) {
+                <span class="badge-arqueo badge-cuadrada">
+                  <lucide-icon name="check" [size]="12"></lucide-icon>
+                  <span>Cuadrada</span>
+                </span>
+              } @else if (diff > 0) {
+                <span class="badge-arqueo badge-sobrante">
+                  <span>+Bs. {{ diff | number:'1.2-2' }}</span>
+                </span>
+              } @else {
+                <span class="badge-arqueo badge-faltante">
+                  <span>-Bs. {{ (diff * -1) | number:'1.2-2' }}</span>
+                </span>
+              }
+            </td>
+            <td class="text-center">
+              <button 
+                class="action-btn" 
+                title="Ver Reporte de Cierre Z"
+                (click)="abrirTicketZ(c)"
+              >
+                <lucide-icon name="printer" class="icon-sm"></lucide-icon>
+                <span>Reporte Z</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
 </div>
 
 <!-- ═══════════════════════════════════════════
-     MODAL DE ARQUEO Y CIERRE DE CAJA
+     MODAL 1: REGISTRAR SALIDA DE DINERO (EGRESO)
+     ═══════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="egresoModalOpen()" (click)="cerrarEgresoModal()"></div>
+
+<div class="modal-card glass-panel" [class.open]="egresoModalOpen()">
+  <div class="modal-header">
+    <h2>
+      <lucide-icon name="minus" class="icon-md text-danger"></lucide-icon>
+      <span>Salida de Efectivo / Caja Chica</span>
+    </h2>
+    <button class="close-x-btn" (click)="cerrarEgresoModal()"><lucide-icon name="x" class="icon-md"></lucide-icon></button>
+  </div>
+
+  <div class="modal-body">
+    <p class="modal-intro">
+      Registra cualquier dinero que salga de la gaveta para compras o pagos operativos, para que el arqueo de cierre cuadre exactamente:
+    </p>
+
+    <div class="input-group">
+      <label for="egresoMonto">Monto Retirado (Bs.) *</label>
+      <input 
+        id="egresoMonto"
+        type="number" 
+        min="1" 
+        step="0.50" 
+        placeholder="Ej. 30.00"
+        [value]="egresoMonto() || ''"
+        (input)="egresoMonto.set(+$any($event.target).value)"
+        [disabled]="isRegistrandoEgreso()"
+      />
+    </div>
+
+    <div class="input-group">
+      <label for="egresoMotivo">Motivo o Concepto del Gasto *</label>
+      <input 
+        id="egresoMotivo"
+        type="text" 
+        placeholder="Ej. Compra de carbón, verduras, pan, hielo..."
+        [value]="egresoMotivo()"
+        (input)="egresoMotivo.set($any($event.target).value)"
+        [disabled]="isRegistrandoEgreso()"
+      />
+    </div>
+
+    <div class="input-group">
+      <label for="egresoAutoriza">Quién Retiró / Autorizó (Opcional)</label>
+      <input 
+        id="egresoAutoriza"
+        type="text" 
+        placeholder="Ej. Cocinero Marco, Don Roberto..."
+        [value]="egresoAutoriza()"
+        (input)="egresoAutoriza.set($any($event.target).value)"
+        [disabled]="isRegistrandoEgreso()"
+      />
+    </div>
+
+    <div class="error-banner" *ngIf="egresoError()">
+      {{ egresoError() }}
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-secondary" (click)="cerrarEgresoModal()" [disabled]="isRegistrandoEgreso()">Cancelar</button>
+    <button class="btn-primary danger" (click)="confirmarEgreso()" [disabled]="isRegistrandoEgreso() || !egresoMonto() || !egresoMotivo()">
+      {{ isRegistrandoEgreso() ? 'Registrando...' : 'Confirmar Salida de Dinero' }}
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL 2: ARQUEO FINAL Y CIERRE DE CAJA
      ═══════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="cerrarCajaModalOpen()" (click)="cerrarCajaModal()"></div>
 
-<div class="modal-card glass-panel" [class.open]="cerrarCajaModalOpen()">
+<div class="modal-card modal-arqueo glass-panel" [class.open]="cerrarCajaModalOpen()">
   
   <!-- Paso 1: Formulario de arqueo -->
   <div *ngIf="!cierreExitosoResult()">
@@ -252,28 +583,49 @@
     </div>
 
     <div class="modal-body">
+      
+      <!-- Resumen de Auditoría Esperada -->
       <div class="audit-summary-box">
-        <div class="summary-item">
-          <span>Efectivo Esperado (Teórico):</span>
-          <span class="val">Bs. {{ balanceTeorico() | number:'1.2-2' }}</span>
+        <div class="summary-item highlight-item">
+          <span>Efectivo Físico Esperado en Gaveta:</span>
+          <strong class="val gold">Bs. {{ balanceTeorico() | number:'1.2-2' }}</strong>
         </div>
-        <div class="summary-item">
-          <span>Apertura de Turno:</span>
-          <span>Bs. {{ montoApertura() | number:'1.2-2' }}</span>
-        </div>
-        <div class="summary-item">
-          <span>Ventas Efectivo:</span>
-          <span>Bs. {{ ventasEfectivo() | number:'1.2-2' }}</span>
+        <div class="summary-sub-row">
+          <span>(+) Fondo Inicial: Bs. {{ montoApertura() | number:'1.2-2' }}</span>
+          <span>(+) Cobrado Efectivo: Bs. {{ ventasEfectivo() | number:'1.2-2' }}</span>
+          <span>(-) Salidas Caja: Bs. {{ totalEgresos() | number:'1.2-2' }}</span>
         </div>
       </div>
 
-      <!-- Input de conteo físico -->
-      <div class="input-group">
-        <label for="montoFisico">Efectivo Físico Contado (Bs.)</label>
+      <!-- Selector de Modo de Conteo -->
+      <div class="mode-conteo-tabs">
+        <button 
+          type="button" 
+          class="mode-btn" 
+          [class.active]="modoConteo() === 'directo'" 
+          (click)="setModoConteo('directo')"
+        >
+          <lucide-icon name="wallet" [size]="14"></lucide-icon>
+          <span>Escribir Total Directo</span>
+        </button>
+        <button 
+          type="button" 
+          class="mode-btn" 
+          [class.active]="modoConteo() === 'calculadora'" 
+          (click)="setModoConteo('calculadora')"
+        >
+          <lucide-icon name="calculator" [size]="14"></lucide-icon>
+          <span>Calculadora de Billetes y Monedas</span>
+        </button>
+      </div>
+
+      <!-- MODO 1: Input de conteo físico directo -->
+      <div class="input-group" *ngIf="modoConteo() === 'directo'">
+        <label for="montoFisico">Efectivo Físico Contado en Gaveta (Bs.)</label>
         <input 
           id="montoFisico"
           type="number" 
-          step="0.01" 
+          step="0.50" 
           placeholder="Ingrese el monto total contado"
           [value]="montoCierreFisico()"
           (input)="onMontoCierreInput($any($event.target).value)"
@@ -281,17 +633,124 @@
         />
       </div>
 
-      <!-- Resultados de discrepancia (Auditoría) -->
+      <!-- MODO 2: Calculadora de Billetes y Monedas Bolivianas -->
+      <div class="calculadora-billetes-box" *ngIf="modoConteo() === 'calculadora'">
+        <div class="calc-header">
+          <span class="calc-title">Conteo por Denominación (Bolivia):</span>
+          <button type="button" class="btn-clear-calc" (click)="limpiarCalculadora()">Limpiar</button>
+        </div>
+
+        <div class="denominaciones-grid">
+          <!-- Billetes -->
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 200</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('b200', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().b200" (input)="onBilleteInput('b200', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('b200', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 100</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('b100', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().b100" (input)="onBilleteInput('b100', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('b100', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 50</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('b50', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().b50" (input)="onBilleteInput('b50', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('b50', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 20</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('b20', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().b20" (input)="onBilleteInput('b20', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('b20', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 10</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('b10', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().b10" (input)="onBilleteInput('b10', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('b10', 1)">+</button>
+            </div>
+          </div>
+
+          <!-- Monedas -->
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 5 (Mon.)</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('m5', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().m5" (input)="onBilleteInput('m5', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('m5', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 2 (Mon.)</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('m2', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().m2" (input)="onBilleteInput('m2', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('m2', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 1 (Mon.)</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('m1', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().m1" (input)="onBilleteInput('m1', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('m1', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="denom-item">
+            <span class="denom-lbl">Bs. 0.50 (Mon.)</span>
+            <div class="stepper-wrap">
+              <button type="button" (click)="ajustarBillete('m05', -1)">-</button>
+              <input type="number" min="0" [value]="conteoBilletes().m05" (input)="onBilleteInput('m05', $any($event.target).value)" />
+              <button type="button" (click)="ajustarBillete('m05', 1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="calc-total-bar">
+          <span>Total Sumado por Calculadora:</span>
+          <strong class="text-gold">Bs. {{ totalCalculadora() | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <!-- Resultados de discrepancia (Auditoría en Tiempo Real) -->
       <div class="discrepancy-alert" [ngClass]="{
         'sobrante': diferenciaArqueo() > 0,
         'faltante': diferenciaArqueo() < 0,
         'cuadrado': diferenciaArqueo() === 0
       }">
-        <span class="alert-title">Auditoría de Arqueo:</span>
-        <h3 *ngIf="diferenciaArqueo() === 0"><lucide-icon name="check-circle-2" class="icon-sm icon-success"></lucide-icon> Caja Cuadrada (Bs. 0.00 de diferencia)</h3>
-        <h3 *ngIf="diferenciaArqueo() > 0"><lucide-icon name="banknote" class="icon-sm icon-gold"></lucide-icon> Sobrante en Caja: +Bs. {{ diferenciaArqueo() | number:'1.2-2' }}</h3>
-        <h3 *ngIf="diferenciaArqueo() < 0"><lucide-icon name="alert-circle" class="icon-sm icon-danger"></lucide-icon> Faltante en Caja: -Bs. {{ diferenciaAbsoluta() | number:'1.2-2' }}</h3>
-        <p class="alert-desc">El arqueo registrará de manera inmutable esta diferencia en la base de datos para auditorías administrativas.</p>
+        <span class="alert-title">Auditoría del Arqueo:</span>
+        <h3 *ngIf="diferenciaArqueo() === 0">
+          <lucide-icon name="check-circle-2" class="icon-sm icon-success"></lucide-icon>
+          <span>Caja Cuadrada Exacta (Diferencia: Bs. 0.00)</span>
+        </h3>
+        <h3 *ngIf="diferenciaArqueo() > 0">
+          <lucide-icon name="banknote" class="icon-sm icon-gold"></lucide-icon>
+          <span>Sobrante en Gaveta: +Bs. {{ diferenciaArqueo() | number:'1.2-2' }}</span>
+        </h3>
+        <h3 *ngIf="diferenciaArqueo() < 0">
+          <lucide-icon name="alert-circle" class="icon-sm icon-danger"></lucide-icon>
+          <span>Faltante en Gaveta: -Bs. {{ diferenciaAbsoluta() | number:'1.2-2' }}</span>
+        </h3>
+        <p class="alert-desc">El cierre se registrará de forma inmutable en el historial de auditoría de la peña.</p>
       </div>
 
       <div class="error-banner" *ngIf="cierreError()">
@@ -302,7 +761,7 @@
     <div class="modal-footer">
       <button class="btn-secondary" (click)="cerrarCajaModal()" [disabled]="isCerrando()">Cancelar</button>
       <button class="btn-primary danger" (click)="confirmarCerrarCaja()" [disabled]="isCerrando() || montoCierreFisico() === null">
-        {{ isCerrando() ? 'Procesando Cierre...' : 'Confirmar y Cerrar Caja' }}
+        {{ isCerrando() ? 'Cerrando Turno...' : 'Confirmar y Cerrar Caja' }}
       </button>
     </div>
   </div>
@@ -310,42 +769,42 @@
   <!-- Paso 2: Éxito de Cierre (Resumen de Auditoría) -->
   <div *ngIf="cierreExitosoResult()">
     <div class="modal-header">
-      <h2><lucide-icon name="check-circle-2" class="icon-lg icon-success"></lucide-icon> Caja Cerrada Exitosamente</h2>
+      <h2><lucide-icon name="check-circle-2" class="icon-lg icon-success"></lucide-icon> Turno de Caja Cerrado</h2>
       <button class="close-x-btn" (click)="cerrarCajaModal()"><lucide-icon name="x" class="icon-md"></lucide-icon></button>
     </div>
 
     <div class="modal-body success-summary">
       <div class="success-icon"><lucide-icon name="check" class="icon-lg icon-success"></lucide-icon></div>
-      <p class="success-desc">El turno de caja ha sido bloqueado de forma inmutable. Se ha emitido el reporte de auditoría a la gerencia.</p>
+      <p class="success-desc">El arqueo ha sido registrado exitosamente. Puedes imprimir tu comprobante oficial de cierre Z para archivar con los tickets físicos:</p>
 
       <div class="audit-details-table">
-        <div class="row">
-          <span>Identificador de Turno:</span>
-          <span class="val">{{ cierreExitosoResult().cajaId.substring(0, 8) }}...</span>
-        </div>
         <div class="row">
           <span>Cajero:</span>
           <span class="val">{{ cierreExitosoResult().cajero }}</span>
         </div>
         <div class="row">
-          <span>Cierre de Turno:</span>
+          <span>Hora de Cierre:</span>
           <span class="val">{{ cierreExitosoResult().cierre | date:'medium' }}</span>
         </div>
         <div class="row-divider"></div>
         <div class="row">
-          <span>Monto Apertura:</span>
+          <span>(+) Fondo Apertura:</span>
           <span>Bs. {{ cierreExitosoResult().montoApertura | number:'1.2-2' }}</span>
         </div>
         <div class="row">
-          <span>Ventas Efectivo:</span>
+          <span>(+) Ventas Efectivo:</span>
           <span>Bs. {{ cierreExitosoResult().totalEfectivo | number:'1.2-2' }}</span>
         </div>
+        <div class="row" *ngIf="cierreExitosoResult().totalEgresos > 0">
+          <span>(-) Salidas de Caja Chica:</span>
+          <span class="text-danger">-Bs. {{ cierreExitosoResult().totalEgresos | number:'1.2-2' }}</span>
+        </div>
         <div class="row highlight">
-          <span>Efectivo Esperado:</span>
+          <span>(=) Efectivo Esperado:</span>
           <span>Bs. {{ cierreExitosoResult().balanceEsperado | number:'1.2-2' }}</span>
         </div>
         <div class="row highlight">
-          <span>Efectivo Declarado:</span>
+          <span>(~) Efectivo Declarado:</span>
           <span>Bs. {{ cierreExitosoResult().montoCierre | number:'1.2-2' }}</span>
         </div>
         <div class="row-divider"></div>
@@ -354,27 +813,119 @@
           'faltante': cierreExitosoResult().diferencia < 0,
           'cuadrado': cierreExitosoResult().diferencia === 0
         }">
-          <span>Diferencia (Arqueo):</span>
+          <span>Resultado del Cuadre:</span>
           <span class="val-diff">
-            {{ cierreExitosoResult().diferencia >= 0 ? '+' : '' }}Bs. {{ cierreExitosoResult().diferencia | number:'1.2-2' }}
+            {{ cierreExitosoResult().diferencia === 0 ? 'CAJA CUADRADA' : (cierreExitosoResult().diferencia > 0 ? '+Bs. ' + (cierreExitosoResult().diferencia | number:'1.2-2') : '-Bs. ' + (cierreExitosoResult().diferencia * -1 | number:'1.2-2')) }}
           </span>
         </div>
       </div>
     </div>
 
     <div class="modal-footer">
-      <button class="btn-primary" (click)="cerrarCajaModal()">Entendido</button>
+      <button class="btn-primary" (click)="abrirTicketZ(cierreExitosoResult())">
+        <lucide-icon name="printer" class="icon-sm"></lucide-icon>
+        <span>Imprimir Reporte de Cierre (Ticket Z)</span>
+      </button>
+      <button class="btn-secondary" (click)="cerrarCajaModal()">Cerrar</button>
     </div>
   </div>
 
 </div>
 
 <!-- ═══════════════════════════════════════════
-     COMPROBANTE MODAL (REUTILIZACIÓN)
+     MODAL 3: REPORTE DE CIERRE Z IMPRIMIBLE (80MM TÉRMICO)
+     ═══════════════════════════════════════════ -->
+<div class="modal-overlay" *ngIf="ticketZModalOpen()" (click)="cerrarTicketZ()"></div>
+
+<div class="modal-card modal-ticket-z glass-panel" [class.open]="ticketZModalOpen()">
+  <div class="modal-header no-print">
+    <h2><lucide-icon name="printer" class="icon-sm"></lucide-icon> Reporte Oficial de Cierre (Ticket Z)</h2>
+    <button class="close-x-btn" (click)="cerrarTicketZ()"><lucide-icon name="x" class="icon-md"></lucide-icon></button>
+  </div>
+
+  <div class="modal-body printable-ticket-wrapper" *ngIf="datosTicketZ()">
+    <!-- Ticket Térmico 80mm Estilo Clásico -->
+    <div class="thermal-receipt" id="print-ticket-z">
+      <div class="receipt-header">
+        <h2>TUKUYPAJ</h2>
+        <h3>PEÑA RESTAURANT</h3>
+        <p>Cochabamba - Bolivia</p>
+        <div class="receipt-divider-dashed"></div>
+        <h4>REPORTE DE ARQUEO Y CIERRE DE CAJA</h4>
+        <span class="badge-z">CORTE Z</span>
+      </div>
+
+      <div class="receipt-meta">
+        <div class="meta-line"><span>Caja ID:</span> <span>{{ (datosTicketZ().cajaId || datosTicketZ().id || '').substring(0, 8) }}</span></div>
+        <div class="meta-line"><span>Cajero:</span> <strong>{{ datosTicketZ().cajero }}</strong></div>
+        <div class="meta-line"><span>Apertura:</span> <span>{{ datosTicketZ().apertura | date:'short' }}</span></div>
+        <div class="meta-line"><span>Cierre:</span> <span>{{ datosTicketZ().cierre | date:'short' }}</span></div>
+      </div>
+
+      <div class="receipt-divider-dashed"></div>
+
+      <div class="receipt-items-block">
+        <div class="receipt-line"><span>(+) FONDO INICIAL:</span> <span>Bs. {{ datosTicketZ().montoApertura | number:'1.2-2' }}</span></div>
+        <div class="receipt-line"><span>(+) VENTAS EFECTIVO:</span> <span>Bs. {{ datosTicketZ().totalEfectivo | number:'1.2-2' }}</span></div>
+        <div class="receipt-line" *ngIf="datosTicketZ().totalEgresos > 0">
+          <span>(-) GASTOS CAJA CHICA:</span> <span>-Bs. {{ datosTicketZ().totalEgresos | number:'1.2-2' }}</span>
+        </div>
+        <div class="receipt-divider-double"></div>
+        <div class="receipt-line total-strong">
+          <span>(=) TOTAL ESPERADO:</span> <strong>Bs. {{ (datosTicketZ().balanceEsperado || (datosTicketZ().montoApertura + datosTicketZ().totalEfectivo)) | number:'1.2-2' }}</strong>
+        </div>
+        <div class="receipt-line total-strong">
+          <span>(~) TOTAL DECLARADO:</span> <strong>Bs. {{ datosTicketZ().montoCierre | number:'1.2-2' }}</strong>
+        </div>
+        <div class="receipt-divider-dashed"></div>
+        <div class="receipt-line diff-line">
+          <span>RESULTADO ARQUEO:</span>
+          @let diff = datosTicketZ().diferencia !== undefined ? datosTicketZ().diferencia : (datosTicketZ().montoCierre - (datosTicketZ().montoApertura + datosTicketZ().totalEfectivo));
+          <strong>
+            {{ diff === 0 ? 'CUADRADA (Bs. 0.00)' : (diff > 0 ? 'SOBRANTE (+Bs. ' + (diff | number:'1.2-2') + ')' : 'FALTANTE (-Bs. ' + (diff * -1 | number:'1.2-2') + ')') }}
+          </strong>
+        </div>
+      </div>
+
+      <div class="receipt-divider-dashed"></div>
+
+      <div class="receipt-other-payments">
+        <div class="receipt-line"><span>VENTAS POR QR:</span> <span>Bs. {{ datosTicketZ().totalQr | number:'1.2-2' }}</span></div>
+        <div class="receipt-line"><span>TOTAL FACTURADO:</span> <strong>Bs. {{ datosTicketZ().totalVentas | number:'1.2-2' }}</strong></div>
+      </div>
+
+      <div class="receipt-signatures">
+        <div class="sig-box">
+          <div class="sig-line"></div>
+          <span>Firma Cajero</span>
+        </div>
+        <div class="sig-box">
+          <div class="sig-line"></div>
+          <span>Firma Administrador</span>
+        </div>
+      </div>
+
+      <div class="receipt-footer">
+        <p>Documento oficial de control interno</p>
+        <p>{{ datosTicketZ().cierre | date:'medium' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer no-print">
+    <button class="btn-primary" (click)="imprimirTicketZ()">
+      <lucide-icon name="printer" class="icon-sm"></lucide-icon>
+      <span>Imprimir Comprobante</span>
+    </button>
+    <button class="btn-secondary" (click)="cerrarTicketZ()">Cerrar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     COMPROBANTE MODAL (REUTILIZACIÓN RECIBO)
      ═══════════════════════════════════════════ -->
 <app-comprobante
   [isOpen]="verComprobanteModal()"
   [datos]="datosComprobanteSelected()"
   (close)="cerrarReciboModal()"
 ></app-comprobante>
-

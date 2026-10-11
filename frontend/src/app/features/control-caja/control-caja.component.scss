@@ -209,13 +209,13 @@
   }
 }
 
-/* KPIs Grid */
+/* KPIs Grid (4 Columnas Equilibradas) */
 .kpis-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -226,11 +226,25 @@
   .kpi-card {
     background: rgba(22, 19, 15, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 18px 20px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &:hover {
+      border-color: rgba(229, 185, 76, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .kpi-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
 
     .kpi-label {
       font-size: 0.7rem;
@@ -240,108 +254,342 @@
       color: #857b70;
     }
 
+    .kpi-icon-pill {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &.gold {
+        background: rgba(229, 185, 76, 0.12);
+        border: 1px solid rgba(229, 185, 76, 0.25);
+        color: #e5b94c;
+      }
+      &.green {
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        color: #4ade80;
+      }
+      &.blue {
+        background: rgba(56, 189, 248, 0.12);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        color: #38bdf8;
+      }
+      &.red {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: #f87171;
+      }
+    }
+
     .kpi-val {
       font-family: 'Inter', sans-serif;
-      font-size: 1.65rem;
-      font-weight: 700;
-      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin: 4px 0 2px;
+      letter-spacing: -0.3px;
 
       &.text-white { color: #f3ebe2; }
       &.text-success { color: #4ade80; }
       &.text-gold { color: #eab308; }
-      &.text-blue { color: #60a5fa; }
+      &.text-blue { color: #38bdf8; }
+      &.text-danger { color: #f87171; }
     }
 
     .kpi-sub {
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: #7d7469;
     }
   }
 }
 
-/* Balance Box (Proactive Arqueo Banner) */
-.glass-panel-proactive {
-  background: linear-gradient(135deg, rgba(38, 28, 18, 0.9) 0%, rgba(22, 17, 12, 0.95) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 10px;
+/* ═══════════════════════════════════════════
+   HERO ARQUEO CARD (Cuadre de Gaveta Premium)
+   ═══════════════════════════════════════════ */
+.hero-arqueo-card {
+  background: linear-gradient(135deg, rgba(32, 26, 20, 0.95) 0%, rgba(18, 14, 11, 0.98) 100%);
+  border: 1px solid rgba(229, 185, 76, 0.28);
+  border-radius: 16px;
   padding: 28px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  gap: 28px;
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
 
-  .balance-info {
+  &::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -40px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(229, 185, 76, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-left-content {
     flex: 1;
-    min-width: 280px;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 
-    .label-warm {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #a3895e;
-      font-weight: 700;
+    .hero-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .balance-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 14px 5px 8px;
+        background: rgba(229, 185, 76, 0.08);
+        border: 1px solid rgba(229, 185, 76, 0.25);
+        border-radius: 20px;
+
+        .badge-icon-box {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: rgba(229, 185, 76, 0.18);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .badge-text {
+          font-size: 0.74rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          color: #e5b94c;
+        }
+      }
+
+      .audit-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #4ade80;
+        padding: 4px 10px;
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.22);
+        border-radius: 20px;
+
+        .pulse-dot-green {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #4ade80;
+          box-shadow: 0 0 8px #4ade80;
+          animation: statusPulse 2s infinite ease-in-out;
+        }
+      }
     }
 
-    .amount-gold-large {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 2.4rem;
-      font-weight: 800;
-      color: #d4af37;
-      margin: 6px 0 10px;
-      line-height: 1.1;
+    .hero-amount-display {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 2px 0;
+
+      .currency-tag {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #caa038;
+      }
+
+      .amount-digits {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-size: 2.9rem;
+        font-weight: 900;
+        letter-spacing: -0.8px;
+        margin: 0;
+        line-height: 1;
+        background: linear-gradient(135deg, #fff2be 0%, #e8bc4b 50%, #c4962c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
     }
 
-    .desc-warm {
-      font-size: 0.82rem;
-      color: #7d6b56;
-      line-height: 1.5;
-      max-width: 700px;
-      margin: 0;
+    /* ── Desglose de Fórmula Visual (Strip) ── */
+    .formula-breakdown-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+
+      .formula-pill {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 6px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .f-lbl {
+          font-size: 0.68rem;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          color: #8e8477;
+          font-weight: 700;
+        }
+
+        .f-val {
+          font-size: 0.86rem;
+          font-weight: 700;
+          color: #f5ede4;
+        }
+
+        &.accent-green {
+          border-color: rgba(34, 197, 94, 0.22);
+          background: rgba(34, 197, 94, 0.05);
+          .f-val { color: #4ade80; }
+        }
+
+        &.accent-red {
+          border-color: rgba(239, 68, 68, 0.22);
+          background: rgba(239, 68, 68, 0.05);
+          .f-val { color: #f87171; }
+        }
+
+        &.accent-gold.highlighted {
+          border-color: rgba(229, 185, 76, 0.35);
+          background: rgba(229, 185, 76, 0.1);
+          .f-lbl { color: #caa038; }
+          .f-val {
+            color: #fcd34d;
+            font-size: 0.94rem;
+            font-weight: 800;
+          }
+        }
+      }
+
+      .f-op {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #7a7065;
+        padding: 0 2px;
+
+        &.plus { color: #4ade80; }
+        &.minus { color: #f87171; }
+        &.equals { color: #e5b94c; }
+      }
     }
   }
 
-  .balance-actions {
-    .btn-arqueo-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 26px;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      box-shadow: 0 4px 18px rgba(217, 119, 6, 0.35);
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  .hero-actions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 290px;
 
-      .icon-sm {
-        width: 16px;
-        height: 16px;
-      }
-
-      &:hover {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        transform: translateY(-1.5px);
-        box-shadow: 0 6px 24px rgba(217, 119, 6, 0.45);
-      }
-
-      &:active {
-        transform: translateY(0);
-      }
+    @media (max-width: 640px) {
+      width: 100%;
+      min-width: auto;
     }
 
-    .cajero-warning {
+    .btn-hero-action {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      color: #a3895e;
-      font-weight: 600;
+      gap: 14px;
+      padding: 13px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      outline: none;
+      border: none;
+      font-family: 'Inter', sans-serif;
+
+      .btn-icon-wrapper {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        &.red {
+          background: rgba(239, 68, 68, 0.2);
+          color: #fca5a5;
+          border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+
+        &.gold {
+          background: rgba(18, 14, 11, 0.3);
+          color: #120e07;
+        }
+      }
+
+      .btn-label-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .btn-main-text {
+          font-size: 0.92rem;
+          font-weight: 800;
+          letter-spacing: 0.2px;
+          line-height: 1.2;
+        }
+
+        .btn-sub-text {
+          font-size: 0.72rem;
+          font-weight: 500;
+          opacity: 0.8;
+          line-height: 1.2;
+        }
+      }
+
+      &.btn-egreso {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+
+        &:hover {
+          background: rgba(239, 68, 68, 0.2);
+          border-color: rgba(239, 68, 68, 0.55);
+          color: #ffffff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      &.btn-arqueo {
+        background: linear-gradient(135deg, #e8be50 0%, #cca236 50%, #ae8423 100%);
+        color: #120e07;
+        box-shadow: 0 6px 22px rgba(229, 185, 76, 0.35);
+
+        &:hover {
+          background: linear-gradient(135deg, #f3ca5e 0%, #d8ae42 50%, #ba902f 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(229, 185, 76, 0.5);
+        }
+
+        &:active {
+          transform: translateY(0);
+          box-shadow: 0 3px 12px rgba(229, 185, 76, 0.3);
+        }
+      }
     }
   }
 }
@@ -880,4 +1128,596 @@
   50% { opacity: 0.4; transform: scale(0.9); }
   100% { opacity: 1; transform: scale(1); }
 }
+
+/* ═══════════════════════════════════════════
+   APERTURA DE TURNO DE CAJA
+   ═══════════════════════════════════════════ */
+.apertura-caja-card {
+  max-width: 640px;
+  margin: 20px auto 40px;
+  padding: 32px 36px;
+  border-radius: 16px;
+  background: rgba(22, 19, 15, 0.95);
+  border: 1px solid rgba(229, 193, 88, 0.25);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+
+  .apertura-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    .apertura-icon-halo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(229, 193, 88, 0.12);
+      border: 1.5px solid #e5c158;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .apertura-texts {
+      h2 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-size: 1.45rem;
+        color: #f5ede4;
+        margin: 0 0 6px;
+      }
+      p {
+        font-size: 0.85rem;
+        color: #a89c8f;
+        margin: 0;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .apertura-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .apertura-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #e5c158;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .chips-fondos-rapidos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .chip-monto {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #d1c7bc;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          border-color: #e5c158;
+          color: #e5c158;
+        }
+
+        &.active {
+          background: rgba(229, 193, 88, 0.15);
+          border-color: #e5c158;
+          color: #e5c158;
+        }
+      }
+    }
+
+    .input-apertura-wrap {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1.5px solid rgba(229, 193, 88, 0.3);
+      border-radius: 12px;
+      padding: 4px 16px;
+      transition: border-color 0.2s ease;
+
+      &:focus-within {
+        border-color: #e5c158;
+        box-shadow: 0 0 12px rgba(229, 193, 88, 0.2);
+      }
+
+      .currency-prefix {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #e5c158;
+        margin-right: 10px;
+      }
+
+      .input-apertura {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: #ffffff;
+        font-size: 1.4rem;
+        font-weight: 700;
+        padding: 8px 0;
+        outline: none;
+      }
+    }
+
+    .apertura-tip {
+      font-size: 0.8rem;
+      color: #9c9285;
+      line-height: 1.45;
+      margin: 0;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border-left: 3px solid #e5c158;
+    }
+
+    .btn-iniciar-turno {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #e5c158 0%, #caa23b 100%);
+      color: #120f0c;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 14px 24px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(229, 193, 88, 0.35);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+
+/* ── Egresos List Card ── */
+.egresos-card {
+  margin-top: 20px;
+  padding: 20px 24px;
+  border-radius: 14px;
+
+  .egresos-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    .egresos-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #f5ede4;
+      }
+    }
+
+    .egresos-total-badge {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ef4444;
+    }
+  }
+
+  .egresos-list-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .egreso-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      font-size: 0.84rem;
+
+      .egreso-time {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #8f8577;
+        width: 110px;
+      }
+
+      .egreso-motivo {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        strong {
+          color: #e5ded5;
+        }
+        small {
+          color: #8f8577;
+        }
+      }
+
+      .egreso-monto {
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+    }
+  }
+}
+
+/* ── Modal Arqueo & Calculadora ── */
+.modal-arqueo {
+  max-width: 620px;
+
+  .audit-summary-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+
+    .highlight-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+
+      .val.gold {
+        font-size: 1.3rem;
+        color: #e5c158;
+      }
+    }
+
+    .summary-sub-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.78rem;
+      color: #9c9285;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  .mode-conteo-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    .mode-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #b0a597;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.active {
+        background: rgba(229, 193, 88, 0.15);
+        border-color: #e5c158;
+        color: #e5c158;
+      }
+    }
+  }
+
+  .calculadora-billetes-box {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+
+    .calc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+
+      .calc-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #e5c158;
+      }
+
+      .btn-clear-calc {
+        background: transparent;
+        border: none;
+        color: #8f8577;
+        font-size: 0.76rem;
+        cursor: pointer;
+        text-decoration: underline;
+
+        &:hover { color: #fca5a5; }
+      }
+    }
+
+    .denominaciones-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+
+      @media (max-width: 600px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .denom-item {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        padding: 6px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .denom-lbl {
+          font-size: 0.76rem;
+          font-weight: 700;
+          color: #d1c7bc;
+        }
+
+        .stepper-wrap {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          button {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+              background: #e5c158;
+              color: #120f0c;
+            }
+          }
+
+          input {
+            width: 100%;
+            height: 24px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            outline: none;
+          }
+        }
+      }
+    }
+
+    .calc-total-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.88rem;
+      font-weight: 700;
+
+      strong {
+        font-size: 1.15rem;
+      }
+    }
+  }
+}
+
+/* ── Badges de Arqueo ── */
+.badge-arqueo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.76rem;
+  font-weight: 700;
+
+  &.badge-cuadrada {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+  }
+  &.badge-sobrante {
+    background: rgba(229, 193, 88, 0.12);
+    border: 1px solid rgba(229, 193, 88, 0.3);
+    color: #e5c158;
+  }
+  &.badge-faltante {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   TICKET Z TÉRMICO (80MM IMPRIMIBLE)
+   ═══════════════════════════════════════════ */
+.modal-ticket-z {
+  max-width: 440px;
+
+  .printable-ticket-wrapper {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    color: #111111;
+  }
+
+  .thermal-receipt {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    color: #111111;
+
+    .receipt-header {
+      text-align: center;
+      margin-bottom: 12px;
+
+      h2 {
+        font-size: 1.3rem;
+        margin: 0;
+        letter-spacing: 1px;
+      }
+      h3 {
+        font-size: 0.95rem;
+        margin: 2px 0 0;
+      }
+      p {
+        font-size: 0.75rem;
+        margin: 2px 0;
+      }
+      h4 {
+        font-size: 0.85rem;
+        margin: 8px 0 4px;
+      }
+      .badge-z {
+        display: inline-block;
+        border: 1px solid #111111;
+        padding: 1px 8px;
+        font-size: 0.75rem;
+        font-weight: bold;
+      }
+    }
+
+    .receipt-divider-dashed {
+      border-bottom: 1px dashed #444444;
+      margin: 8px 0;
+    }
+    .receipt-divider-double {
+      border-bottom: 2px solid #111111;
+      margin: 8px 0;
+    }
+
+    .receipt-meta {
+      .meta-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+      }
+    }
+
+    .receipt-items-block {
+      .receipt-line {
+        display: flex;
+        justify-content: space-between;
+        margin: 3px 0;
+
+        &.total-strong {
+          font-weight: bold;
+          font-size: 0.92rem;
+        }
+        &.diff-line {
+          font-weight: bold;
+          margin-top: 6px;
+        }
+      }
+    }
+
+    .receipt-other-payments {
+      margin-top: 6px;
+      .receipt-line {
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+
+    .receipt-signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 36px;
+      padding: 0 10px;
+
+      .sig-box {
+        text-align: center;
+        width: 130px;
+
+        .sig-line {
+          border-bottom: 1px solid #111111;
+          margin-bottom: 4px;
+        }
+        span {
+          font-size: 0.7rem;
+        }
+      }
+    }
+
+    .receipt-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.7rem;
+      p { margin: 2px 0; }
+    }
+  }
+}
+
+/* ── Reglas de Impresión ── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-ticket-z, #print-ticket-z * {
+    visibility: visible;
+  }
+  #print-ticket-z {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 5mm;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
 
