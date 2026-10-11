@@ -56,6 +56,32 @@ export class CajaController {
   }
 
   /**
+   * Abre un turno de caja indicando el fondo inicial de sencillo.
+   */
+  @Post('abrir')
+  @Roles('ADMIN', 'CAJERO')
+  async abrirCaja(
+    @CurrentUser('id') usuarioId: string,
+    @Body('montoApertura') montoApertura: number,
+  ) {
+    this.logger.log(`🟢 Apertura de caja solicitada con Bs. ${montoApertura}`);
+    return this.cajaService.abrirCaja(usuarioId, Number(montoApertura || 0));
+  }
+
+  /**
+   * Registra una salida de efectivo (gasto menor de caja chica).
+   */
+  @Post('egreso')
+  @Roles('ADMIN', 'CAJERO')
+  async registrarEgreso(
+    @CurrentUser('id') usuarioId: string,
+    @Body() dto: { monto: number; motivo: string; autoriza?: string },
+  ) {
+    this.logger.log(`➖ Registrando egreso de caja: Bs. ${dto.monto} — ${dto.motivo}`);
+    return this.cajaService.registrarEgreso(usuarioId, dto);
+  }
+
+  /**
    * Obtiene el resumen consolidado de la caja activa actual en el sistema.
    */
   @Get('resumen-activa')
@@ -65,16 +91,26 @@ export class CajaController {
   }
 
   /**
+   * Obtiene el historial de turnos de caja cerrados con métricas de arqueo.
+   */
+  @Get('historial-cajas')
+  @Roles('ADMIN', 'CAJERO')
+  async obtenerHistorialCajas() {
+    return this.cajaService.obtenerHistorialCajas();
+  }
+
+  /**
    * Cierra una caja abierta y registra el arqueo correspondiente.
    */
   @Post(':id/cerrar')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CAJERO')
   async cerrarCaja(
     @Param('id') cajaId: string,
     @Body('montoCierre') montoCierre: number,
+    @Body('desgloseBilletes') desgloseBilletes?: any,
   ) {
     this.logger.log(`🔒 Cerrando caja ${cajaId} con arqueo físico de Bs. ${montoCierre}`);
-    return this.cajaService.cerrarCaja(cajaId, Number(montoCierre));
+    return this.cajaService.cerrarCaja(cajaId, Number(montoCierre), desgloseBilletes);
   }
 }
 

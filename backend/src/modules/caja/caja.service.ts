@@ -331,7 +331,94 @@ export class CajaService {
   }
 
   /**
-   * Obtiene la consolidación de la caja abierta actualmente
+   * Abre un nuevo turno de caja declarando el fondo inicial de sencillo.
+   */
+  async abrirCaja(usuarioId: string, montoApertura: number) {
+    const cajaExistente = await this.prisma.caja.findFirst({
+      where: { estado: EstadoCaja.ABIERTA },
+    });
+    if (cajaExistente) {
+      throw new BadRequestException('Ya existe un turno de caja abierto en el sistema.');
+    }
+
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+    const nuevaCaja = await this.prisma.caja.create({
+      data: {
+        usuarioId,
+        montoApertura: new Prisma.Decimal(montoApertura),
+        estado: EstadoCaja.ABIERTA,
+      },
+      include: {
+        usuario: { select: { nombre: true, rol: true } },
+      },
+    });
+
+    await this.auditoriaService.registrarEvento({
+      tipoEvento: 'APERTURA_CAJA',
+      usuarioId,
+      usuarioNombre: usuario.nombre,
+      rolUsuario: usuario.rol,
+      descripcion: `Turno de caja abierto por ${usuario.nombre} con fondo de sencillo de Bs. ${Number(montoApertura).toFixed(2)}`,
+      metadata: {
+        cajaId: nuevaCaja.id,
+        montoApertura,
+      },
+    });
+
+    return {
+      id: nuevaCaja.id,
+      montoApertura: Number(nuevaCaja.montoApertura),
+      cajero: nuevaCaja.usuario.nombre,
+      apertura: nuevaCaja.apertura,
+      estado: nuevaCaja.estado,
+    };
+  }
+
+  /**
+   * Registra una salida de efectivo (gasto menor de caja chica) durante el turno.
+   */
+  async registrarEgreso(usuarioId: string, dto: { monto: number; motivo: string; autoriza?: string }) {
+    const caja = await this.prisma.caja.findFirst({
+      where: { estado: EstadoCaja.ABIERTA },
+    });
+    if (!caja) {
+      throw new BadRequestException('No hay una caja abierta para registrar egresos.');
+    }
+
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+    const evento = await this.auditoriaService.registrarEvento({
+      tipoEvento: 'EGRESO_CAJA',
+      usuarioId,
+      usuarioNombre: usuario.nombre,
+      rolUsuario: usuario.rol,
+      descripcion: `Salida de efectivo de caja por Bs. ${Number(dto.monto).toFixed(2)}: ${dto.motivo}`,
+      metadata: {
+        cajaId: caja.id,
+        monto: Number(dto.monto),
+        motivo: dto.motivo,
+        autoriza: dto.autoriza || usuario.nombre,
+      },
+    });
+
+    return {
+      exito: true,
+      mensaje: 'Salida de dinero registrada correctamente.',
+      egreso: {
+        id: evento.id,
+        monto: Number(dto.monto),
+        motivo: dto.motivo,
+        autoriza: dto.autoriza || usuario.nombre,
+        hora: evento.createdAt,
+      },
+    };
+  }
+
+  /**
+   * Obtiene la consolidación de la caja abierta actualmente, incluyendo egresos de caja chica.
    */
   async obtenerCajaActivaConsolidada() {
     const caja = await this.prisma.caja.findFirst({
@@ -351,7 +438,28 @@ export class CajaService {
     const totalTarjeta = Number(caja.totalTarjeta);
     const totalQr = Number(caja.totalQr);
     const montoApertura = Number(caja.montoApertura);
-    const balanceCaja = montoApertura + totalEfectivo; // Dinero físico esperado en caja
+
+    // Obtener egresos registrados en este turno
+    const eventosEgreso = await this.prisma.auditoriaEvento.findMany({
+      where: {
+        tipoEvento: 'EGRESO_CAJA',
+        createdAt: { gte: caja.apertura },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const egresos = eventosEgreso.map((e) => ({
+      id: e.id,
+      monto: Number((e.metadata as any)?.monto || 0),
+      motivo: (e.metadata as any)?.motivo || e.descripcion,
+      autoriza: (e.metadata as any)?.autoriza || e.usuarioNombre || 'Personal',
+      hora: e.createdAt,
+    }));
+
+    const totalEgresos = egresos.reduce((acc, curr) => acc + curr.monto, 0);
+
+    // Efectivo físico esperado = Fondo Inicial + Cobrado en Efectivo - Egresos
+    const balanceCaja = Math.max(0, montoApertura + totalEfectivo - totalEgresos);
 
     return {
       id: caja.id,
@@ -360,7 +468,9 @@ export class CajaService {
       totalEfectivo,
       totalTarjeta,
       totalQr,
+      totalEgresos,
       balanceCaja,
+      egresos,
       estado: caja.estado,
       apertura: caja.apertura,
       cajero: caja.usuario.nombre,
@@ -368,9 +478,9 @@ export class CajaService {
   }
 
   /**
-   * Cierra una caja de forma atómica y calcula la discrepancia (arqueo)
+   * Cierra una caja de forma atómica, deduce egresos y calcula el arqueo final.
    */
-  async cerrarCaja(cajaId: string, montoCierre: number) {
+  async cerrarCaja(cajaId: string, montoCierre: number, desgloseBilletes?: any) {
     return this.prisma.$transaction(async (tx) => {
       const caja = await tx.caja.findUnique({
         where: { id: cajaId },
@@ -386,8 +496,19 @@ export class CajaService {
 
       const totalEfectivo = Number(caja.totalEfectivo);
       const montoApertura = Number(caja.montoApertura);
-      const balanceEsperado = montoApertura + totalEfectivo;
-      const diferencia = montoCierre - balanceEsperado; // > 0: sobrante, < 0: faltante
+
+      // Calcular total de egresos en este turno
+      const eventosEgreso = await tx.auditoriaEvento.findMany({
+        where: {
+          tipoEvento: 'EGRESO_CAJA',
+          createdAt: { gte: caja.apertura },
+        },
+      });
+      const totalEgresos = eventosEgreso.reduce((acc, e) => acc + Number((e.metadata as any)?.monto || 0), 0);
+
+      // Efectivo real esperado en gaveta
+      const balanceEsperado = montoApertura + totalEfectivo - totalEgresos;
+      const diferencia = montoCierre - balanceEsperado; // > 0: sobrante, < 0: faltante, == 0: cuadrada
 
       const cajaCerrada = await tx.caja.update({
         where: { id: cajaId },
@@ -397,7 +518,28 @@ export class CajaService {
           montoCierre: new Prisma.Decimal(montoCierre),
         },
         include: {
-          usuario: { select: { nombre: true } },
+          usuario: { select: { nombre: true, rol: true } },
+          _count: { select: { transacciones: true } },
+        },
+      });
+
+      await this.auditoriaService.registrarEvento({
+        tipoEvento: 'CIERRE_CAJA',
+        usuarioId: cajaCerrada.usuarioId,
+        usuarioNombre: cajaCerrada.usuario.nombre,
+        rolUsuario: cajaCerrada.usuario.rol,
+        descripcion: `Cierre de turno realizado. Efectivo Esperado: Bs. ${balanceEsperado.toFixed(2)} | Efectivo Declarado: Bs. ${montoCierre.toFixed(2)} | Diferencia: Bs. ${diferencia.toFixed(2)}`,
+        metadata: {
+          cajaId: cajaCerrada.id,
+          montoApertura,
+          montoCierre,
+          totalEfectivo,
+          totalQr: Number(cajaCerrada.totalQr),
+          totalEgresos,
+          balanceEsperado,
+          diferencia,
+          transaccionesCount: cajaCerrada._count.transacciones,
+          desgloseBilletes: desgloseBilletes || null,
         },
       });
 
@@ -409,11 +551,15 @@ export class CajaService {
         totalEfectivo: Number(cajaCerrada.totalEfectivo),
         totalTarjeta: Number(cajaCerrada.totalTarjeta),
         totalQr: Number(cajaCerrada.totalQr),
+        totalEgresos,
         balanceEsperado,
         diferencia,
+        transaccionesCount: cajaCerrada._count.transacciones,
         cajero: cajaCerrada.usuario.nombre,
+        apertura: cajaCerrada.apertura,
         cierre: cajaCerrada.cierre,
         estado: cajaCerrada.estado,
+        desgloseBilletes: desgloseBilletes || null,
       };
 
       // Emitir evento por WebSockets fuera de la transacción
@@ -422,6 +568,42 @@ export class CajaService {
       }, 0);
 
       return result;
+    });
+  }
+
+  /**
+   * Obtiene el historial de turnos de caja cerrados con métricas de arqueo.
+   */
+  async obtenerHistorialCajas(limite = 20) {
+    const cajas = await this.prisma.caja.findMany({
+      where: { estado: EstadoCaja.CERRADA },
+      include: {
+        usuario: { select: { nombre: true } },
+        _count: { select: { transacciones: true } },
+      },
+      orderBy: { cierre: 'desc' },
+      take: limite,
+    });
+
+    return cajas.map((c) => {
+      const montoApertura = Number(c.montoApertura);
+      const montoCierre = Number(c.montoCierre || 0);
+      const totalVentas = Number(c.totalVentas);
+      const totalEfectivo = Number(c.totalEfectivo);
+      const totalQr = Number(c.totalQr);
+
+      return {
+        id: c.id,
+        cajero: c.usuario.nombre,
+        apertura: c.apertura,
+        cierre: c.cierre,
+        montoApertura,
+        montoCierre,
+        totalVentas,
+        totalEfectivo,
+        totalQr,
+        transaccionesCount: c._count.transacciones,
+      };
     });
   }
 }
