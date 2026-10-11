@@ -6,8 +6,28 @@ import { SocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ComprobanteComponent, DatosRecibo } from '../mesas/comprobante.component';
 import { Subscription } from 'rxjs';
-
 import { LucideAngularModule } from 'lucide-angular';
+
+export interface EgresoCaja {
+  id: string;
+  monto: number;
+  motivo: string;
+  autoriza: string;
+  hora: string;
+}
+
+export interface CierreHistorico {
+  id: string;
+  cajero: string;
+  apertura: string;
+  cierre: string;
+  montoApertura: number;
+  montoCierre: number;
+  totalVentas: number;
+  totalEfectivo: number;
+  totalQr: number;
+  transaccionesCount: number;
+}
 
 @Component({
   selector: 'app-control-caja',
@@ -24,27 +44,60 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
   private readonly baseUrl = 'http://localhost:3000/api';
   private subscriptions = new Subscription();
 
-  // ── Signals de Estado ──
-  activeTab = signal<'caja' | 'historial'>('caja');
+  // ── Pestañas de Vista ──
+  activeTab = signal<'caja' | 'historial' | 'cierres'>('caja');
   activeCaja = signal<any | null>(null);
   transacciones = signal<any[]>([]);
+  historialCajas = signal<CierreHistorico[]>([]);
   loadingCaja = signal(false);
   loadingHistorial = signal(false);
+  loadingCierres = signal(false);
   errorMsg = signal('');
 
-  // ── Signals de Filtrado (Historial Tab) ──
-  filtroMetodo = signal<string>('TODOS');
-  filtroEstado = signal<string>('COMPLETADO');
-  searchQuery = signal<string>('');
+  // ── Apertura de Turno ──
+  montoAperturaInput = signal<number>(100);
+  isAbriendoCaja = signal(false);
+  aperturaError = signal('');
 
-  // Arqueo & Cierre Modal State
+  // ── Salidas de Efectivo (Egresos de Caja Chica) ──
+  egresoModalOpen = signal(false);
+  egresoMonto = signal<number | null>(null);
+  egresoMotivo = signal<string>('');
+  egresoAutoriza = signal<string>('');
+  isRegistrandoEgreso = signal(false);
+  egresoError = signal('');
+
+  // ── Arqueo & Cierre de Caja ──
   cerrarCajaModalOpen = signal(false);
   montoCierreFisico = signal<number | null>(null);
   isCerrando = signal(false);
   cierreError = signal('');
   cierreExitosoResult = signal<any | null>(null);
 
-  // Comprobante Modal State
+  // Modo de conteo de arqueo
+  modoConteo = signal<'directo' | 'calculadora'>('directo');
+  conteoBilletes = signal({
+    b200: 0,
+    b100: 0,
+    b50: 0,
+    b20: 0,
+    b10: 0,
+    m5: 0,
+    m2: 0,
+    m1: 0,
+    m05: 0,
+  });
+
+  // Ticket de Cierre Z Imprimible
+  ticketZModalOpen = signal(false);
+  datosTicketZ = signal<any | null>(null);
+
+  // ── Filtros (Historial Tab) ──
+  filtroMetodo = signal<string>('TODOS');
+  filtroEstado = signal<string>('COMPLETADO');
+  searchQuery = signal<string>('');
+
+  // Comprobante Recibo Modal State
   verComprobanteModal = signal(false);
   datosComprobanteSelected = signal<DatosRecibo | null>(null);
 
@@ -52,27 +105,45 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
   currentUser = this.authService.currentUserSignal;
   isAdmin = computed(() => this.currentUser()?.rol === 'ADMIN');
 
-  // ── Computed Stats ──
+  // ── Computed Stats de Caja ──
   montoApertura = computed(() => this.activeCaja()?.montoApertura ?? 0);
   ventasEfectivo = computed(() => this.activeCaja()?.totalEfectivo ?? 0);
   ventasTarjeta = computed(() => this.activeCaja()?.totalTarjeta ?? 0);
   ventasQr = computed(() => this.activeCaja()?.totalQr ?? 0);
   ventasTotales = computed(() => this.activeCaja()?.totalVentas ?? 0);
-  
-  // Balance neto teórico de efectivo físico = Apertura + Ventas en Efectivo
+  totalEgresos = computed(() => this.activeCaja()?.totalEgresos ?? 0);
+  egresosList = computed<EgresoCaja[]>(() => this.activeCaja()?.egresos ?? []);
+
+  // Balance neto teórico de efectivo físico = Fondo Apertura + Ventas Efectivo - Egresos
   balanceTeorico = computed(() => {
-    return this.montoApertura() + this.ventasEfectivo();
+    return Math.max(0, this.montoApertura() + this.ventasEfectivo() - this.totalEgresos());
   });
 
-  // Discrepancia calculada dinámicamente en el modal de arqueo
+  // Total acumulado por calculadora de billetes
+  totalCalculadora = computed(() => {
+    const c = this.conteoBilletes();
+    return (
+      c.b200 * 200 +
+      c.b100 * 100 +
+      c.b50 * 50 +
+      c.b20 * 20 +
+      c.b10 * 10 +
+      c.m5 * 5 +
+      c.m2 * 2 +
+      c.m1 * 1 +
+      c.m05 * 0.5
+    );
+  });
+
+  // Discrepancia calculada dinámicamente en el arqueo
   diferenciaArqueo = computed(() => {
     const fisico = this.montoCierreFisico() ?? 0;
-    return fisico - this.balanceTeorico();
+    return Math.round((fisico - this.balanceTeorico()) * 100) / 100;
   });
 
   diferenciaAbsoluta = computed(() => Math.abs(this.diferenciaArqueo()));
 
-  // ── Computed Filtered Transactions ──
+  // ── Transacciones Filtradas ──
   transaccionesFiltradas = computed(() => {
     let list = this.transacciones();
     const metodo = this.filtroMetodo();
@@ -80,17 +151,17 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
     const q = this.searchQuery().toLowerCase().trim();
 
     if (metodo !== 'TODOS') {
-      list = list.filter(t => t.metodoPago === metodo);
+      list = list.filter((t) => t.metodoPago === metodo);
     }
 
     if (estado === 'COMPLETADO') {
-      list = list.filter(t => t.estado !== 'ANULADO');
+      list = list.filter((t) => t.estado !== 'ANULADO');
     } else if (estado === 'ANULADO') {
-      list = list.filter(t => t.estado === 'ANULADO');
+      list = list.filter((t) => t.estado === 'ANULADO');
     }
 
     if (q) {
-      list = list.filter(t => 
+      list = list.filter((t) =>
         (t.nroRecibo && t.nroRecibo.toLowerCase().includes(q)) ||
         (t.mesero?.nombre && t.mesero.nombre.toLowerCase().includes(q)) ||
         (t.mesa?.numero && t.mesa.numero.toString().includes(q)) ||
@@ -109,8 +180,6 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
     return this.transaccionesFiltradas().length;
   });
 
-
-
   ngOnInit() {
     this.cargarDatosCaja();
     this.cargarHistorial();
@@ -121,7 +190,7 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  // ── Carga de Datos (APIs) ──
+  // ── Carga de Datos ──
   cargarDatosCaja(silent = false) {
     if (!silent && !this.activeCaja()) {
       this.loadingCaja.set(true);
@@ -136,7 +205,7 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
         console.error('Error al cargar caja activa:', err);
         if (!silent) this.errorMsg.set('No se pudo obtener el resumen de caja activa.');
         this.loadingCaja.set(false);
-      }
+      },
     });
   }
 
@@ -152,83 +221,185 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error al cargar transacciones:', err);
         this.loadingHistorial.set(false);
-      }
+      },
     });
   }
 
-  // ── Suscripción WebSockets (Tiempo Real) ──
+  cargarHistorialCajas() {
+    this.loadingCierres.set(true);
+    this.http.get<any>(`${this.baseUrl}/caja/historial-cajas`).subscribe({
+      next: (res) => {
+        this.historialCajas.set(res.data || []);
+        this.loadingCierres.set(false);
+      },
+      error: (err) => {
+        console.error('Error al cargar historial de cierres:', err);
+        this.loadingCierres.set(false);
+      },
+    });
+  }
+
+  // ── Suscripción WebSockets ──
   private suscribirEventosRealTime() {
-    // 1. Nueva transacción cobrada en salón
     const subTransaccion = this.socketService.onEvent<any>('transaccion:creada').subscribe({
       next: (transaccion) => {
-        console.log('🔌 WebSocket: Nueva transacción recibida:', transaccion);
-        
-        // Agregar al feed de transacciones del día
         this.transacciones.update((list) => [transaccion, ...list]);
-        
-        // Recargar los acumuladores de caja de forma silenciosa
         this.cargarDatosCaja(true);
-      }
+      },
     });
 
-    // 2. Cierre de caja realizado
     const subCajaCerrada = this.socketService.onEvent<any>('caja:cerrada').subscribe({
       next: (data) => {
-        console.log('🔌 WebSocket: Caja cerrada en el sistema:', data);
-        
-        // Si la caja cerrada coincide con la que tenemos cargada, la marcamos como cerrada o recargamos
         if (this.activeCaja()?.id === data.cajaId) {
-          this.activeCaja.update((c) => {
-            if (!c) return null;
-            return {
-              ...c,
-              estado: 'CERRADA',
-              montoCierre: data.montoCierre
-            };
-          });
+          this.activeCaja.update((c) => (c ? { ...c, estado: 'CERRADA', montoCierre: data.montoCierre } : null));
         }
-        
-        // Recargar para sincronizar de forma silenciosa
         this.cargarDatosCaja(true);
-      }
+        if (this.activeTab() === 'cierres') {
+          this.cargarHistorialCajas();
+        }
+      },
     });
 
     this.subscriptions.add(subTransaccion);
     this.subscriptions.add(subCajaCerrada);
   }
 
-  // ── Acciones de Interfaz ──
-  cambiarPestana(tab: 'caja' | 'historial') {
+  // ── Navegación de Pestañas ──
+  cambiarPestana(tab: 'caja' | 'historial' | 'cierres') {
     this.activeTab.set(tab);
     if (tab === 'caja') {
       this.cargarDatosCaja(true);
-    } else {
+    } else if (tab === 'historial') {
       this.cargarHistorial(true);
+    } else if (tab === 'cierres') {
+      this.cargarHistorialCajas();
     }
   }
 
-  // Comprobante
-  verRecibo(transaccion: any) {
-    this.datosComprobanteSelected.set(transaccion);
-    this.verComprobanteModal.set(true);
+  // ── Apertura de Turno ──
+  seleccionarFondoRapido(monto: number) {
+    this.montoAperturaInput.set(monto);
   }
 
-  cerrarReciboModal() {
-    this.verComprobanteModal.set(false);
-    this.datosComprobanteSelected.set(null);
+  abrirTurno() {
+    const monto = this.montoAperturaInput();
+    if (isNaN(monto) || monto < 0) {
+      this.aperturaError.set('Ingresa un monto de apertura válido.');
+      return;
+    }
+
+    this.isAbriendoCaja.set(true);
+    this.aperturaError.set('');
+
+    this.http.post<any>(`${this.baseUrl}/caja/abrir`, { montoApertura: monto }).subscribe({
+      next: () => {
+        this.isAbriendoCaja.set(false);
+        this.cargarDatosCaja();
+      },
+      error: (err) => {
+        this.isAbriendoCaja.set(false);
+        this.aperturaError.set(err.error?.message || 'Error al abrir el turno de caja.');
+      },
+    });
   }
 
-  // Arqueo & Cierre
+  // ── Salidas de Efectivo (Egresos) ──
+  abrirEgresoModal() {
+    this.egresoMonto.set(null);
+    this.egresoMotivo.set('');
+    this.egresoAutoriza.set('');
+    this.egresoError.set('');
+    this.egresoModalOpen.set(true);
+  }
+
+  cerrarEgresoModal() {
+    if (!this.isRegistrandoEgreso()) {
+      this.egresoModalOpen.set(false);
+    }
+  }
+
+  confirmarEgreso() {
+    const monto = this.egresoMonto();
+    const motivo = this.egresoMotivo().trim();
+    const autoriza = this.egresoAutoriza().trim();
+
+    if (!monto || monto <= 0) {
+      this.egresoError.set('Ingresa un monto válido mayor a Bs. 0.');
+      return;
+    }
+
+    if (!motivo) {
+      this.egresoError.set('Debes ingresar el motivo o concepto del gasto.');
+      return;
+    }
+
+    this.isRegistrandoEgreso.set(true);
+    this.egresoError.set('');
+
+    this.http.post<any>(`${this.baseUrl}/caja/egreso`, { monto, motivo, autoriza }).subscribe({
+      next: () => {
+        this.isRegistrandoEgreso.set(false);
+        this.egresoModalOpen.set(false);
+        this.cargarDatosCaja(true);
+      },
+      error: (err) => {
+        this.isRegistrandoEgreso.set(false);
+        this.egresoError.set(err.error?.message || 'Error al registrar la salida de dinero.');
+      },
+    });
+  }
+
+  // ── Arqueo & Cierre de Turno ──
   abrirCerrarCajaModal() {
     if (!this.activeCaja() || this.activeCaja().estado === 'CERRADA') return;
-    this.montoCierreFisico.set(this.balanceTeorico()); // Valor por defecto sugerido
+    this.montoCierreFisico.set(this.balanceTeorico());
     this.cierreError.set('');
     this.cierreExitosoResult.set(null);
+    this.modoConteo.set('directo');
+    this.limpiarCalculadora();
     this.cerrarCajaModalOpen.set(true);
+  }
+
+  setModoConteo(modo: 'directo' | 'calculadora') {
+    this.modoConteo.set(modo);
+    if (modo === 'calculadora') {
+      this.montoCierreFisico.set(this.totalCalculadora());
+    }
   }
 
   onMontoCierreInput(value: string) {
     this.montoCierreFisico.set(parseFloat(value) || 0);
+  }
+
+  onBilleteInput(denom: keyof ReturnType<typeof this.conteoBilletes>, value: any) {
+    const count = parseInt(value, 10) || 0;
+    this.conteoBilletes.update((prev) => ({
+      ...prev,
+      [denom]: Math.max(0, count),
+    }));
+    this.montoCierreFisico.set(this.totalCalculadora());
+  }
+
+  ajustarBillete(denom: keyof ReturnType<typeof this.conteoBilletes>, delta: number) {
+    this.conteoBilletes.update((prev) => ({
+      ...prev,
+      [denom]: Math.max(0, prev[denom] + delta),
+    }));
+    this.montoCierreFisico.set(this.totalCalculadora());
+  }
+
+  limpiarCalculadora() {
+    this.conteoBilletes.set({
+      b200: 0,
+      b100: 0,
+      b50: 0,
+      b20: 0,
+      b10: 0,
+      m5: 0,
+      m2: 0,
+      m1: 0,
+      m05: 0,
+    });
   }
 
   cerrarCajaModal() {
@@ -242,25 +413,56 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
     if (!this.activeCaja()) return;
     const cajaId = this.activeCaja().id;
     const monto = this.montoCierreFisico() ?? 0;
+    const desglose = this.modoConteo() === 'calculadora' ? this.conteoBilletes() : undefined;
 
     this.isCerrando.set(true);
     this.cierreError.set('');
 
-    this.http.post<any>(`${this.baseUrl}/caja/${cajaId}/cerrar`, { montoCierre: monto }).subscribe({
+    this.http.post<any>(`${this.baseUrl}/caja/${cajaId}/cerrar`, {
+      montoCierre: monto,
+      desgloseBilletes: desglose,
+    }).subscribe({
       next: (res) => {
         this.isCerrando.set(false);
-        this.cierreExitosoResult.set(res.data);
-        this.activeCaja.set(null); // Limpiar caja activa localmente
-        this.cargarDatosCaja();   // Intentar recargar
+        const result = res.data;
+        this.cierreExitosoResult.set(result);
+        this.datosTicketZ.set(result);
+        this.activeCaja.set(null);
+        this.cargarDatosCaja();
       },
       error: (err) => {
         this.isCerrando.set(false);
         this.cierreError.set(err.error?.message || 'Error al cerrar la caja');
-      }
+      },
     });
   }
 
-  // Helper filter handlers
+  // ── Ticket de Cierre Z Imprimible ──
+  abrirTicketZ(cierre: any) {
+    this.datosTicketZ.set(cierre);
+    this.ticketZModalOpen.set(true);
+  }
+
+  cerrarTicketZ() {
+    this.ticketZModalOpen.set(false);
+  }
+
+  imprimirTicketZ() {
+    window.print();
+  }
+
+  // ── Visualización de Recibo / Comprobante ──
+  verRecibo(transaccion: any) {
+    this.datosComprobanteSelected.set(transaccion);
+    this.verComprobanteModal.set(true);
+  }
+
+  cerrarReciboModal() {
+    this.verComprobanteModal.set(false);
+    this.datosComprobanteSelected.set(null);
+  }
+
+  // ── Filtros y Búsqueda ──
   onFiltroMetodoChange(val: string) {
     this.filtroMetodo.set(val);
   }
@@ -273,7 +475,7 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
     this.searchQuery.set(val);
   }
 
-  // Helper formatting classes
+  // ── Helpers Visuales ──
   getMetodoBadgeClass(metodo: string): string {
     switch (metodo) {
       case 'EFECTIVO': return 'badge-efectivo';
@@ -309,5 +511,3 @@ export class ControlCajaComponent implements OnInit, OnDestroy {
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
   }
 }
-
-
