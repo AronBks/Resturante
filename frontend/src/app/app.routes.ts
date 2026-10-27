@@ -41,6 +41,17 @@ export const routes: Routes = [
             (m) => m.ControlCajaComponent,
           ),
       },
+      {
+        path: 'cocina',
+        canActivate: [roleGuard([RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CAJERO, RolUsuario.CHEF])],
+        loadComponent: () =>
+          import('./features/cocina/cocina.component').then((m) => m.CocinaComponent),
+      },
+      {
+        path: 'despacho',
+        redirectTo: 'cocina',
+        pathMatch: 'full',
+      },
 
       {
         path: 'carta',

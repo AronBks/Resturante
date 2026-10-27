@@ -29,6 +29,7 @@ export class LayoutComponent {
     if (url.includes('/usuarios')) return 'Equipo de Trabajo';
     if (url.includes('/mesas')) return 'Salón & Mesas';
     if (url.includes('/control-caja')) return 'Control de Caja';
+    if (url.includes('/cocina') || url.includes('/despacho')) return 'Pase & Despacho de Platos';
     if (url.includes('/carta')) return 'Nuestra Carta';
     if (url.includes('/overview')) return 'Panel de Hoy';
     return 'Panel de Control';
@@ -48,6 +49,12 @@ export class LayoutComponent {
         route: '/dashboard/mesas',
         iconName: 'grid',
         roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CAJERO],
+      },
+      {
+        label: 'Pase & Despacho',
+        route: '/dashboard/cocina',
+        iconName: 'concierge-bell',
+        roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CHEF, RolUsuario.CAJERO],
       },
       {
         label: 'Control de Caja',
