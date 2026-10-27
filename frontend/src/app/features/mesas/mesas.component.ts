@@ -111,6 +111,11 @@ export class MesasComponent implements OnInit, OnDestroy {
     return rol === 'ADMIN' || rol === 'CAJERO';
   });
 
+  puedeReabrirComandas = computed(() => {
+    const rol = this.authService.userRole();
+    return rol === 'ADMIN';
+  });
+
   // ── Mesas Filtradas por Estado y por Mesero Designado ──
   mesasFiltradas = computed(() => {
     let result = this.mesas();
@@ -226,6 +231,10 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   reabrirComandaMesa(mesa: Mesa, ev: MouseEvent) {
     ev.stopPropagation();
+    if (!this.puedeReabrirComandas()) {
+      alert('No dispones de permisos de administración para reabrir comandas cerradas.');
+      return;
+    }
     if (!confirm(`¿Deseas reabrir la comanda de la Mesa ${mesa.numero}? La mesa volverá a estar OCUPADA y los comensales podrán ordenar platos adicionales.`)) {
       return;
     }

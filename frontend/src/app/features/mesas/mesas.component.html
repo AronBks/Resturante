@@ -401,15 +401,17 @@
                       </button>
                     }
 
-                    <button
-                      type="button"
-                      class="btn-reabrir-comanda-mesa"
-                      (click)="reabrirComandaMesa(mesa, $event)"
-                      title="Desbloquear comanda si los clientes desean pedir platos o bebidas adicionales"
-                    >
-                      <lucide-icon name="rotate-ccw" [size]="12"></lucide-icon>
-                      <span>Reabrir Comanda</span>
-                    </button>
+                    @if (puedeReabrirComandas()) {
+                      <button
+                        type="button"
+                        class="btn-reabrir-comanda-mesa"
+                        (click)="reabrirComandaMesa(mesa, $event)"
+                        title="Desbloquear comanda si los clientes desean pedir platos o bebidas adicionales"
+                      >
+                        <lucide-icon name="rotate-ccw" [size]="12"></lucide-icon>
+                        <span>Reabrir Comanda</span>
+                      </button>
+                    }
                   </div>
                 </div>
 

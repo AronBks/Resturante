@@ -119,6 +119,21 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
+    if (!this.authService.tienePermiso('puedeVerFinanzas')) {
+      if (this.authService.tienePermiso('puedeTomarPedidos')) {
+        this.router.navigate(['/dashboard/mesas']);
+        return;
+      }
+      if (this.authService.tienePermiso('puedeOperarCocina')) {
+        this.router.navigate(['/dashboard/cocina']);
+        return;
+      }
+      if (this.authService.tienePermiso('puedeCobrarCaja')) {
+        this.router.navigate(['/dashboard/control-caja']);
+        return;
+      }
+    }
+
     this.cargarResumenHoy();
     this.cargarMesas();
     this.cargarCajaActiva();
