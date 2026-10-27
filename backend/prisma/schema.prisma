@@ -32,6 +32,7 @@ model Usuario {
   email        String   @unique @db.VarChar(150)
   passwordHash String   @map("password_hash") @db.VarChar(255)
   rol          RolUsuario
+  permisos     Json?    @default("{\"puedeTomarPedidos\": true, \"puedeCobrarCaja\": false, \"puedeOperarCocina\": false, \"puedeReabrirComandas\": false, \"puedeModificarCarta\": false, \"puedeVerFinanzas\": false, \"puedeAdministrarUsuarios\": false}")
   activo       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
