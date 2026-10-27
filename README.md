@@ -9,12 +9,13 @@
 
 - [1. Descripción y Propósito del Sistema](#1-descripción-y-propósito-del-sistema)
 - [2. Actores y Filosofía Operativa Real](#2-actores-y-filosofía-operativa-real)
-  - [El Comensal (Móvil / QR en Mesa)](#-el-comensal-móvil--qr-en-mesa)
-  - [El Garzón / Mesero (Salón y Tablet)](#-el-garzón--mesero-salón-y-tablet)
-  - [La Cocina / KDS (Monitor Táctil Culinario)](#-la-cocina--kds-monitor-táctil-culinario)
-  - [El Cajero y Administración (Caja Central)](#-el-cajero-y-administración-caja-central)
+  - [El Comensal (Móvil / QR en Mesa)](#el-comensal-móvil--qr-en-mesa)
+  - [El Garzón / Mesero (Salón y Tablet)](#el-garzón--mesero-salón-y-tablet)
+  - [Cocina & Despacho / KDS (Monitor Táctil y Control de Pase)](#cocina--despacho--kds-monitor-táctil-y-control-de-pase)
+  - [El Cajero y Administración (Caja Central)](#el-cajero-y-administración-caja-central)
 - [3. Flujos Operativos de Extremo a Extremo](#3-flujos-operativos-de-extremo-a-extremo)
   - [Flujo de Comanda Omnicanal](#flujo-de-comanda-omnicanal)
+  - [Flujo de Pase y Despacho en Vivo (Cocina ➔ Barra ➔ Salón)](#flujo-de-pase-y-despacho-en-vivo-cocina--barra--salón)
   - [Protocolo de Cierre Tradicional y Sincronización Salón-Caja (Viaje Único Optimizado)](#protocolo-de-cierre-tradicional-y-sincronización-salón-caja-viaje-único-optimizado)
   - [Mecanismo de Resiliencia y Eventos WebSocket Duales](#mecanismo-de-resiliencia-y-eventos-websocket-duales)
 - [4. Flujo Futuro: Integración Bancaria Automática (API QR Dinámico & Webhooks)](#4-flujo-futuro-integración-bancaria-automática-api-qr-dinámico--webhooks)
@@ -33,7 +34,9 @@
 - [9. Red de Eventos WebSocket en Tiempo Real](#9-red-de-eventos-websocket-en-tiempo-real)
 - [10. Modelo de Datos y Entidades Prisma](#10-modelo-de-datos-y-entidades-prisma)
 - [11. Usuarios, Roles y Seguridad RBAC](#11-usuarios-roles-y-seguridad-rbac)
+  - [Matriz Oficial de Permisos por Rol](#matriz-oficial-de-permisos-por-rol)
   - [Credenciales de Acceso por Perfil](#credenciales-de-acceso-por-perfil)
+  - [Separación de Responsabilidades: Cajero vs Administrador](#separación-de-responsabilidades-cajero-vs-administrador)
   - [Blindaje Financiero y Protección del Arqueo de Caja](#blindaje-financiero-y-protección-del-arqueo-de-caja)
 - [12. Guía de Instalación y Puesta en Marcha](#12-guía-de-instalación-y-puesta-en-marcha)
 - [13. Guía de Certificación y Pruebas E2E (3 Actores en Simultáneo)](#13-guía-de-certificación-y-pruebas-e2e-3-actores-en-simultáneo)
@@ -88,27 +91,40 @@ Para que cualquier desarrollador o IA entienda la lógica del sistema, es crucia
 
 ### 🤵 El Garzón / Mesero (Salón y Tablet)
 - **Plano interactivo del restaurante**: Vista de todas las mesas (`LIBRE`, `OCUPADA`, `POR_COBRAR`) con indicador de mesero asignado y filtro **"Mis Mesas"**.
-- **Alertas en tiempo real con datos de cobro**: Notificación instantánea en tarjeta con el desglose exacto:
-  - Efectivo: *"Mesa 1 paga con Bs. 100 — Llevar Bs. 15.00 de cambio"*.
-  - QR: *"Mesa 1 pide cuenta — Pago por QR"*.
-- **Comanda Drawer táctil**: Puede cargar pedidos adicionales directamente en mesa, editar notas culinarias y revisar tiempos transcurridos.
+- **Alertas en tiempo real de Despacho y Cobro**:
+  - Despacho: Notificación inmediata de platos listos en mostrador caliente (*"¡Comida lista en barra para Mesa X!"*), permitiendo acudir al pase sin demoras.
+  - Cobro Efectivo: Notificación instantánea en tarjeta con el desglose exacto: *"Mesa 1 paga con Bs. 100 — Llevar Bs. 15.00 de cambio"*.
+  - Cobro QR: *"Mesa 1 pide cuenta — Pago por QR"*.
+- **Comanda Drawer táctil**: Carga pedidos adicionales directamente en mesa, edita notas culinarias especiales y consulta tiempos transcurridos.
 - **Protocolo de Entrega de Cuenta (`entregar-cuenta`)**: El garzón acude con la pre-cuenta física y presiona **"Entregar Cuenta"** en el sistema, lo que desbloquea de forma segura las opciones de pago en el teléfono del comensal.
-- **Reapertura de Comanda (`reabrir-comanda`)**: Si los comensales deciden pedir algo más antes de pagar, el garzón reactiva la comanda con un solo clic devolviendo la mesa al estado `OCUPADA`.
+- **Seguridad en Salón**: El garzón **NO puede liquidar cobros en el sistema** ni tiene acceso al módulo de caja. La reapertura de comandas pre-cerradas está protegida exclusivamente para el **Administrador**, impidiendo modificaciones no auditadas.
 
-### 👨‍🍳 La Cocina / KDS (Monitor Táctil Culinario)
+### 👨‍🍳 Cocina & Despacho / KDS (Monitor Táctil y Control de Pase)
 > [!IMPORTANT]
-> **Aclaración Clave sobre Cocina**: Los chefs y cocineros **NO usan la aplicación administrativa ni gestionan usuarios, cajas o inventarios**. En la cocina opera una **pantalla KDS (Kitchen Display System)** de alta visibilidad, pensada para pantallas táctiles de pared en un ambiente caliente y concurrido.
+> **Aislamiento Operativo del Personal Culinario**: Los chefs y despachadores acceden directamente a su panel especializado de **Pase & Despacho** (`/dashboard/cocina`) y a la consulta de la carta culinaria (`/dashboard/carta`). Tienen bloqueado el acceso a mesas, cobros, cajas, analítica financiera y administración de usuarios.
 
-- **Tickets FIFO**: Los pedidos entran organizados cronológicamente por orden de llegada con número de mesa visible.
-- **Temporizador de alerta**: El tiempo transcurrido cambia a color ámbar/rojo de alerta si la comanda supera los 15 minutos sin despacho.
-- **Control táctil rápido por ítem**: Botones grandes táctiles para avanzar:
-  $$\text{PENDIENTE} \xrightarrow{\text{Tocar 'Preparar'}} \text{PREPARANDO} \xrightarrow{\text{Tocar 'Terminar'}} \text{LISTO}$$
-- **Despacho a Mesa**: Cuando los platos están listos, el garzón asignado se encarga de retirarlos de cocina y servirlos a la mesa.
+- **Monitor de Pase en Vivo**: Diseñado para tablets o pantallas táctiles de cocina y mostrador caliente en horas pico.
+- **Ciclo de Despacho en 2 Pasos**:
+  1. **Paso 1 (Fogón a Barra)**: El cocinero marca ítems individuales con **"Pase a Barra"** o la comanda completa con **"1. Comida en Barra"**, notificando automáticamente por WebSocket a la tablet del garzón.
+  2. **Paso 2 (Barra a Mesa)**: Cuando el garzón levanta la bandeja de la barra de despacho, se pulsa **"2. Entregar a Mesa (Servido)"**, retirando el ticket con animación suave y registrando el despacho.
+- **Atajo "Servicio Directo"**: En horas de máxima afluencia, si el mesero retira los platos al vuelo directamente del fogón, el botón de servicio directo marca la comanda como entregada en un solo toque.
+- **Salvavidas "Recién Despachadas"**: Pestaña histórica de las últimas comandas despachadas con botón **"Deshacer y Devolver a Barra"** para corregir toques accidentales de pantalla sin perder datos.
+- **Filtros Rápidos de Mostrador**:
+  - *Todos*: Cola general en orden de llegada (FIFO).
+  - *Listos en Barra*: Comandas esperando ser recogidas por el personal de sala.
+  - *Demorados +15 min*: Alerta visual ámbar/roja con contador para priorizar pedidos retrasados.
+- **Timbre de Despacho (Web Audio)**: Sistema de alerta sonoro conmutable para avisar la entrada de nuevas comandas o platos listos.
 
-### 💰 El Cajero y Administración (Caja Central)
-- **Turnos de Caja**: Apertura con fondo inicial, control de ventas en tiempo real por canal (Efectivo y QR) y arqueo ciego al cierre.
-- **Exclusividad Financiera**: Solo Cajeros y Administradores pueden registrar cobros (`POST /api/caja/registrar-pago`), evitando descuadres en el arqueo del turno.
-- **Cierre Transaccional Atómico**: Al confirmar el cobro, el backend actualiza la caja, marca el pedido como cerrado, emite el evento WebSocket `pago:confirmado` a salón y cliente, y libera la mesa para los siguientes comensales.
+### 💰 El Cajero de Sala (Estación de Cobro)
+- **Turnos de Caja**: Apertura con fondo inicial de sencillo, control de ventas del día por canal (Efectivo y QR) y arqueo físico de billetes y monedas al cierre.
+- **Exclusividad de Cobro**: Liquida las cuentas de las mesas en estado `POR_COBRAR`, emite el ticket digital oficial y libera la mesa para nuevos clientes.
+- **Egresos Menores**: Registro auditado de salidas de efectivo de caja chica (insumos urgentes o cambio menor) con motivo y autorización.
+- **Límite de Visibilidad**: No tiene acceso a la analítica financiera global ni al panel de métricas del negocio (`/dashboard/overview`), enfocado estrictamente en la precisión del cuadre de su turno.
+
+### 👑 El Administrador (Control Total del Restaurante)
+- **Supervisión Global**: Acceso irrestricto a todas las áreas operativas: Panel de Hoy con analítica financiera, Salón & Mesas, Pase & Despacho, Control de Caja, Carta Gastronómica y Equipo de Trabajo.
+- **Autoridad Exclusiva de Reapertura**: Único rol con autorización para reabrir comandas cerradas o pre-cerradas en caso de ajustes o adiciones de última hora.
+- **Gestión de Personal**: Creación y asignación de roles estrictos para todo el equipo de trabajo sin matrices de permisos complejas o vulnerables.
 
 ---
 
@@ -146,6 +162,63 @@ sequenceDiagram
     K->>Backend: PATCH /api/pedidos/:id/items/:itemId (estado: PREPARANDO ➔ LISTO)
     Backend-->>G: WS 'pedido:estado-actualizado' (Garzón retira y sirve el plato)
 ```
+
+---
+
+### Flujo de Pase y Despacho en Vivo (Cocina ➔ Barra ➔ Salón)
+
+El módulo de **Pase & Despacho** (`/dashboard/cocina`) actúa como el puente de comunicación en tiempo real entre la línea de fuego (cocina) y el personal de atención en salón (garzones), eliminando gritos, campanas manuales y platos fríos en el mostrador:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor CLI as Comensal / QR
+    actor K as Cocina & Despacho (KDS)
+    participant SGGI as Backend SGGI (WebSockets)
+    actor G as Garzón (Tablet / Salón)
+
+    CLI->>SGGI: Comanda enviada (Don Beto IA / Menú QR / Garzón)
+    SGGI-->>K: WS 'pedido:creado' (Comanda entra en cola con timbre sonoro)
+    SGGI-->>G: WS 'pedido:creado' (Mesa pasa a OCUPADA)
+
+    rect rgb(30, 24, 18)
+        Note over K: PREPARACIÓN EN FOGÓN / OLLA:<br/>Los cocineros visualizan ingredientes, variantes y notas especiales.<br/>El tiempo transcurrido corre en vivo (aviso ámbar/rojo tras 15 min).
+    end
+
+    alt Paso 1: Salida de platos a la barra caliente
+        K->>SGGI: PATCH /api/pedidos/:id/items/:itemId (o botón colectivo "1. Comida en Barra")
+        SGGI-->>G: WS 'pedido:estado-actualizado'
+        rect rgb(28, 30, 18)
+            Note over G: ALERTA INSTANTÁNEA EN SALÓN:<br/>La mesa en el mapa de salón enciende badge dorado parpadeante:<br/>"¡Comida lista en barra para Mesa X — Retirar de Despacho!"
+        end
+    end
+
+    alt Paso 2: Retiro de bandeja y servicio en mesa
+        Note over G: Garzón acude a la barra de pase y retira la comida caliente
+        alt Opción Normal (Confirmación en Pase)
+            K->>SGGI: Botón "2. Entregar a Mesa (Servido)"
+        else Opción Rápida (Hora Pico)
+            K->>SGGI: Botón "Servicio Directo" (Fogón ➔ Mesa)
+        end
+        SGGI-->>G: WS 'pedido:estado-actualizado' (Comanda servida con éxito)
+        SGGI-->>K: Ticket sale con animación hacia pestaña "Recién Despachadas"
+    end
+
+    opt Salvavidas Deshacer (Toque accidental en pantalla táctil)
+        Note over K: Si se pulsó entregar por equivocación, el chef entra a<br/>"Recién Despachadas" y pulsa "Deshacer y Devolver a Barra"
+        K->>SGGI: Revierte estado de la comanda a la cola activa en 1 clic
+        SGGI-->>G: WS 'pedido:estado-actualizado'
+    end
+```
+
+#### Características Clave del Panel de Despacho:
+1. **Separación de Responsabilidad Culinaria**: El personal de cocina no tiene botones de cobro, ni cajas, ni configuración; solo controlan el ritmo de producción y la barra caliente de salida.
+2. **Alertas Visuales y Tiempos de Espera**:
+   - `< 10 minutos`: Indicador verde/dorado normal.
+   - `10 a 15 minutos`: Indicador ámbar de atención.
+   - `> 15 minutos`: Alerta roja parpadeante de **Demora Crítica** para priorizar en el fogón.
+3. **Filtro de Emergencia**: El botón de filtro *"Demorados +15 min"* aísla al instante los pedidos atrasados para despacharlos de inmediato.
+4. **Resiliencia ante Toques en Pantalla**: El historial de *"Recién Despachadas"* retiene las últimas órdenes con botón de recuperación inmediata por si un cocinero tocó la pantalla con guantes o accidentalmente.
 
 ---
 
@@ -585,6 +658,30 @@ El archivo [schema.prisma](file:///d:/python/Restaurante/backend/prisma/schema.p
 
 ## 11. Usuarios, Roles y Seguridad RBAC
 
+El sistema opera bajo un modelo de control de acceso basado en roles (**RBAC estricto**), eliminando configuraciones vulnerables o confusas. Cada actor del restaurante cuenta con una superficie de acción delimitada por su rol funcional:
+
+### Matriz Oficial de Permisos por Rol
+
+| Módulo u Operación | Administrador (`ADMIN`) | Cocina & Despacho (`CHEF`) | Cajero de Sala (`CAJERO`) | Mesero de Sala (`MESERO`) |
+|---|:---:|:---:|:---:|:---:|
+| **Pantalla de Inicio tras Login** | `/dashboard/overview` | `/dashboard/cocina` | `/dashboard/control-caja` | `/dashboard/mesas` |
+| **Panel de Hoy (Finanzas & Analítica Global)** | Sí (Exclusivo) | No | No | No |
+| **Salón & Mesas (Visualizar mapa y estados)** | Sí | No | Sí | Sí |
+| **Toma de Pedidos (Comanda Drawer en Mesa)** | Sí | No | Sí (Opcional) | Sí (Principal) |
+| **Reapertura de Comandas (Pre-cerradas)** | Sí (Exclusivo) | No | No | No |
+| **Pase & Despacho (KDS en Vivo)** | Sí | Sí (Principal) | No | No |
+| **Cambiar Estado de Platos (Fogón ➔ Barra)** | Sí | Sí | No | No |
+| **Confirmar Entrega de Comanda Servida** | Sí | Sí | No | Sí (Al retirar) |
+| **Apertura de Turno de Caja** | Sí | No | Sí (Turno diario) | No |
+| **Cierre y Arqueo Físico de Turno de Caja** | Sí | No | Sí (Turno diario) | No |
+| **Registro de Cobro de Mesas (`POR_COBRAR`)** | Sí | No | Sí (Principal) | No |
+| **Registro de Egresos de Caja Chica** | Sí | No | Sí (Auditado) | No |
+| **Gestión de Carta (Crear / Editar Platos)** | Sí (Exclusivo) | No | No | No |
+| **Consulta de Carta (Ingredientes / Recetas)** | Sí | Sí | No | Sí |
+| **Equipo de Trabajo (Crear / Editar Personal)** | Sí (Exclusivo) | No | No | No |
+
+---
+
 ### Credenciales de Acceso por Perfil
 
 El seeder inicial (`npm run db:seed`) aprovisiona los siguientes perfiles de prueba:
@@ -592,9 +689,29 @@ El seeder inicial (`npm run db:seed`) aprovisiona los siguientes perfiles de pru
 | Rol | Correo Electrónico | Contraseña | Destino y Alcance Operativo |
 |---|---|:---:|---|
 | **ADMIN** | `admin@tukuypaj.com` | `admin123` | Control total del sistema, configuración, carta, personal y caja |
-| **MESERO** | `mesero@tukuypaj.com` | `mesero123` | Mapa de salón, filtro "Mis Mesas", atención de llamadas y entrega de cuenta |
+| **CHEF** | `cocina@tukuypaj.com` | `cocina123` | Acceso directo a KDS Pase & Despacho y consulta de recetas |
 | **CAJERO** | `caja@tukuypaj.com` | `caja123` | Turnos de caja, cobro en efectivo y validación de transferencias QR |
-| **CHEF** | `cocina@tukuypaj.com` | `cocina123` | Acceso directo al monitor KDS de preparación de tickets en cocina |
+| **MESERO** | `mesero@tukuypaj.com` | `mesero123` | Mapa de salón, comanda drawer, atención de llamadas y entrega de cuenta |
+
+---
+
+### Separación de Responsabilidades: Cajero vs Administrador
+
+Para garantizar la integridad financiera y operativa del establecimiento, se establecen directrices claras:
+
+1. **¿Por qué el Cajero NO accede al Panel Financiero (`/dashboard/overview`)?**  
+   El cajero tiene la responsabilidad de registrar los cobros y cuadrar el dinero físico de su turno en el módulo de Caja (`/dashboard/control-caja`). No debe tener acceso al panel de métricas globales del restaurante (márgenes de ganancia neta, comparativas mensuales de facturación ni estadísticas de rentabilidad del negocio), ya que dicha información es estratégica y de competencia exclusiva del dueño o **Administrador**.
+
+2. **¿Por qué la Reapertura de Comandas es Exclusiva del Administrador?**  
+   Una vez que una mesa pasa a estado de cobro (`POR_COBRAR`) o se emite la pre-cuenta, permitir que un mesero o cajero reabra la comanda sin supervisión abriría una brecha de vulnerabilidad operativa (ej. agregar o quitar platos sin control tras recibir dinero). Por ello, el botón de **Reapertura de Comanda** en `mesas.component.ts` está blindado para requerir privilegios de `ADMIN`.
+
+3. **¿Cuál es el rol del Cajero en Apertura y Cierre de Caja?**  
+   El cajero abre su turno declarando el fondo de sencillo inicial (ej. Bs. 100), opera los cobros de las mesas durante su jornada y ejecuta el arqueo físico al terminar el turno (conteo de billetes y monedas). Sin embargo, el historial consolidado multi-turno, auditorías de descuadres y la visualización de balances acumulados corresponden a la administración.
+
+4. **¿Por qué Cocina & Despacho (`CHEF`) opera en aislamiento?**  
+   El personal culinario trabaja en un entorno de alta demanda física y rapidez. Su interfaz está libre de distracciones contables o de administración de salón: al iniciar sesión, el sistema los redirige de inmediato a **Pase & Despacho** (`/dashboard/cocina`), donde únicamente gestionan el ritmo del fogón, la salida de comida a mostrador y el llamado al garzón.
+
+---
 
 ### Blindaje Financiero y Protección del Arqueo de Caja
 
