@@ -4,11 +4,22 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { RolUsuario } from '@sggi/shared';
 
+export interface PermisosUsuario {
+  puedeTomarPedidos: boolean;
+  puedeCobrarCaja: boolean;
+  puedeOperarCocina: boolean;
+  puedeReabrirComandas: boolean;
+  puedeModificarCarta: boolean;
+  puedeVerFinanzas: boolean;
+  puedeAdministrarUsuarios: boolean;
+}
+
 export interface UserProfile {
   id: string;
   nombre: string;
   email: string;
   rol: RolUsuario;
+  permisos?: PermisosUsuario;
 }
 
 export interface LoginResponse {
@@ -38,6 +49,32 @@ export class AuthService {
     this.loadSession();
   }
 
+  tienePermiso(permiso?: keyof PermisosUsuario): boolean {
+    if (!permiso) return true;
+    const user = this.currentUserSignal();
+    if (!user) return false;
+    if (user.rol === RolUsuario.ADMIN) return true;
+    if (user.permisos && user.permisos[permiso] !== undefined) {
+      return !!user.permisos[permiso];
+    }
+    // Presets inteligentes por rol
+    switch (user.rol) {
+      case RolUsuario.CAJERO:
+        return permiso === 'puedeCobrarCaja' || permiso === 'puedeVerFinanzas' || permiso === 'puedeReabrirComandas';
+      case RolUsuario.MESERO:
+        return permiso === 'puedeTomarPedidos';
+      case RolUsuario.CHEF:
+        return permiso === 'puedeOperarCocina';
+      default:
+        return false;
+    }
+  }
+
+  hasRole(allowedRoles: RolUsuario[]): boolean {
+    const user = this.currentUserSignal();
+    return user !== null && allowedRoles.includes(user.rol);
+  }
+
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
       tap((response) => {
@@ -59,11 +96,6 @@ export class AuthService {
 
   getToken(): string | null {
     return localStorage.getItem('sggi_at');
-  }
-
-  hasRole(allowedRoles: RolUsuario[]): boolean {
-    const user = this.currentUserSignal();
-    return user !== null && allowedRoles.includes(user.rol);
   }
 
   private saveSession(user: UserProfile, at: string, rt: string): void {

@@ -5,11 +5,14 @@ import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
 import { RolUsuario } from '@sggi/shared';
 
+import { PermisosUsuario } from '../../services/auth.service';
+
 interface SidebarItem {
   label: string;
   route: string;
   iconName: string;
-  roles: RolUsuario[];
+  permiso?: keyof PermisosUsuario;
+  roles?: RolUsuario[];
 }
 
 @Component({
@@ -35,50 +38,59 @@ export class LayoutComponent {
     return 'Panel de Control';
   });
 
-  // Menú lateral con nomenclatura adaptada a Peña Tukuypaj
+  // Menú lateral adaptativo según rol y permisos granulares
   menuItems = computed<SidebarItem[]>(() => {
     const allItems: SidebarItem[] = [
       {
         label: 'Panel de Hoy',
         route: '/dashboard/overview',
         iconName: 'layout-dashboard',
-        roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CHEF, RolUsuario.CAJERO],
+        permiso: 'puedeVerFinanzas',
+        roles: [RolUsuario.ADMIN],
       },
       {
         label: 'Salón & Mesas',
         route: '/dashboard/mesas',
         iconName: 'grid',
+        permiso: 'puedeTomarPedidos',
         roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CAJERO],
       },
       {
         label: 'Pase & Despacho',
         route: '/dashboard/cocina',
         iconName: 'concierge-bell',
-        roles: [RolUsuario.ADMIN, RolUsuario.MESERO, RolUsuario.CHEF, RolUsuario.CAJERO],
+        permiso: 'puedeOperarCocina',
+        roles: [RolUsuario.ADMIN, RolUsuario.CHEF],
       },
       {
         label: 'Control de Caja',
         route: '/dashboard/control-caja',
         iconName: 'landmark',
+        permiso: 'puedeCobrarCaja',
         roles: [RolUsuario.ADMIN, RolUsuario.CAJERO],
       },
       {
         label: 'Carta y Platos del Día',
         route: '/dashboard/carta',
         iconName: 'utensils-crossed',
-        roles: [RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO, RolUsuario.CAJERO],
+        roles: [RolUsuario.ADMIN, RolUsuario.CHEF, RolUsuario.MESERO],
       },
       {
         label: 'Equipo de Trabajo',
         route: '/dashboard/usuarios',
         iconName: 'users',
+        permiso: 'puedeAdministrarUsuarios',
         roles: [RolUsuario.ADMIN],
       },
     ];
 
-    const currentRol = this.user()?.rol;
-    if (!currentRol) return [];
-    return allItems.filter((item) => item.roles.includes(currentRol));
+    const currentUser = this.user();
+    if (!currentUser) return [];
+
+    return allItems.filter((item) => {
+      if (currentUser.rol === RolUsuario.ADMIN) return true;
+      return item.roles?.includes(currentUser.rol) || false;
+    });
   });
 
   logout(): void {
@@ -88,8 +100,8 @@ export class LayoutComponent {
   getRolLabel(rol: RolUsuario): string {
     switch (rol) {
       case RolUsuario.ADMIN: return 'Administrador';
-      case RolUsuario.CHEF: return 'Jefe de Cocina';
-      case RolUsuario.MESERO: return 'Mesero';
+      case RolUsuario.CHEF: return 'Cocina & Despacho';
+      case RolUsuario.MESERO: return 'Mesero de Salón';
       case RolUsuario.CAJERO: return 'Cajero';
       default: return '';
     }

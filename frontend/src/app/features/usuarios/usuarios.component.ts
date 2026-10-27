@@ -9,6 +9,7 @@ export enum RolUsuario {
   ADMIN = 'ADMIN',
   CAJERO = 'CAJERO',
   MESERO = 'MESERO',
+  CHEF = 'CHEF',
 }
 
 export interface MiembroEquipo {
@@ -47,7 +48,7 @@ export interface MiembroEquipo {
           </div>
           <h1 class="font-playfair">Equipo de Trabajo & Caja</h1>
           <p class="header-desc">
-            Gestione las cuentas de acceso del personal de sala y cajeros responsables de turnos y arqueos.
+            Gestione las cuentas de acceso, roles (Administración, Caja, Salón y Cocina/Despacho) y la matriz personalizada de permisos para cada colaborador.
           </p>
         </div>
 
@@ -64,7 +65,7 @@ export interface MiembroEquipo {
         </div>
       </header>
 
-      <!-- KPI Summary Cards (Administración y Operativa de Caja) -->
+      <!-- KPI Summary Cards (Administración, Cocina, Caja y Salón) -->
       <section class="kpi-cards-grid">
         
         <!-- Card 1: Total Personal -->
@@ -79,7 +80,21 @@ export interface MiembroEquipo {
           </div>
         </article>
 
-        <!-- Card 2: Cajeros Responsables -->
+        <!-- Card 2: Cocina & Despacho -->
+        <article class="kpi-card">
+          <div class="kpi-icon-circle kpi-icon-amber">
+            <lucide-icon name="concierge-bell" [size]="20"></lucide-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">COCINA & DESPACHO</span>
+            <strong class="kpi-value font-playfair">{{ cocinaCount() }}</strong>
+            <span class="kpi-subtext text-amber">
+              <span class="dot-amber"></span> Pase y KDS
+            </span>
+          </div>
+        </article>
+
+        <!-- Card 3: Cajeros Responsables -->
         <article class="kpi-card">
           <div class="kpi-icon-circle kpi-icon-emerald">
             <lucide-icon name="landmark" [size]="20"></lucide-icon>
@@ -93,7 +108,7 @@ export interface MiembroEquipo {
           </div>
         </article>
 
-        <!-- Card 3: Meseros en Sala -->
+        <!-- Card 4: Meseros en Sala -->
         <article class="kpi-card">
           <div class="kpi-icon-circle kpi-icon-purple">
             <lucide-icon name="utensils-crossed" [size]="20"></lucide-icon>
@@ -105,7 +120,7 @@ export interface MiembroEquipo {
           </div>
         </article>
 
-        <!-- Card 4: Personal Activo Ahora -->
+        <!-- Card 5: Personal Activo Ahora -->
         <article class="kpi-card">
           <div class="kpi-icon-circle kpi-icon-blue">
             <lucide-icon name="user-check" [size]="20"></lucide-icon>
@@ -145,6 +160,7 @@ export interface MiembroEquipo {
             >
               <option value="TODOS">Todos los roles</option>
               <option value="ADMIN">Administradores</option>
+              <option value="CHEF">Cocina & Despacho</option>
               <option value="CAJERO">Cajeros de Sala</option>
               <option value="MESERO">Meseros</option>
             </select>
@@ -224,7 +240,7 @@ export interface MiembroEquipo {
                     </div>
                   </td>
 
-                  <!-- Rol del Sistema (ADMIN / CAJERO / MESERO) -->
+                  <!-- Rol del Sistema -->
                   <td class="td-rol">
                     <div class="role-badge" [ngClass]="getRoleBadgeClass(user.rol)">
                       <lucide-icon [name]="getRoleIcon(user.rol)" [size]="13"></lucide-icon>
@@ -386,6 +402,21 @@ export interface MiembroEquipo {
                     </div>
                   </div>
 
+                  <!-- Card Rol: Cocina & Despacho -->
+                  <div
+                    class="role-select-card"
+                    [class.selected]="nuevoUsuario.rol === RolUsuario.CHEF"
+                    (click)="nuevoUsuario.rol = RolUsuario.CHEF"
+                  >
+                    <div class="r-icon r-amber">
+                      <lucide-icon name="concierge-bell" [size]="18"></lucide-icon>
+                    </div>
+                    <div class="r-meta">
+                      <strong class="r-title">Cocina & Despacho</strong>
+                      <span class="r-desc">Pase de pedidos, monitor KDS en vivo y despacho</span>
+                    </div>
+                  </div>
+
                   <!-- Card Rol: Cajero -->
                   <div
                     class="role-select-card"
@@ -532,6 +563,20 @@ export interface MiembroEquipo {
                     <div class="r-meta">
                       <strong class="r-title">Administrador</strong>
                       <span class="r-desc">Acceso total al sistema</span>
+                    </div>
+                  </div>
+
+                  <div
+                    class="role-select-card"
+                    [class.selected]="formEditar.rol === RolUsuario.CHEF"
+                    (click)="formEditar.rol = RolUsuario.CHEF"
+                  >
+                    <div class="r-icon r-amber">
+                      <lucide-icon name="concierge-bell" [size]="18"></lucide-icon>
+                    </div>
+                    <div class="r-meta">
+                      <strong class="r-title">Cocina & Despacho</strong>
+                      <span class="r-desc">Pase de pedidos y monitor KDS</span>
                     </div>
                   </div>
 
@@ -874,6 +919,12 @@ export interface MiembroEquipo {
           border: 1px solid rgba(34, 197, 94, 0.25);
         }
 
+        &.kpi-icon-amber {
+          background: rgba(245, 158, 11, 0.12);
+          color: #f59e0b;
+          border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
         &.kpi-icon-purple {
           background: rgba(168, 85, 247, 0.12);
           color: #c084fc;
@@ -921,6 +972,21 @@ export interface MiembroEquipo {
             height: 6px;
             border-radius: 50%;
             background: #4ade80;
+            display: inline-block;
+          }
+
+          &.text-amber {
+            color: #f59e0b;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+          }
+
+          .dot-amber {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #f59e0b;
             display: inline-block;
           }
         }
@@ -1097,6 +1163,10 @@ export interface MiembroEquipo {
           border-color: rgba(74, 222, 128, 0.6);
         }
 
+        &.ring-chef {
+          border-color: rgba(245, 158, 11, 0.6);
+        }
+
         &.ring-mesero {
           border-color: rgba(192, 132, 252, 0.6);
         }
@@ -1197,6 +1267,7 @@ export interface MiembroEquipo {
     }
 
     /* ── Badges de Roles ── */
+
     .role-badge {
       display: inline-flex;
       align-items: center;
@@ -1212,6 +1283,12 @@ export interface MiembroEquipo {
         background: rgba(229, 193, 88, 0.12);
         color: #e5c158;
         border: 1px solid rgba(229, 193, 88, 0.35);
+      }
+
+      &.badge-chef {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.35);
       }
 
       &.badge-cajero {
@@ -1393,12 +1470,16 @@ export interface MiembroEquipo {
       border: 1px solid rgba(229, 193, 88, 0.28);
       border-radius: 16px;
       width: 100%;
-      max-width: 540px;
+      max-width: 640px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(229, 193, 88, 0.1);
       overflow: hidden;
 
       &.modal-small {
         max-width: 440px;
+        max-height: none;
       }
     }
 
@@ -1492,6 +1573,8 @@ export interface MiembroEquipo {
       display: flex;
       flex-direction: column;
       gap: 16px;
+      overflow-y: auto;
+      max-height: calc(90vh - 85px);
     }
 
     .form-field {
@@ -1546,21 +1629,25 @@ export interface MiembroEquipo {
       }
     }
 
-    /* ── Roles Selection Cards ── */
+    /* ── Roles Selection Cards (Grid 2x2) ── */
     .roles-selection-grid {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+
+      @media (max-width: 580px) {
+        grid-template-columns: 1fr;
+      }
     }
 
     .role-select-card {
       background: #110e0c;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 10px;
-      padding: 10px 14px;
+      padding: 10px 12px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
 
@@ -1588,6 +1675,11 @@ export interface MiembroEquipo {
           color: #e5c158;
         }
 
+        &.r-amber {
+          background: rgba(245, 158, 11, 0.12);
+          color: #f59e0b;
+        }
+
         &.r-emerald {
           background: rgba(34, 197, 94, 0.12);
           color: #4ade80;
@@ -1604,16 +1696,19 @@ export interface MiembroEquipo {
         flex-direction: column;
 
         .r-title {
-          font-size: 0.84rem;
+          font-size: 0.82rem;
           color: #ffffff;
         }
 
         .r-desc {
-          font-size: 0.7rem;
+          font-size: 0.68rem;
           color: #8c8277;
+          line-height: 1.25;
         }
       }
     }
+
+
 
     /* ── Modal Footer ── */
     .modal-footer {
@@ -1724,7 +1819,7 @@ export class UsuariosComponent implements OnInit {
   nuevoUsuario = {
     nombre: '',
     email: '',
-    telefono: '',
+    telefono: '+591 ',
     rol: RolUsuario.MESERO,
     password: '',
   };
@@ -1745,8 +1840,7 @@ export class UsuariosComponent implements OnInit {
     const e = this.selectedEstado();
 
     return this.miembros().filter((m) => {
-      // Filtrar estrictamente cualquier rol CHEF o cocinero si existiera en BD
-      if ((m.rol as string) === 'CHEF' || m.email.includes('ia@tukuypaj.com')) {
+      if (m.email.includes('ia@tukuypaj.com')) {
         return false;
       }
 
@@ -1768,19 +1862,23 @@ export class UsuariosComponent implements OnInit {
   });
 
   totalStaffCount = computed(() => {
-    return this.miembros().filter(m => (m.rol as string) !== 'CHEF' && !m.email.includes('ia@')).length;
+    return this.miembros().filter((m) => !m.email.includes('ia@')).length;
+  });
+
+  cocinaCount = computed(() => {
+    return this.miembros().filter((m) => m.rol === RolUsuario.CHEF && m.activo).length;
   });
 
   cajerosCount = computed(() => {
-    return this.miembros().filter(m => m.rol === RolUsuario.CAJERO && m.activo).length;
+    return this.miembros().filter((m) => m.rol === RolUsuario.CAJERO && m.activo).length;
   });
 
   meserosCount = computed(() => {
-    return this.miembros().filter(m => m.rol === RolUsuario.MESERO && m.activo).length;
+    return this.miembros().filter((m) => m.rol === RolUsuario.MESERO && m.activo).length;
   });
 
   activosAhoraCount = computed(() => {
-    return this.miembros().filter(m => m.activo && (m.rol as string) !== 'CHEF' && !m.email.includes('ia@')).length;
+    return this.miembros().filter((m) => m.activo && !m.email.includes('ia@')).length;
   });
 
   ngOnInit(): void {
@@ -1794,10 +1892,16 @@ export class UsuariosComponent implements OnInit {
         this.cargando.set(false);
         const users = Array.isArray(res) ? res : res.data || [];
         if (users.length > 0) {
-          // Filtrar cocineros y bots
-          const filtrados = users.filter((u: any) => u.rol !== 'CHEF' && !u.email.includes('ia@'));
+          const filtrados = users.filter((u: any) => !u.email.includes('ia@'));
           const mapped: MiembroEquipo[] = filtrados.map((u: any, idx: number) => {
-            const prefix = u.rol === 'ADMIN' ? 'ADM' : u.rol === 'CAJERO' ? 'CAJ' : 'MES';
+            const prefix =
+              u.rol === 'ADMIN'
+                ? 'ADM'
+                : u.rol === 'CHEF'
+                ? 'COC'
+                : u.rol === 'CAJERO'
+                ? 'CAJ'
+                : 'MES';
             return {
               id: u.id,
               staffId: `ID-${prefix}-${String(idx + 1).padStart(2, '0')}`,
@@ -1834,6 +1938,8 @@ export class UsuariosComponent implements OnInit {
     switch (rol) {
       case RolUsuario.ADMIN:
         return 'Administrador';
+      case RolUsuario.CHEF:
+        return 'Cocina & Despacho';
       case RolUsuario.CAJERO:
         return 'Cajero de Sala';
       case RolUsuario.MESERO:
@@ -1847,6 +1953,8 @@ export class UsuariosComponent implements OnInit {
     switch (rol) {
       case RolUsuario.ADMIN:
         return 'shield';
+      case RolUsuario.CHEF:
+        return 'concierge-bell';
       case RolUsuario.CAJERO:
         return 'landmark';
       case RolUsuario.MESERO:
@@ -1860,6 +1968,8 @@ export class UsuariosComponent implements OnInit {
     switch (rol) {
       case RolUsuario.ADMIN:
         return 'badge-admin';
+      case RolUsuario.CHEF:
+        return 'badge-chef';
       case RolUsuario.CAJERO:
         return 'badge-cajero';
       case RolUsuario.MESERO:
@@ -1873,6 +1983,8 @@ export class UsuariosComponent implements OnInit {
     switch (rol) {
       case RolUsuario.ADMIN:
         return 'ring-admin';
+      case RolUsuario.CHEF:
+        return 'ring-chef';
       case RolUsuario.CAJERO:
         return 'ring-cajero';
       case RolUsuario.MESERO:
@@ -1894,7 +2006,7 @@ export class UsuariosComponent implements OnInit {
       nombre: '',
       email: '',
       telefono: '+591 ',
-      rol: RolUsuario.CAJERO,
+      rol: RolUsuario.MESERO,
       password: '',
     };
     this.mostrarPassword.set(false);
@@ -2003,6 +2115,7 @@ export class UsuariosComponent implements OnInit {
     const payload = {
       nombre,
       email,
+      telefono: this.formEditar.telefono,
       rol: this.formEditar.rol,
     };
 
