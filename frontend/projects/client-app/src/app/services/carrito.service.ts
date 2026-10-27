@@ -130,6 +130,15 @@ export class CarritoService {
       }
     });
 
+    this.socketPublico.onEstadoItemActualizado().subscribe((evento) => {
+      const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01';
+      const mesaNormCurrent = formatearMesaParaBackend(currentMesa);
+      const activo = this.ultimoPedido();
+      if (activo && (!evento.pedidoId || evento.pedidoId === activo.id)) {
+        this.consultarPedidoActivoMesa(mesaNormCurrent).subscribe();
+      }
+    });
+
     this.socketPublico.onPagoConfirmado().subscribe((evento) => {
       const currentMesa = localStorage.getItem('tukuypaj_mesa_asignada') || 'M01';
       const mesaNormEvent = formatearMesaParaBackend(evento.mesaNumero);

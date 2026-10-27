@@ -117,6 +117,21 @@ export class SocketPublicoService implements OnDestroy {
   }
 
   /**
+   * Observable que emite cuando un ítem o plato individual cambia de estado (LISTO, ENTREGADO).
+   */
+  onEstadoItemActualizado(): Observable<{ pedidoId: string; itemId: string; estado: string }> {
+    return new Observable<{ pedidoId: string; itemId: string; estado: string }>((observer) => {
+      const handler = (data: any) => observer.next(data);
+
+      this.socket.on('item:estado-actualizado', handler);
+
+      return () => {
+        this.socket.off('item:estado-actualizado', handler);
+      };
+    });
+  }
+
+  /**
    * Observable que emite cuando la cuenta fue solicitada al personal de salón.
    */
   onCuentaSolicitada(): Observable<{ mesaNumero: string }> {
