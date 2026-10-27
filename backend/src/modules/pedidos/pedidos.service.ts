@@ -924,8 +924,34 @@ export class PedidosService {
   }
 
   /**
-   * Obtiene el historial de pedidos de una mesa
+   * Obtiene los últimos pedidos despachados recientemente para auditoría y opción de deshacer
    */
+  async obtenerPedidosDespachadosRecientes(limite = 20) {
+    return this.prisma.pedido.findMany({
+      where: {
+        estado: EstadoPedido.ENTREGADO,
+      },
+      include: {
+        detalles: {
+          include: {
+            plato: {
+              select: { nombre: true, imagenUrl: true },
+            },
+          },
+        },
+        mesa: {
+          select: { id: true, numero: true, estado: true },
+        },
+        mesero: {
+          select: { nombre: true },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: limite,
+    });
+  }
   async obtenerPedidoActivoPorMesa(mesaId: number) {
     const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } });
     if (!mesa || mesa.estado === EstadoMesa.LIBRE) {

@@ -253,6 +253,13 @@ export class PedidosController {
     return this.pedidosService.obtenerPedidosActivos();
   }
 
+  @Get('despachados-recientes')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'CHEF', 'MESERO', 'CAJERO')
+  obtenerDespachadosRecientes() {
+    return this.pedidosService.obtenerPedidosDespachadosRecientes();
+  }
+
   @Get('mesa/:mesaId')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN', 'CHEF', 'MESERO', 'CAJERO')
@@ -262,7 +269,7 @@ export class PedidosController {
 
   @Patch(':id/items/:itemId/estado')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN', 'CHEF', 'MESERO')
+  @Roles('ADMIN', 'CHEF', 'MESERO', 'CAJERO')
   actualizarEstadoItem(
     @Param('id') id: string,
     @Param('itemId') itemId: string,
@@ -277,7 +284,7 @@ export class PedidosController {
 
   @Post(':id/servir-todos')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN', 'CHEF', 'MESERO')
+  @Roles('ADMIN', 'CHEF', 'MESERO', 'CAJERO')
   servirTodos(@Param('id') id: string) {
     return this.pedidosService.servirTodosLosItems(id);
   }

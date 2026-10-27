@@ -87,7 +87,10 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.server
       .to(`role:${RolUsuario.MESERO}`)
       .to(`role:${RolUsuario.ADMIN}`)
+      .to(`role:${RolUsuario.CAJERO}`)
+      .to(`role:${RolUsuario.CHEF}`)
       .emit('pedido:creado', pedido);
+    this.server.emit('pedido:creado', pedido);
   }
 
   /**
@@ -98,7 +101,9 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
       .to(`role:${RolUsuario.MESERO}`)
       .to(`role:${RolUsuario.ADMIN}`)
       .to(`role:${RolUsuario.CAJERO}`)
+      .to(`role:${RolUsuario.CHEF}`)
       .emit('pedido:estado-actualizado', { pedidoId, estado });
+    this.server.emit('pedido:estado-actualizado', { pedidoId, estado });
   }
 
   /**
@@ -108,7 +113,10 @@ export class PedidosGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.server
       .to(`role:${RolUsuario.MESERO}`)
       .to(`role:${RolUsuario.ADMIN}`)
+      .to(`role:${RolUsuario.CAJERO}`)
+      .to(`role:${RolUsuario.CHEF}`)
       .emit('item:estado-actualizado', { pedidoId, itemId, estado });
+    this.server.emit('item:estado-actualizado', { pedidoId, itemId, estado });
   }
 
   /**
