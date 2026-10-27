@@ -139,17 +139,61 @@ export class MesasComponent implements OnInit, OnDestroy {
     return result;
   });
 
-  marcarEntregadoMesa(mesa: Mesa, ev: MouseEvent) {
+  tienePlatosListos(mesa: Mesa): boolean {
+    const p = mesa.pedidos?.[0];
+    if (!p) return false;
+    if (p.estado === 'LISTO') return true;
+    return (p.detalles || []).some((d: any) => d.estadoItem === 'LISTO');
+  }
+
+  conteoPlatosListos(mesa: Mesa): number {
+    const p = mesa.pedidos?.[0];
+    if (!p) return 0;
+    return (p.detalles || []).filter((d: any) => d.estadoItem === 'LISTO').length;
+  }
+
+  todosPlatosEntregados(mesa: Mesa): boolean {
+    const p = mesa.pedidos?.[0];
+    if (!p) return false;
+    if (p.estado === 'ENTREGADO') return true;
+    const det = p.detalles || [];
+    return det.length > 0 && det.every((d: any) => d.estadoItem === 'ENTREGADO' || d.estadoItem === 'SERVIDO');
+  }
+
+  tienePlatosEnCocina(mesa: Mesa): boolean {
+    const p = mesa.pedidos?.[0];
+    if (!p) return false;
+    return (p.detalles || []).some(
+      (d: any) => d.estadoItem === 'PREPARANDO' || d.estadoItem === 'EN_COCINA' || d.estadoItem === 'PENDIENTE'
+    );
+  }
+
+  servirTodosLosPlatos(mesa: Mesa, ev: MouseEvent) {
     ev.stopPropagation();
     const pedido = mesa.pedidos?.[0];
     if (!pedido || !pedido.id) return;
 
-    this.http.patch(`${this.baseUrl}/pedidos/${pedido.id}/estado`, { estado: 'ENTREGADO' }).subscribe({
+    this.http.post<any>(`${this.baseUrl}/pedidos/${pedido.id}/servir-todos`, {}).subscribe({
       next: () => {
+        this.agregarEvento({
+          tipo: 'COMANDA',
+          titulo: `Mesa ${mesa.numero}: Entrega confirmada`,
+          descripcion: 'Platos retirados de barra y servidos en la mesa.',
+        });
         this.cargarMesas();
       },
-      error: (err) => console.error('Error al entregar pedido', err),
+      error: (err) => {
+        console.warn('Fallback a PATCH estado ENTREGADO', err);
+        this.http.patch(`${this.baseUrl}/pedidos/${pedido.id}/estado`, { estado: 'ENTREGADO' }).subscribe({
+          next: () => this.cargarMesas(),
+          error: (err2) => console.error('Error al entregar pedido', err2),
+        });
+      },
     });
+  }
+
+  marcarEntregadoMesa(mesa: Mesa, ev: MouseEvent) {
+    this.servirTodosLosPlatos(mesa, ev);
   }
 
   esCuentaEntregada(mesa: Mesa): boolean {
@@ -290,12 +334,36 @@ export class MesasComponent implements OnInit, OnDestroy {
         const diffMins = Math.floor((now - start) / 60000);
         const timeAgoStr = diffMins > 0 ? `Hace ${diffMins} min` : 'Hace un momento';
 
+        const platosListos = (pedido.detalles || []).filter((d: any) => d.estadoItem === 'LISTO').length;
+        const totalPlatos = pedido.detalles?.length || 0;
+        const todosEntregados =
+          totalPlatos > 0 &&
+          (pedido.detalles || []).every((d: any) => d.estadoItem === 'ENTREGADO' || d.estadoItem === 'SERVIDO');
+
         if (mesa.estado === 'POR_COBRAR') {
           eventos.push({
             id: `cuenta-${mesa.id}`,
             tipo: 'CUENTA',
             titulo: `Mesa ${mesa.numero}: Lista para cobro`,
             descripcion: `Consumo total registrado por Bs. ${Number(pedido.total || 0).toFixed(2)}.`,
+            tiempo: timeAgoStr,
+            timestamp: start,
+          });
+        } else if (pedido.estado === 'LISTO' || platosListos > 0) {
+          eventos.push({
+            id: `listo-${mesa.id}`,
+            tipo: 'ALERTA',
+            titulo: `Mesa ${mesa.numero}: ¡${platosListos > 0 ? platosListos + ' plato(s) en barra' : 'Comida en barra'}!`,
+            descripcion: 'Platos preparados en cocina esperando retiro del mesero para servir.',
+            tiempo: timeAgoStr,
+            timestamp: start,
+          });
+        } else if (pedido.estado === 'ENTREGADO' || todosEntregados) {
+          eventos.push({
+            id: `servido-${mesa.id}`,
+            tipo: 'COMANDA',
+            titulo: `Mesa ${mesa.numero}: Pedido servido`,
+            descripcion: 'Comensales atendidos con comanda entregada en mesa.',
             tiempo: timeAgoStr,
             timestamp: start,
           });
@@ -315,7 +383,7 @@ export class MesasComponent implements OnInit, OnDestroy {
             .slice(0, 2)
             .join(', ');
           const desc = itemsCount > 0
-            ? `${nombres} en preparación.`
+            ? `${nombres} en preparación activa.`
             : 'Comanda activa en preparación en cocina.';
           eventos.push({
             id: `comanda-${mesa.id}`,
@@ -532,7 +600,78 @@ export class MesasComponent implements OnInit, OnDestroy {
         }
       });
 
-    this.subs.push(subMesa, subMesaLiberada, subPedido, subMeseroLlamado, subMeseroAtendido, subPagoConf, subStock, subCuentaEntregada, subComandaReabierta);
+    const subPedidoEstado = this.socketService
+      .onEvent<{ pedidoId: string; estado: string; mesaNumero?: string }>('pedido:estado-actualizado')
+      .subscribe((data) => {
+        if (data?.estado === 'LISTO') {
+          this.reproducirChimeAviso();
+          const mesaNum = data?.mesaNumero ? `Mesa ${data.mesaNumero}` : 'Cocina';
+          this.agregarEvento({
+            tipo: 'ALERTA',
+            titulo: `${mesaNum}: ¡Platos listos en barra!`,
+            descripcion: 'Pedido despachado por cocina, esperando retiro del mesero para servir.',
+          });
+        } else if (data?.estado === 'ENTREGADO') {
+          const mesaNum = data?.mesaNumero ? `Mesa ${data.mesaNumero}` : 'Salón';
+          this.agregarEvento({
+            tipo: 'COMANDA',
+            titulo: `${mesaNum}: Pedido servido`,
+            descripcion: 'Comanda entregada en la mesa con éxito.',
+          });
+        }
+        this.cargarMesas();
+      });
+
+    const subItemEstado = this.socketService
+      .onEvent<{ pedidoId: string; itemId: string; estado: string; platoNombre?: string; mesaNumero?: string }>('item:estado-actualizado')
+      .subscribe((data) => {
+        if (data?.estado === 'LISTO') {
+          this.reproducirChimeAviso();
+          const platoTxt = data?.platoNombre || 'Plato';
+          const mesaTxt = data?.mesaNumero ? ` para Mesa ${data.mesaNumero}` : '';
+          this.agregarEvento({
+            tipo: 'ALERTA',
+            titulo: `¡${platoTxt} listo en barra!`,
+            descripcion: `Retirar de despacho para servir al comensal${mesaTxt}.`,
+          });
+        }
+        this.cargarMesas();
+      });
+
+    this.subs.push(
+      subMesa,
+      subMesaLiberada,
+      subPedido,
+      subMeseroLlamado,
+      subMeseroAtendido,
+      subPagoConf,
+      subStock,
+      subCuentaEntregada,
+      subComandaReabierta,
+      subPedidoEstado,
+      subItemEstado,
+    );
+  }
+
+  private reproducirChimeAviso() {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch (e) {
+      // Audio context might be restricted before interaction
+    }
   }
 
   private agregarEvento(ev: { tipo: 'ALERTA' | 'COMANDA' | 'CUENTA' | 'APERTURA'; titulo: string; descripcion: string }) {
@@ -649,12 +788,12 @@ export class MesasComponent implements OnInit, OnDestroy {
       if (p.metodoPagoPreferido.toUpperCase() === 'EFECTIVO' && p.montoPagaCon) {
         const cambio = Math.max(0, Number(p.montoPagaCon) - this.getMesaSubtotal(mesa));
         return {
-          motivo: `💵 Paga con Bs. ${Number(p.montoPagaCon).toFixed(2)} — Cambio: Bs. ${cambio.toFixed(2)}`,
+          motivo: `Paga con Bs. ${Number(p.montoPagaCon).toFixed(2)} — Cambio: Bs. ${cambio.toFixed(2)}`,
           timestamp: (p as any).cuentaSolicitadaAt || (p as any).createdAt || new Date().toISOString(),
         };
       } else if (p.metodoPagoPreferido.toUpperCase() === 'QR') {
         return {
-          motivo: `📱 Pago por QR`,
+          motivo: `Pago por QR`,
           timestamp: (p as any).cuentaSolicitadaAt || (p as any).createdAt || new Date().toISOString(),
         };
       }
@@ -756,7 +895,7 @@ export class MesasComponent implements OnInit, OnDestroy {
       .reduce((sum: number, d: any) => sum + (d.cantidad || 1), 0);
   }
 
-  getComandaItems(mesa: Mesa): { nombre: string; cantidad: number; subtotal: number }[] {
+  getComandaItems(mesa: Mesa): { nombre: string; cantidad: number; subtotal: number; estadoItem: string }[] {
     const detalles = mesa.pedidos?.[0]?.detalles || [];
     return detalles.slice(0, 3).map((d: any) => {
       const precio = Number(d.precioUnitario) || Number(d.plato?.precioVenta) || 0;
@@ -765,6 +904,7 @@ export class MesasComponent implements OnInit, OnDestroy {
         nombre: d.plato?.nombre || 'Producto',
         cantidad: cant,
         subtotal: (precio * cant) || 0,
+        estadoItem: d.estadoItem || d.estado || (mesa.pedidos?.[0]?.estado === 'LISTO' ? 'LISTO' : 'EN_COCINA'),
       };
     });
   }
@@ -794,7 +934,8 @@ export class MesasComponent implements OnInit, OnDestroy {
     const isFlashing = this.flashingMesas()[mesa.id] ? ' ws-flash-active' : '';
     const isCalling = this.mesasLlamando().has(mesa.numero) ? ' solicita-mesero' : '';
     const isSelected = this.selectedMesa()?.id === mesa.id ? ' mesa-selected' : '';
-    return `mesa-card-cmd ${estadoClass}${isFlashing}${isCalling}${isSelected}`;
+    const conListos = this.tienePlatosListos(mesa) ? ' con-platos-listos' : '';
+    return `mesa-card-cmd ${estadoClass}${isFlashing}${isCalling}${isSelected}${conListos}`;
   }
 }
 

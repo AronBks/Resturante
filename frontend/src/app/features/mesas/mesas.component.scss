@@ -160,6 +160,20 @@
   }
 }
 
+.filter-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+
+  &.dot-ocupada { background: #e5c158; box-shadow: 0 0 5px rgba(229, 193, 88, 0.6); }
+  &.dot-comanda { background: #60a5fa; box-shadow: 0 0 5px rgba(96, 165, 250, 0.6); }
+  &.dot-por-cobrar { background: #f43f5e; box-shadow: 0 0 5px rgba(244, 63, 94, 0.6); }
+  &.dot-libre { background: #9e9484; }
+}
+
 .status-legend-inline {
   display: flex;
   align-items: center;
@@ -268,6 +282,19 @@
     }
   }
 
+  /* Estado Mesa con Platos Listos en Barra (Resaltado Esmeralda y Pulso de Alerta Suave) */
+  &.con-platos-listos {
+    border-color: rgba(16, 185, 129, 0.5) !important;
+    border-top: 3px solid #10b981 !important;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.22) !important;
+    animation: mesa-listo-glow 2.5s infinite ease-in-out;
+
+    &:hover {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 28px rgba(16, 185, 129, 0.35) !important;
+    }
+  }
+
   /* Estado Por Cobrar (Borde Superior Rosa/Rojo) */
   &.por-cobrar {
     border-color: rgba(244, 63, 94, 0.4);
@@ -295,6 +322,15 @@
 @keyframes pulse-ribbon {
   0% { opacity: 0.85; transform: scale(1); }
   100% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes mesa-listo-glow {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(16, 185, 129, 0.38);
+  }
 }
 
 /* ── Encabezado de la Tarjeta ── */
@@ -337,6 +373,28 @@
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.06);
   color: #9e9484;
+
+  &.badge-platos-listos {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+    font-weight: 800;
+
+    lucide-icon {
+      color: #34d399;
+    }
+  }
+
+  &.badge-servido-ok {
+    background: rgba(16, 185, 129, 0.12);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+
+    lucide-icon {
+      color: #6ee7b7;
+    }
+  }
 
   &.badge-ocupada {
     background: rgba(229, 193, 88, 0.15);
@@ -433,18 +491,57 @@
     justify-content: space-between;
     font-size: 0.74rem;
 
+    .dish-name-with-tag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow: hidden;
+      max-width: 140px;
+    }
+
     .dish-name {
       color: #d6cbba;
       font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 110px;
+      max-width: 95px;
+    }
+
+    .item-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.6rem;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 4px;
+      line-height: 1.1;
+      flex-shrink: 0;
+
+      &.tag-ready {
+        background: rgba(16, 185, 129, 0.22);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.45);
+      }
+
+      &.tag-delivered {
+        background: rgba(255, 255, 255, 0.06);
+        color: #9e9484;
+      }
+    }
+
+    &.item-ready-row {
+      .dish-name {
+        color: #ffffff;
+        font-weight: 700;
+      }
     }
 
     .dish-subtotal {
       color: #e5c158;
       font-weight: 700;
+      flex-shrink: 0;
     }
   }
 }
@@ -1523,6 +1620,104 @@
 @keyframes scaleUp {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
+}
+
+.card-waiter-control-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+  .delivery-waiter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    color: #b8ac9a;
+    max-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    lucide-icon {
+      color: #e5c158;
+    }
+  }
+
+  .btn-deliver-order {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    color: #4ade80;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      background: rgba(34, 197, 94, 0.28);
+      border-color: #22c55e;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: scale(0.96);
+    }
+
+    &.btn-recoger-barra {
+      background: #10b981;
+      border: 1px solid #34d399;
+      color: #0d1e16;
+      font-weight: 800;
+      padding: 5px 12px;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+
+      lucide-icon {
+        color: #0d1e16;
+      }
+
+      &:hover {
+        background: #34d399;
+        border-color: #6ee7b7;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.6);
+        transform: translateY(-1px) scale(1.02);
+      }
+    }
+  }
+
+  .badge-delivered-ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #6ee7b7;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.7);
+  }
 }
 
 

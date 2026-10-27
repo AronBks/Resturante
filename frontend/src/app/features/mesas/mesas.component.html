@@ -62,15 +62,15 @@
           (change)="filtroMeseroId.set($any($event.target).value)"
         >
           <option value="TODOS">Todos los meseros</option>
-          <option value="MIS_MESAS" *ngIf="authService.currentUserSignal()">⭐ Mis Mesas Asignadas</option>
+          <option value="MIS_MESAS" *ngIf="authService.currentUserSignal()">Mis Mesas Asignadas</option>
           @for (m of meseros(); track m.id) {
-            <option [value]="m.id">👤 {{ m.nombre }} ({{ m.rol }})</option>
+            <option [value]="m.id">{{ m.nombre }} ({{ m.rol }})</option>
           }
         </select>
       </div>
     </div>
 
-    <!-- Filtros de Estado con Emojis -->
+    <!-- Filtros de Estado con Indicadores Vectoriales (Sin Emojis) -->
     <div class="zone-filter-tabs">
       <button
         class="zone-tab"
@@ -84,28 +84,32 @@
         [class.active]="filtroEstado() === 'OCUPADA'"
         (click)="filtroEstado.set('OCUPADA')"
       >
-        🟡 Ocupada
+        <span class="filter-dot dot-ocupada"></span>
+        <span>Ocupada</span>
       </button>
       <button
         class="zone-tab"
         [class.active]="filtroEstado() === 'COMANDA'"
         (click)="filtroEstado.set('COMANDA')"
       >
-        🔵 Comanda
+        <span class="filter-dot dot-comanda"></span>
+        <span>Comanda</span>
       </button>
       <button
         class="zone-tab"
         [class.active]="filtroEstado() === 'POR_COBRAR'"
         (click)="filtroEstado.set('POR_COBRAR')"
       >
-        🔴 Por Cobrar
+        <span class="filter-dot dot-por-cobrar"></span>
+        <span>Por Cobrar</span>
       </button>
       <button
         class="zone-tab"
         [class.active]="filtroEstado() === 'LIBRE'"
         (click)="filtroEstado.set('LIBRE')"
       >
-        ⚪ Libre
+        <span class="filter-dot dot-libre"></span>
+        <span>Libre</span>
       </button>
     </div>
 
@@ -151,10 +155,22 @@
               <!-- Badge de Estado según Caso -->
               @switch (mesa.estado) {
                 @case ('OCUPADA') {
-                  <span class="badge-cmd-status badge-ocupada">
-                    <span class="badge-dot"></span>
-                    <span>Ocupada</span>
-                  </span>
+                  @if (tienePlatosListos(mesa)) {
+                    <span class="badge-cmd-status badge-platos-listos pulse-green" title="Hay platos listos en barra esperando retiro">
+                      <lucide-icon name="bell-ring" [size]="12"></lucide-icon>
+                      <span>¡Listo en Barra!</span>
+                    </span>
+                  } @else if (todosPlatosEntregados(mesa)) {
+                    <span class="badge-cmd-status badge-servido-ok" title="Todos los platos fueron servidos en mesa">
+                      <lucide-icon name="check-check" [size]="12"></lucide-icon>
+                      <span>Servido</span>
+                    </span>
+                  } @else {
+                    <span class="badge-cmd-status badge-ocupada">
+                      <span class="badge-dot"></span>
+                      <span>En Cocina</span>
+                    </span>
+                  }
                 }
                 @case ('POR_COBRAR') {
                   <span class="badge-cmd-status badge-por-cobrar">
@@ -231,13 +247,26 @@
                   </div>
                 </div>
 
-                <!-- Lista de Comanda Activa (Solo Datos Reales) -->
+                <!-- Lista de Comanda Activa (Solo Datos Reales con Estado Individual) -->
                 <div class="comanda-activa-block">
                   <span class="comanda-heading">Comanda Activa:</span>
                   <div class="comanda-lines-list">
                     @for (item of getComandaItems(mesa); track item.nombre) {
-                      <div class="comanda-item-row">
-                        <span class="dish-name">{{ item.cantidad }}x {{ item.nombre }}</span>
+                      <div class="comanda-item-row" [class.item-ready-row]="item.estadoItem === 'LISTO'">
+                        <div class="dish-name-with-tag">
+                          <span class="dish-name">{{ item.cantidad }}x {{ item.nombre }}</span>
+                          @if (item.estadoItem === 'LISTO') {
+                            <span class="item-tag tag-ready" title="Listo en barra esperando retiro">
+                              <lucide-icon name="bell" [size]="9"></lucide-icon>
+                              <span>Listo</span>
+                            </span>
+                          } @else if (item.estadoItem === 'ENTREGADO' || item.estadoItem === 'SERVIDO') {
+                            <span class="item-tag tag-delivered" title="Servido al comensal">
+                              <lucide-icon name="check" [size]="9"></lucide-icon>
+                              <span>Servido</span>
+                            </span>
+                          }
+                        </div>
                         <span class="dish-subtotal">Bs. {{ item.subtotal | number:'1.0-0' }}</span>
                       </div>
                     }
@@ -262,21 +291,31 @@
                     <span>{{ mesa.meseroAsignado?.nombre || 'Mesero Asignado' }}</span>
                   </span>
 
-                  @if (mesa.pedidos?.[0]?.estado !== 'ENTREGADO') {
+                  @if (tienePlatosListos(mesa)) {
+                    <button 
+                      type="button"
+                      class="btn-deliver-order btn-recoger-barra animate-pulse-subtle" 
+                      (click)="servirTodosLosPlatos(mesa, $event)"
+                      title="Confirmar retiro de barra y entrega a la mesa"
+                    >
+                      <lucide-icon name="check-circle-2" [size]="12"></lucide-icon>
+                      <span>Recoger y Servir</span>
+                    </button>
+                  } @else if (todosPlatosEntregados(mesa)) {
+                    <span class="badge-delivered-ok">
+                      <lucide-icon name="check-check" [size]="11"></lucide-icon>
+                      <span>Servido</span>
+                    </span>
+                  } @else {
                     <button 
                       type="button"
                       class="btn-deliver-order" 
-                      (click)="marcarEntregadoMesa(mesa, $event)"
+                      (click)="servirTodosLosPlatos(mesa, $event)"
                       title="Confirmar entrega presencial en mesa"
                     >
                       <lucide-icon name="check" [size]="11"></lucide-icon>
                       <span>Entregar</span>
                     </button>
-                  } @else {
-                    <span class="badge-delivered-ok">
-                      <lucide-icon name="check-check" [size]="11"></lucide-icon>
-                      <span>Servido</span>
-                    </span>
                   }
                 </div>
 
