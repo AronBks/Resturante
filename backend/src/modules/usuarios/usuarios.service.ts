@@ -10,6 +10,71 @@ import * as bcrypt from 'bcrypt';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 
+export interface PermisosUsuario {
+  puedeTomarPedidos: boolean;
+  puedeCobrarCaja: boolean;
+  puedeOperarCocina: boolean;
+  puedeReabrirComandas: boolean;
+  puedeModificarCarta: boolean;
+  puedeVerFinanzas: boolean;
+  puedeAdministrarUsuarios: boolean;
+}
+
+export function obtenerPermisosPorDefecto(rol: RolUsuario): PermisosUsuario {
+  switch (rol) {
+    case RolUsuario.ADMIN:
+      return {
+        puedeTomarPedidos: true,
+        puedeCobrarCaja: true,
+        puedeOperarCocina: true,
+        puedeReabrirComandas: true,
+        puedeModificarCarta: true,
+        puedeVerFinanzas: true,
+        puedeAdministrarUsuarios: true,
+      };
+    case RolUsuario.CAJERO:
+      return {
+        puedeTomarPedidos: false,
+        puedeCobrarCaja: true,
+        puedeOperarCocina: false,
+        puedeReabrirComandas: true,
+        puedeModificarCarta: false,
+        puedeVerFinanzas: true,
+        puedeAdministrarUsuarios: false,
+      };
+    case RolUsuario.MESERO:
+      return {
+        puedeTomarPedidos: true,
+        puedeCobrarCaja: false,
+        puedeOperarCocina: false,
+        puedeReabrirComandas: false,
+        puedeModificarCarta: false,
+        puedeVerFinanzas: false,
+        puedeAdministrarUsuarios: false,
+      };
+    case RolUsuario.CHEF:
+      return {
+        puedeTomarPedidos: false,
+        puedeCobrarCaja: false,
+        puedeOperarCocina: true,
+        puedeReabrirComandas: false,
+        puedeModificarCarta: false,
+        puedeVerFinanzas: false,
+        puedeAdministrarUsuarios: false,
+      };
+    default:
+      return {
+        puedeTomarPedidos: false,
+        puedeCobrarCaja: false,
+        puedeOperarCocina: false,
+        puedeReabrirComandas: false,
+        puedeModificarCarta: false,
+        puedeVerFinanzas: false,
+        puedeAdministrarUsuarios: false,
+      };
+  }
+}
+
 @Injectable()
 export class UsuariosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -17,7 +82,6 @@ export class UsuariosService {
   async findAll() {
     return this.prisma.usuario.findMany({
       where: {
-        rol: { not: 'CHEF' },
         email: { not: 'ia@tukuypaj.com' },
       },
       select: {
@@ -25,6 +89,7 @@ export class UsuariosService {
         nombre: true,
         email: true,
         rol: true,
+        permisos: true,
         activo: true,
         createdAt: true,
       },
@@ -40,6 +105,7 @@ export class UsuariosService {
         nombre: true,
         email: true,
         rol: true,
+        permisos: true,
         activo: true,
         createdAt: true,
         updatedAt: true,
@@ -56,16 +122,12 @@ export class UsuariosService {
   async findByRol(rol: RolUsuario) {
     return this.prisma.usuario.findMany({
       where: { rol, activo: true },
-      select: { id: true, nombre: true, email: true, rol: true },
+      select: { id: true, nombre: true, email: true, rol: true, permisos: true },
       orderBy: { nombre: 'asc' },
     });
   }
 
   async create(data: CreateUsuarioDto) {
-    if ((data.rol as string) === 'CHEF') {
-      throw new BadRequestException('El rol de cocina/chef no está admitido en el sistema.');
-    }
-
     const cleanEmail = data.email.trim().toLowerCase();
     const existing = await this.prisma.usuario.findUnique({
       where: { email: cleanEmail },
@@ -77,12 +139,18 @@ export class UsuariosService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(data.password, salt);
 
+    const permisosFinales =
+      data.permisos && Object.keys(data.permisos).length > 0
+        ? { ...obtenerPermisosPorDefecto(data.rol), ...data.permisos }
+        : obtenerPermisosPorDefecto(data.rol);
+
     return this.prisma.usuario.create({
       data: {
         nombre: data.nombre.trim(),
         email: cleanEmail,
         passwordHash,
         rol: data.rol,
+        permisos: permisosFinales as any,
         activo: true,
       },
       select: {
@@ -90,6 +158,7 @@ export class UsuariosService {
         nombre: true,
         email: true,
         rol: true,
+        permisos: true,
         activo: true,
         createdAt: true,
       },
@@ -121,6 +190,7 @@ export class UsuariosService {
         nombre: true,
         email: true,
         rol: true,
+        permisos: true,
         activo: true,
       },
     });
@@ -128,10 +198,6 @@ export class UsuariosService {
 
   async update(id: string, data: UpdateUsuarioDto, currentUserId?: string) {
     const user = await this.findOne(id);
-
-    if ((data.rol as string) === 'CHEF') {
-      throw new BadRequestException('El rol de cocina/chef no está admitido.');
-    }
 
     // Si un admin intenta cambiarse a sí mismo de rol
     if (currentUserId && currentUserId === id && data.rol && data.rol !== RolUsuario.ADMIN) {
@@ -154,7 +220,16 @@ export class UsuariosService {
       }
     }
 
-    if (data.rol) updateData.rol = data.rol;
+    if (data.rol) {
+      updateData.rol = data.rol;
+    }
+
+    if (data.permisos !== undefined) {
+      updateData.permisos = data.permisos;
+    } else if (data.rol && data.rol !== user.rol) {
+      // Si cambia de rol y no especificó permisos, asignar defaults del nuevo rol
+      updateData.permisos = obtenerPermisosPorDefecto(data.rol);
+    }
 
     if (data.password) {
       if (data.password.length < 6) {
@@ -172,6 +247,7 @@ export class UsuariosService {
         nombre: true,
         email: true,
         rol: true,
+        permisos: true,
         activo: true,
       },
     });

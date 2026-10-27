@@ -26,7 +26,9 @@ export class UpdateUsuarioDto {
 
   @IsOptional()
   @IsEnum(RolUsuario, {
-    message: 'El rol debe ser ADMINISTRADOR (ADMIN), CAJERO (CAJERO) o MESERO (MESERO)',
+    message: 'El rol debe ser ADMIN, CAJERO, MESERO o CHEF (Cocina & Despacho)',
   })
   rol?: RolUsuario;
+
+  permisos?: Record<string, boolean>;
 }

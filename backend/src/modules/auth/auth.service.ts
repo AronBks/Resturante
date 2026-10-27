@@ -11,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { obtenerPermisosPorDefecto } from '../usuarios/usuarios.service';
 
 @Injectable()
 export class AuthService {
@@ -63,6 +64,7 @@ export class AuthService {
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
+        permisos: user.permisos || obtenerPermisosPorDefecto(user.rol),
       },
       ...tokens,
     };
@@ -144,6 +146,7 @@ export class AuthService {
         nombre: true,
         email: true,
         rol: true,
+        permisos: true,
         activo: true,
         createdAt: true,
       },

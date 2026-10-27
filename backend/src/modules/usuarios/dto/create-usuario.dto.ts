@@ -26,8 +26,10 @@ export class CreateUsuarioDto {
   password: string;
 
   @IsEnum(RolUsuario, {
-    message: 'El rol debe ser ADMINISTRADOR (ADMIN), CAJERO (CAJERO) o MESERO (MESERO)',
+    message: 'El rol debe ser ADMIN, CAJERO, MESERO o CHEF (Cocina & Despacho)',
   })
   @IsNotEmpty({ message: 'El rol en el restaurante es obligatorio' })
   rol: RolUsuario;
+
+  permisos?: Record<string, boolean>;
 }
