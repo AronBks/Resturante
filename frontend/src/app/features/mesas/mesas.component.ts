@@ -562,7 +562,19 @@ export class MesasComponent implements OnInit, OnDestroy {
         );
       });
 
-    const subMeseroAtendido = this.socketService
+    
+    const subDisponibilidad = this.socketService
+      .onEvent<{ platoId: string; disponible: boolean }>('plato:disponibilidad-actualizada')
+      .subscribe((data) => {
+        if (data && data.platoId) {
+          this.platos.update((lista) =>
+            lista.map((p) =>
+              p.id === data.platoId ? { ...p, disponible: data.disponible } : p,
+            ),
+          );
+        }
+      });
+const subMeseroAtendido = this.socketService
       .onEvent<{ mesaNumero: string }>('mesero:atendido')
       .subscribe((data) => {
         const mesaNum = data?.mesaNumero;

@@ -464,6 +464,7 @@ export class PedidosService {
         throw new BadRequestException('La mesa seleccionada no existe o no está activa');
       }
 
+
       // Si la mesa está OCUPADA, agregar items al pedido activo (soporte multi-ronda para admin y para IA)
       if (mesa.estado === EstadoMesa.OCUPADA) {
         return this.agregarItemsAPedidoActivo(tx, mesaId, meseroId, items, notas, esAdmin, esIA, origenFinal);
@@ -511,12 +512,13 @@ export class PedidosService {
           }
 
           const nuevoStock = (plato.stockActual ?? 0) - item.cantidad;
+          const sigueDisponible = nuevoStock > 0;
 
           await tx.plato.update({
             where: { id: plato.id },
             data: {
               stockActual: nuevoStock,
-              disponible: true,
+              disponible: sigueDisponible,
             },
           });
 
@@ -524,7 +526,7 @@ export class PedidosService {
             id: plato.id,
             nombre: plato.nombre,
             nuevoStock,
-            disponible: nuevoStock > 0,
+            disponible: sigueDisponible,
           });
         }
 
@@ -661,6 +663,9 @@ export class PedidosService {
       for (const sp of result.platosStockModificado) {
         if (this.cartaGateway) {
           this.cartaGateway.broadcastStock(sp.id, sp.nuevoStock, sp.disponible);
+          if (!sp.disponible) {
+            this.cartaGateway.broadcastDisponibilidad(sp.id, false);
+          }
         }
         if (this.gateway?.server) {
           this.gateway.server.emit('plato:stock-actualizado', {
@@ -668,6 +673,12 @@ export class PedidosService {
             nuevoStock: sp.nuevoStock,
             disponible: sp.disponible,
           });
+          if (!sp.disponible) {
+            this.gateway.server.emit('plato:disponibilidad-actualizada', {
+              platoId: sp.id,
+              disponible: false,
+            });
+          }
         }
         if (!sp.disponible) {
           await this.auditoriaService.registrarEvento({
