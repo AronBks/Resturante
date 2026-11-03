@@ -202,13 +202,15 @@ export class MesasService {
     });
   }
 
-  async cambiarEstado(id: number, estado: EstadoMesa) {
-    await this.findOne(id);
+  async cambiarEstado(id: number, estado: EstadoMesa, usuarioNombre?: string) {
+    const mesa = await this.findOne(id);
+    const estadoAnterior = mesa.estado;
     const mesaActualizada = await this.prisma.mesa.update({
       where: { id },
       data: { estado },
     });
     this.gateway.broadcastMesaEstado(id, estado);
+
     return mesaActualizada;
   }
 

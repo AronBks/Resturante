@@ -66,8 +66,9 @@ export class MesasController {
   cambiarEstado(
     @Param('id', ParseIntPipe) id: number,
     @Body('estado') estado: EstadoMesa,
+    @CurrentUser() user: any,
   ) {
-    return this.mesasService.cambiarEstado(id, estado);
+    return this.mesasService.cambiarEstado(id, estado, user?.nombre);
   }
 
   @Patch(':id/toggle-active')
