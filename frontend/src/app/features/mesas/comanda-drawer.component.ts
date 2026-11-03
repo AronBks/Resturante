@@ -943,4 +943,6 @@ export class ComandaDrawerComponent implements OnChanges {
     this.saved.emit();
     this.close.emit();
   }
+
+
 }
