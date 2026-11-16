@@ -1,26 +1,36 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpEventType, HttpRequest } from '@angular/common/http';
-import { Observable, filter, map, tap, catchError, throwError, firstValueFrom } from 'rxjs';
+import {
+  Observable,
+  filter,
+  map,
+  tap,
+  catchError,
+  throwError,
+  firstValueFrom,
+} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
-export class UploadCloudinaryService {
+export class UploadLocalService {
   private readonly http = inject(HttpClient);
 
-  // Cloudinary Config
-  private readonly cloudName = 'dwquu4l5w';
-  private readonly uploadPreset = 'tukuypaj_preset';
-  private readonly cloudinaryEndpoint = `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`;
+  private get uploadEndpoint(): string {
+    const host =
+      typeof window !== 'undefined' && window.location?.hostname
+        ? window.location.hostname
+        : 'localhost';
+    return `http://${host}:3000/api/carta/imagen/upload`;
+  }
 
-  // Signals para estado de carga
   readonly uploading = signal<boolean>(false);
   readonly progress = signal<number>(0);
   readonly error = signal<string | null>(null);
 
   /**
-   * Envía un archivo File a Cloudinary mediante FormData y reporta el progreso mediante Signals.
-   * Retorna la URL pública segura ('secure_url' HTTPS).
+   * Sube una imagen directamente al servidor local del restaurante (backend/public/platos)
+   * y retorna la ruta local relativa (/public/platos/...).
    */
   uploadImage(file: File): Observable<string> {
     this.uploading.set(true);
@@ -29,13 +39,12 @@ export class UploadCloudinaryService {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', this.uploadPreset);
 
-    const req = new HttpRequest('POST', this.cloudinaryEndpoint, formData, {
+    const req = new HttpRequest('POST', this.uploadEndpoint, formData, {
       reportProgress: true,
     });
 
-    return this.http.request<{ secure_url: string }>(req).pipe(
+    return this.http.request<any>(req).pipe(
       tap((event) => {
         if (event.type === HttpEventType.UploadProgress && event.total) {
           const percent = Math.round((100 * event.loaded) / event.total);
@@ -44,25 +53,23 @@ export class UploadCloudinaryService {
       }),
       filter((event) => event.type === HttpEventType.Response),
       map((event: any) => {
-        const secureUrl = event.body?.secure_url as string;
+        const body = event.body;
+        const localUrl = (body?.data?.url || body?.url) as string;
         this.uploading.set(false);
         this.progress.set(100);
-        return secureUrl;
+        return localUrl;
       }),
       catchError((err) => {
         this.uploading.set(false);
         this.progress.set(0);
         const errorMsg =
-          err?.error?.error?.message || 'Error al subir la imagen a Cloudinary';
+          err?.error?.message || 'Error al guardar la imagen en el servidor local';
         this.error.set(errorMsg);
         return throwError(() => new Error(errorMsg));
-      })
+      }),
     );
   }
 
-  /**
-   * Promesa helper para consumo async/await.
-   */
   async uploadImageAsync(file: File): Promise<string> {
     return firstValueFrom(this.uploadImage(file));
   }

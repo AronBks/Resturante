@@ -40,73 +40,92 @@ export interface CategoriaPublica {
   platos: PlatoPublico[];
 }
 
-export const CLOUDINARY_DISHES_MAP: Record<string, string> = {
-  pique: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788149317/imagen_2026-08-31_000836078_qsx36z.png',
-  charque: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148006/imagen_2026-08-30_234644832_rzmnlb.png',
-  matambre: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788727966/imagen_2026-09-06_165244510_bcowih.png',
-  planchita: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584019/128-image_web_q0hfc9.jpg',
-  lapping: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148549/imagen_2026-08-30_235546907_jepqxy.png',
-  pampa: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1768345718/pampaku_xq0ery.jpg',
-  picante: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148920/imagen_2026-08-31_000159494_wohszo.png',
-  caldocola: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788186581/imagen_2026-08-31_102937931_hekruk.png',
-  chankapollo: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788186618/imagen_2026-08-31_103016359_tbagpm.png',
-  kawi: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187077/imagen_2026-08-31_103754357_j15tvd.png',
-  mixto: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187431/imagen_2026-08-31_104348629_eqnlgx.png',
-  pulpitos: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187649/imagen_2026-08-31_104727437_va831n.png',
-  rinon: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187778/imagen_2026-08-31_104910253_zyn75s.png',
-  rinonperol: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188359/imagen_2026-08-31_105916523_vnltvb.png',
-  cascada: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188707/imagen_2026-08-31_110504501_aes1qs.png',
-  cocacola: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188744/imagen_2026-08-31_110542466_ie0rbm.png',
-  fanta: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189726/imagen_2026-08-31_112203919_ektxjf.png',
-  simba: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188831/imagen_2026-08-31_110659388_zhhqsl.png',
-  sprite: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188853/imagen_2026-08-31_110712193_czeqsb.png',
-  acuarius: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189793/imagen_2026-08-31_112311316_p1ak1c.png',
-  delvalle: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188966/imagen_2026-08-31_110918796_umt3wg.png',
-  puravida: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188998/imagen_2026-08-31_110954488_cx756s.png',
-  hervido: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189390/imagen_2026-08-31_111617464_glk2sd.png',
-  huari: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189407/imagen_2026-08-31_111645781_hubsxx.png',
-  pacena: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189457/imagen_2026-08-31_111735504_vdr4d4.png',
+function getLocalBackendOrigin(): string {
+  const host = typeof window !== 'undefined' && window.location?.hostname
+    ? window.location.hostname
+    : 'localhost';
+  return `http://${host}:3000`;
+}
+
+export const LOCAL_DISHES_MAP: Record<string, string> = {
+  pique: '/public/platos/pique.webp',
+  charque: '/public/platos/charque.webp',
+  matambre: '/public/platos/matambre.webp',
+  planchita: '/public/platos/planchita.webp',
+  lapping: '/public/platos/lapping.webp',
+  pampa: '/public/platos/pampa.webp',
+  picante: '/public/platos/picante.webp',
+  caldocola: '/public/platos/caldocola.webp',
+  chankapollo: '/public/platos/chankapollo.webp',
+  kawi: '/public/platos/kawi.webp',
+  mixto: '/public/platos/mixto.webp',
+  pulpitos: '/public/platos/pulpitos.webp',
+  rinon: '/public/platos/rinon.webp',
+  rinonperol: '/public/platos/rinonperol.webp',
+  cascada: '/public/platos/cascada.webp',
+  cocacola: '/public/platos/cocacola.webp',
+  fanta: '/public/platos/fanta.webp',
+  simba: '/public/platos/simba.webp',
+  sprite: '/public/platos/sprite.webp',
+  acuarius: '/public/platos/acuarius.webp',
+  delvalle: '/public/platos/delvalle.webp',
+  puravida: '/public/platos/puravida.webp',
+  hervido: '/public/platos/hervido.webp',
+  huari: '/public/platos/huari.webp',
+  pacena: '/public/platos/pacena.webp',
 };
 
 /**
- * Resuelve la imagen oficial de Cloudinary según el nombre del plato
+ * Resuelve la imagen local del plato desde el servidor del restaurante (sin Internet)
  */
-export function resolverImagenCloudinary(nombre: string, imagenOriginal?: string): string {
+export function resolverImagenLocal(nombre: string, imagenOriginal?: string): string {
+  const origin = getLocalBackendOrigin();
+
+  if (imagenOriginal && imagenOriginal.startsWith('/public/')) {
+    return `${origin}${imagenOriginal}`;
+  }
+
   const n = (nombre || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/['`’\s-]/g, '');
 
-  if (n.includes('coca')) return CLOUDINARY_DISHES_MAP['cocacola'];
-  if (n.includes('cascada')) return CLOUDINARY_DISHES_MAP['cascada'];
-  if (n.includes('fanta')) return CLOUDINARY_DISHES_MAP['fanta'];
-  if (n.includes('simba')) return CLOUDINARY_DISHES_MAP['simba'];
-  if (n.includes('sprite')) return CLOUDINARY_DISHES_MAP['sprite'];
-  if (n.includes('acuari') || n.includes('aquari')) return CLOUDINARY_DISHES_MAP['acuarius'];
-  if (n.includes('valle')) return CLOUDINARY_DISHES_MAP['delvalle'];
-  if (n.includes('puravida')) return CLOUDINARY_DISHES_MAP['puravida'];
-  if (n.includes('hervido')) return CLOUDINARY_DISHES_MAP['hervido'];
-  if (n.includes('huari')) return CLOUDINARY_DISHES_MAP['huari'];
-  if (n.includes('pacen')) return CLOUDINARY_DISHES_MAP['pacena'];
+  const toUrl = (path: string) => `${origin}${path}`;
 
-  if (n.includes('perol')) return CLOUDINARY_DISHES_MAP['rinonperol'];
-  if (n.includes('rinon')) return CLOUDINARY_DISHES_MAP['rinon'];
-  if (n.includes('cola')) return CLOUDINARY_DISHES_MAP['caldocola'];
-  if (n.includes('chanka')) return CLOUDINARY_DISHES_MAP['chankapollo'];
-  if (n.includes('kawi')) return CLOUDINARY_DISHES_MAP['kawi'];
-  if (n.includes('pulpito')) return CLOUDINARY_DISHES_MAP['pulpitos'];
+  if (n.includes('coca')) return toUrl(LOCAL_DISHES_MAP['cocacola']);
+  if (n.includes('cascada')) return toUrl(LOCAL_DISHES_MAP['cascada']);
+  if (n.includes('fanta')) return toUrl(LOCAL_DISHES_MAP['fanta']);
+  if (n.includes('simba')) return toUrl(LOCAL_DISHES_MAP['simba']);
+  if (n.includes('sprite')) return toUrl(LOCAL_DISHES_MAP['sprite']);
+  if (n.includes('acuari') || n.includes('aquari')) return toUrl(LOCAL_DISHES_MAP['acuarius']);
+  if (n.includes('valle')) return toUrl(LOCAL_DISHES_MAP['delvalle']);
+  if (n.includes('puravida')) return toUrl(LOCAL_DISHES_MAP['puravida']);
+  if (n.includes('hervido')) return toUrl(LOCAL_DISHES_MAP['hervido']);
+  if (n.includes('huari')) return toUrl(LOCAL_DISHES_MAP['huari']);
+  if (n.includes('pacen')) return toUrl(LOCAL_DISHES_MAP['pacena']);
 
-  if (n.includes('pique')) return CLOUDINARY_DISHES_MAP['pique'];
-  if (n.includes('charque')) return CLOUDINARY_DISHES_MAP['charque'];
-  if (n.includes('matambre')) return CLOUDINARY_DISHES_MAP['matambre'];
-  if (n.includes('planch')) return CLOUDINARY_DISHES_MAP['planchita'];
-  if (n.includes('lapp')) return CLOUDINARY_DISHES_MAP['lapping'];
-  if (n.includes('pamp')) return CLOUDINARY_DISHES_MAP['pampa'];
-  if (n.includes('picant')) return CLOUDINARY_DISHES_MAP['picante'];
-  if (n.includes('mixto')) return CLOUDINARY_DISHES_MAP['mixto'];
+  if (n.includes('perol')) return toUrl(LOCAL_DISHES_MAP['rinonperol']);
+  if (n.includes('rinon')) return toUrl(LOCAL_DISHES_MAP['rinon']);
+  if (n.includes('cola')) return toUrl(LOCAL_DISHES_MAP['caldocola']);
+  if (n.includes('chanka')) return toUrl(LOCAL_DISHES_MAP['chankapollo']);
+  if (n.includes('kawi')) return toUrl(LOCAL_DISHES_MAP['kawi']);
+  if (n.includes('pulpito')) return toUrl(LOCAL_DISHES_MAP['pulpitos']);
 
-  return imagenOriginal || '';
+  if (n.includes('pique')) return toUrl(LOCAL_DISHES_MAP['pique']);
+  if (n.includes('charque')) return toUrl(LOCAL_DISHES_MAP['charque']);
+  if (n.includes('matambre')) return toUrl(LOCAL_DISHES_MAP['matambre']);
+  if (n.includes('planch')) return toUrl(LOCAL_DISHES_MAP['planchita']);
+  if (n.includes('lapp')) return toUrl(LOCAL_DISHES_MAP['lapping']);
+  if (n.includes('pamp')) return toUrl(LOCAL_DISHES_MAP['pampa']);
+  if (n.includes('picant')) return toUrl(LOCAL_DISHES_MAP['picante']);
+  if (n.includes('mixto')) return toUrl(LOCAL_DISHES_MAP['mixto']);
+
+  if (imagenOriginal && !imagenOriginal.includes('cloudinary.com') && !imagenOriginal.includes('unsplash.com')) {
+    return imagenOriginal;
+  }
+
+  return toUrl(LOCAL_DISHES_MAP['pique']);
 }
 
 @Injectable({ providedIn: 'root' })
@@ -128,14 +147,14 @@ export class CartaPublicaService {
       ...cat,
       platos: (cat.platos || []).map((p) => ({
         ...p,
-        imagenUrl: resolverImagenCloudinary(p.nombre, p.imagenUrl),
+        imagenUrl: resolverImagenLocal(p.nombre, p.imagenUrl),
       })),
     }));
   }
 
   /**
    * Carga inicial de la carta pública desde el backend.
-   * Enriquecida con imágenes HD de Cloudinary de forma centralizada.
+   * Enriquecida con imágenes locales en formato WebP de forma centralizada.
    */
   cargarCarta(): void {
     this.loading.set(true);

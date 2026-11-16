@@ -23,7 +23,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
-import { CartaPublicaService, CategoriaPublica, PlatoPublico, VariantePublica } from '../../services/carta-publica.service';
+import { CartaPublicaService, CategoriaPublica, PlatoPublico, VariantePublica, resolverImagenLocal } from '../../services/carta-publica.service';
 import { SocketPublicoService } from '../../services/socket-publico.service';
 import { CarritoService } from '../../services/carrito.service';
 import { CarritoDrawerComponent } from '../carrito-drawer/carrito-drawer.component';
@@ -215,115 +215,24 @@ export class MenuDigitalComponent implements OnInit, OnDestroy {
     return 'utensils';
   }
 
-  readonly CLOUDINARY_DISHES: Record<string, string> = {
-    pique: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788149317/imagen_2026-08-31_000836078_qsx36z.png',
-    charque: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148006/imagen_2026-08-30_234644832_rzmnlb.png',
-    matambre: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788727966/imagen_2026-09-06_165244510_bcowih.png',
-    planchita: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584019/128-image_web_q0hfc9.jpg',
-    lapping: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148549/imagen_2026-08-30_235546907_jepqxy.png',
-    pampa: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1768345718/pampaku_xq0ery.jpg',
-    picante: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788148920/imagen_2026-08-31_000159494_wohszo.png',
-    caldocola: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788186581/imagen_2026-08-31_102937931_hekruk.png',
-    chankapollo: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788186618/imagen_2026-08-31_103016359_tbagpm.png',
-    kawi: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187077/imagen_2026-08-31_103754357_j15tvd.png',
-    mixto: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187431/imagen_2026-08-31_104348629_eqnlgx.png',
-    pulpitos: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187649/imagen_2026-08-31_104727437_va831n.png',
-    rinon: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788187778/imagen_2026-08-31_104910253_zyn75s.png',
-    rinonperol: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188359/imagen_2026-08-31_105916523_vnltvb.png',
-    cascada: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188707/imagen_2026-08-31_110504501_aes1qs.png',
-    cocacola: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188744/imagen_2026-08-31_110542466_ie0rbm.png',
-    fanta: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189726/imagen_2026-08-31_112203919_ektxjf.png',
-    simba: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188831/imagen_2026-08-31_110659388_zhhqsl.png',
-    sprite: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188853/imagen_2026-08-31_110712193_czeqsb.png',
-    acuarius: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189793/imagen_2026-08-31_112311316_p1ak1c.png',
-    delvalle: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188966/imagen_2026-08-31_110918796_umt3wg.png',
-    puravida: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788188998/imagen_2026-08-31_110954488_cx756s.png',
-    hervido: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189390/imagen_2026-08-31_111617464_glk2sd.png',
-    huari: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189407/imagen_2026-08-31_111645781_hubsxx.png',
-    pacena: 'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788189457/imagen_2026-08-31_111735504_vdr4d4.png',
-  };
-
   /**
-   * Obtiene la URL oficial de la imagen del plato en Cloudinary
+   * Obtiene la URL local de la imagen del plato desde el servidor del restaurante
    */
   getPlatoImageUrl(plato: any): string {
-    const raw = plato?.nombre || '';
-    const n = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['`’\s-]/g, '');
-
-    // 1. Bebidas y Refrescos (coca se evalúa primero para evitar colisión con caldocola)
-    if (n.includes('coca')) return this.CLOUDINARY_DISHES['cocacola'];
-    if (n.includes('cascada')) return this.CLOUDINARY_DISHES['cascada'];
-    if (n.includes('fanta')) return this.CLOUDINARY_DISHES['fanta'];
-    if (n.includes('simba')) return this.CLOUDINARY_DISHES['simba'];
-    if (n.includes('sprite')) return this.CLOUDINARY_DISHES['sprite'];
-    if (n.includes('acuari') || n.includes('aquari')) return this.CLOUDINARY_DISHES['acuarius'];
-    if (n.includes('valle')) return this.CLOUDINARY_DISHES['delvalle'];
-    if (n.includes('puravida')) return this.CLOUDINARY_DISHES['puravida'];
-    if (n.includes('hervido')) return this.CLOUDINARY_DISHES['hervido'];
-    if (n.includes('huari')) return this.CLOUDINARY_DISHES['huari'];
-    if (n.includes('pacen')) return this.CLOUDINARY_DISHES['pacena'];
-
-    // 2. Caldos y Especialidades
-    if (n.includes('perol')) return this.CLOUDINARY_DISHES['rinonperol'];
-    if (n.includes('rinon')) return this.CLOUDINARY_DISHES['rinon'];
-    if (n.includes('cola')) return this.CLOUDINARY_DISHES['caldocola'];
-    if (n.includes('chanka')) return this.CLOUDINARY_DISHES['chankapollo'];
-    if (n.includes('kawi')) return this.CLOUDINARY_DISHES['kawi'];
-    if (n.includes('pulpito')) return this.CLOUDINARY_DISHES['pulpitos'];
-
-    // 3. Platos Tradicionales
-    if (n.includes('pique')) return this.CLOUDINARY_DISHES['pique'];
-    if (n.includes('charque')) return this.CLOUDINARY_DISHES['charque'];
-    if (n.includes('matambre')) return this.CLOUDINARY_DISHES['matambre'];
-    if (n.includes('planch')) return this.CLOUDINARY_DISHES['planchita'];
-    if (n.includes('lapp')) return this.CLOUDINARY_DISHES['lapping'];
-    if (n.includes('pamp')) return this.CLOUDINARY_DISHES['pampa'];
-    if (n.includes('picant')) return this.CLOUDINARY_DISHES['picante'];
-    if (n.includes('mixto')) return this.CLOUDINARY_DISHES['mixto'];
-
-    return plato?.imagenUrl || this.getFoodImageFallback(raw);
+    return resolverImagenLocal(plato?.nombre || '', plato?.imagenUrl);
   }
 
   /**
-   * Fallback visual con fotos culinarias HD de alta calidad
+   * Fallback visual con imágenes locales optimizadas en WebP
    */
   getFoodImageFallback(nombre: string): string {
-    const n = (nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['`’\s-]/g, '');
-
-    if (n.includes('coca')) return this.CLOUDINARY_DISHES['cocacola'];
-    if (n.includes('cascada')) return this.CLOUDINARY_DISHES['cascada'];
-    if (n.includes('fanta')) return this.CLOUDINARY_DISHES['fanta'];
-    if (n.includes('simba')) return this.CLOUDINARY_DISHES['simba'];
-    if (n.includes('sprite')) return this.CLOUDINARY_DISHES['sprite'];
-    if (n.includes('acuari') || n.includes('aquari')) return this.CLOUDINARY_DISHES['acuarius'];
-    if (n.includes('valle')) return this.CLOUDINARY_DISHES['delvalle'];
-    if (n.includes('puravida')) return this.CLOUDINARY_DISHES['puravida'];
-    if (n.includes('hervido')) return this.CLOUDINARY_DISHES['hervido'];
-    if (n.includes('huari')) return this.CLOUDINARY_DISHES['huari'];
-    if (n.includes('pacen')) return this.CLOUDINARY_DISHES['pacena'];
-
-    if (n.includes('perol')) return this.CLOUDINARY_DISHES['rinonperol'];
-    if (n.includes('rinon')) return this.CLOUDINARY_DISHES['rinon'];
-    if (n.includes('cola')) return this.CLOUDINARY_DISHES['caldocola'];
-    if (n.includes('chanka')) return this.CLOUDINARY_DISHES['chankapollo'];
-    if (n.includes('kawi')) return this.CLOUDINARY_DISHES['kawi'];
-    if (n.includes('pulpito')) return this.CLOUDINARY_DISHES['pulpitos'];
-
-    if (n.includes('pique')) return this.CLOUDINARY_DISHES['pique'];
-    if (n.includes('charque')) return this.CLOUDINARY_DISHES['charque'];
-    if (n.includes('matambre')) return this.CLOUDINARY_DISHES['matambre'];
-    if (n.includes('planch')) return this.CLOUDINARY_DISHES['planchita'];
-    if (n.includes('lapp')) return this.CLOUDINARY_DISHES['lapping'];
-    if (n.includes('pamp')) return this.CLOUDINARY_DISHES['pampa'];
-    if (n.includes('picant')) return this.CLOUDINARY_DISHES['picante'];
-    if (n.includes('mixto')) return this.CLOUDINARY_DISHES['mixto'];
-
-    return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop&q=80';
+    return resolverImagenLocal(nombre);
   }
 
   onImgError(event: Event, nombre: string): void {
     const target = event.target as HTMLImageElement;
-    if (target) {
+    if (target && !target.dataset['fallbackApplied']) {
+      target.dataset['fallbackApplied'] = 'true';
       target.src = this.getFoodImageFallback(nombre);
     }
   }
