@@ -5,7 +5,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 import { CategoriaPublica, PlatoPublico, VariantePublica } from './carta-publica.service';
 
 export interface MensajeChat {
@@ -129,7 +129,7 @@ export class DonBetoService {
     return this.http.post(this.webhookUrl, payload, {
       headers,
       responseType: 'text',
-    });
+    }).pipe(timeout(4000));
   }
 
   /**

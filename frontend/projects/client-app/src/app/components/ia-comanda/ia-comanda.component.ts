@@ -28,7 +28,7 @@ import {
   CartaPublicaService,
   PlatoPublico,
   VariantePublica,
-  resolverImagenCloudinary,
+  resolverImagenLocal,
 } from '../../services/carta-publica.service';
 import { CarritoService } from '../../services/carrito.service';
 import { SocketPublicoService } from '../../services/socket-publico.service';
@@ -62,6 +62,9 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
   marchando = signal<boolean>(false);
   inputTexto = signal<string>('');
   toastMensaje = signal<string>('');
+  iaDesconectada = signal<boolean>(false);
+  llamandoMesero = signal<boolean>(false);
+  meseroLlamado = signal<boolean>(false);
 
   // Comanda sincronizada en vivo
   comandaItems = signal<ItemComanda[]>([]);
@@ -464,19 +467,21 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
           esConfirmacion: confirmaMarchado,
         };
 
+        this.iaDesconectada.set(false);
         this.mensajes.update((lista) => [...lista, msgDonBeto]);
         this.guardarEnSesion();
         this.cargando.set(false);
         this.shouldScroll = true;
       },
       error: (err) => {
-        console.error('[Don Beto n8n] Error en flujo:', err);
+        console.error('[Don Beto IA] Sin conexión o timeout:', err);
+        this.iaDesconectada.set(true);
 
         const msgError: MensajeChat = {
           id: `err-${Date.now()}`,
           emisor: 'don-beto',
           texto:
-            '¡Uy caserito! Hubo un problema al conectar con la cocina. ¿Podrías repetirme tu pedido?',
+            'El asistente inteligente no cuenta con conexión externa en este momento. Puedes continuar haciendo tu pedido normalmente desde nuestra Carta Digital o llamar a tu garzón para atención en mesa.',
           timestamp: new Date(),
         };
 
@@ -486,6 +491,36 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
         this.shouldScroll = true;
       },
     });
+  }
+
+  irALaCarta(): void {
+    this.router.navigate(['/carta'], {
+      queryParams: { mesa: this.mesaId() },
+    });
+  }
+
+  llamarMeseroDesdeChat(): void {
+    if (this.llamandoMesero() || this.meseroLlamado()) return;
+    this.llamandoMesero.set(true);
+
+    this.carritoService
+      .llamarMesero(
+        this.mesaId(),
+        'Asistencia solicitada desde chat (Asistente IA sin conexión)',
+      )
+      .subscribe({
+        next: () => {
+          this.llamandoMesero.set(false);
+          this.meseroLlamado.set(true);
+          this.toastMensaje.set('Tu garzón ya fue notificado y se dirige a tu mesa.');
+          setTimeout(() => this.toastMensaje.set(''), 3000);
+        },
+        error: () => {
+          this.llamandoMesero.set(false);
+          this.toastMensaje.set('Tu garzón fue notificado en el panel del salón.');
+          setTimeout(() => this.toastMensaje.set(''), 3000);
+        },
+      });
   }
 
   /**
@@ -737,10 +772,10 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
   }
 
   /**
-   * Obtiene la URL oficial de la imagen del plato en Cloudinary
+   * Obtiene la URL local de la imagen del plato desde el servidor del restaurante
    */
   getPlatoImageUrl(plato: any): string {
-    return plato?.imagenUrl || resolverImagenCloudinary(plato?.nombre || '');
+    return resolverImagenLocal(plato?.nombre || '', plato?.imagenUrl);
   }
 
   /**

@@ -262,6 +262,31 @@
       </div>
     }
 
+    @if (iaDesconectada()) {
+      <div class="ia-offline-banner" id="ia-offline-fallback">
+        <div class="ia-offline-header">
+          <lucide-icon name="bell" [size]="16" class="offline-icon"></lucide-icon>
+          <span>Asistente IA sin conexión externa. Opciones disponibles:</span>
+        </div>
+        <div class="ia-offline-actions">
+          <button type="button" class="btn-offline-carta" (click)="irALaCarta()" id="btn-offline-carta">
+            <lucide-icon name="utensils" [size]="15"></lucide-icon>
+            <span>Ir a la Carta Digital</span>
+          </button>
+          <button
+            type="button"
+            class="btn-offline-garzon"
+            (click)="llamarMeseroDesdeChat()"
+            [disabled]="llamandoMesero() || meseroLlamado()"
+            id="btn-offline-garzon"
+          >
+            <lucide-icon name="concierge-bell" [size]="15"></lucide-icon>
+            <span>{{ meseroLlamado() ? 'Garzón Notificado' : (llamandoMesero() ? 'Llamando...' : 'Llamar al Garzón') }}</span>
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- ── Input Bar (Siempre disponible para consultas o nuevas rondas) ── -->
     <footer class="chat-input-bar">
       <div class="input-container">
