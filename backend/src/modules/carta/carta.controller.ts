@@ -8,9 +8,16 @@ import {
   Body,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
   ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { join } from 'path';
+import { existsSync } from 'fs';
+import { mkdir, writeFile } from 'fs/promises';
 import { CartaService } from './carta.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -75,6 +82,43 @@ export class CartaController {
     },
   ) {
     return this.cartaService.createPlato(data);
+  }
+
+  @Post('imagen/upload')
+  @Roles('ADMIN')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImagenLocal(
+    @UploadedFile()
+    file: { originalname: string; mimetype: string; size: number; buffer: Buffer },
+  ) {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('No se recibió ningún archivo de imagen');
+    }
+
+    const allowedMimeTypes = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Formato no permitido. Usa WebP, PNG o JPG.');
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('La imagen no debe superar los 5 MB.');
+    }
+
+    const ext = file.mimetype === 'image/webp'
+      ? 'webp'
+      : file.mimetype === 'image/png'
+        ? 'png'
+        : 'jpg';
+    const safeName = `plato-${Date.now()}.${ext}`;
+
+    const platosDir = existsSync(join(process.cwd(), 'public'))
+      ? join(process.cwd(), 'public', 'platos')
+      : join(process.cwd(), 'backend', 'public', 'platos');
+
+    await mkdir(platosDir, { recursive: true });
+    await writeFile(join(platosDir, safeName), file.buffer);
+
+    return { url: `/public/platos/${safeName}` };
   }
 
   @Patch('platos/:id/imagen')

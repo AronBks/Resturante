@@ -133,18 +133,18 @@ async function main() {
 
   // ── 4. PLATOS PRINCIPALES (disponibles 12:00 - cierre) ──
   const IMG = {
-    pique:     'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584010/Pique-macho-Cochabambino-500x500_t5gbnw.webp',
-    charque:   'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584019/128-image_web_q0hfc9.jpg',
-    planchita: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=800&q=80',
-    matambre:  'https://res.cloudinary.com/dwquu4l5w/image/upload/v1788727966/imagen_2026-09-06_165244510_bcowih.png',
-    lapping:   'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=800&q=80',
-    pampa:     'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
-    picante:   'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=80',
-    caldo:     'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80',
-    gaseosa:   'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80',
-    jugo:      'https://res.cloudinary.com/dwquu4l5w/image/upload/v1784584179/images_jwo1pg.jpg',
-    hervido:   'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80',
-    cerveza:   'https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&w=800&q=80',
+    pique:     '/public/platos/pique.webp',
+    charque:   '/public/platos/charque.webp',
+    planchita: '/public/platos/planchita.webp',
+    matambre:  '/public/platos/matambre.webp',
+    lapping:   '/public/platos/lapping.webp',
+    pampa:     '/public/platos/pampa.webp',
+    picante:   '/public/platos/picante.webp',
+    caldo:     '/public/platos/caldocola.webp',
+    gaseosa:   '/public/platos/cocacola.webp',
+    jugo:      '/public/platos/delvalle.webp',
+    hervido:   '/public/platos/hervido.webp',
+    cerveza:   '/public/platos/huari.webp',
   };
 
   const platosData = [

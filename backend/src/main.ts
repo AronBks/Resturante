@@ -1,12 +1,21 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { join } from 'path';
+import { existsSync } from 'fs';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('SGGI-Bootstrap');
+
+  // Servir imágenes locales de platos sin depender de Internet
+  const publicDir = existsSync(join(process.cwd(), 'public', 'platos'))
+    ? join(process.cwd(), 'public')
+    : join(process.cwd(), 'backend', 'public');
+  app.useStaticAssets(publicDir, { prefix: '/public' });
 
   // Prefijo global para la API
   app.setGlobalPrefix('api');
