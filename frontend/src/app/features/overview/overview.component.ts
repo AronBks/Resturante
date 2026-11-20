@@ -146,7 +146,7 @@ export class DashboardOverviewComponent implements OnInit, OnDestroy {
 
   getSaludo(): string {
     const hora = new Date().getHours();
-    const nombre = this.user()?.nombre || 'Don Roberto Mamani';
+    const nombre = this.user()?.nombre || 'Dumar Foronda Heredia';
     if (hora >= 6 && hora < 12) {
       return `¡Buen día, ${nombre}!`;
     } else if (hora >= 12 && hora < 19) {

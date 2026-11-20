@@ -25,13 +25,13 @@ async function main() {
   await prisma.usuario.createMany({
     data: [
       {
-        nombre: 'Don Roberto Mamani',
+        nombre: 'Dumar Foronda Heredia',
         email: 'admin@tukuypaj.com',
         passwordHash: await bcrypt.hash('admin123', salt),
         rol: RolUsuario.ADMIN,
       },
       {
-        nombre: 'Carlos Condori',
+        nombre: 'Carlos Condori Vargas',
         email: 'carlos@tukuypaj.com',
         passwordHash: await bcrypt.hash('mesero123', salt),
         rol: RolUsuario.MESERO,
@@ -39,6 +39,18 @@ async function main() {
       {
         nombre: 'Lucía Fernández',
         email: 'lucia@tukuypaj.com',
+        passwordHash: await bcrypt.hash('mesero123', salt),
+        rol: RolUsuario.MESERO,
+      },
+      {
+        nombre: 'Luis Fernando Quispe',
+        email: 'luis.quispe@tukuypaj.com',
+        passwordHash: await bcrypt.hash('mesero123', salt),
+        rol: RolUsuario.MESERO,
+      },
+      {
+        nombre: 'Valeria Arce Vargas',
+        email: 'valeria.arce@tukuypaj.com',
         passwordHash: await bcrypt.hash('mesero123', salt),
         rol: RolUsuario.MESERO,
       },
@@ -93,13 +105,13 @@ async function main() {
     });
 
     if (mesa.meseroId) {
-      const nombreMesero = mesa.meseroId === carlos?.id ? 'Carlos Condori' : 'Lucía Fernández';
+      const nombreMesero = mesa.meseroId === carlos?.id ? 'Carlos Condori Vargas' : 'Lucía Fernández';
       await (prisma as any).auditoriaEvento.create({
         data: {
           tipoEvento: 'ASIGNACION_MESERO',
           mesaId: mesaCreada.id,
           mesaNumero: mesaCreada.numero,
-          usuarioNombre: 'Don Roberto Mamani',
+          usuarioNombre: 'Dumar Foronda Heredia',
           rolUsuario: 'ADMIN',
           meseroResponsableNombre: nombreMesero,
           descripcion: `Apertura de turno: Mesa ${mesaCreada.numero} asignada al mesero ${nombreMesero}`,
