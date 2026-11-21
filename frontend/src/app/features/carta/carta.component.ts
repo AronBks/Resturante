@@ -89,16 +89,12 @@ interface Categoria {
             </div>
             <h1 class="font-playfair">Nuestra Carta Gastronómica</h1>
             <p class="subtitle">
-              Gestione las categorías, precios y disponibilidad de los platos tradicionales de Cochabamba. Mantenga su menú actualizado para una experiencia premium.
+              Administra las categorías, precios, horarios y disponibilidad de los platos y bebidas de la carta en tiempo real.
             </p>
           </div>
 
           @if (isAdmin()) {
             <div class="header-actions">
-              <button type="button" class="btn-action-outline-gold" (click)="abrirModalCategoria()">
-                <lucide-icon name="plus" class="icon-sm"></lucide-icon>
-                Añadir Categoría
-              </button>
               <button type="button" class="btn-action-filled-gold" (click)="abrirCrearPlato()">
                 <lucide-icon name="utensils" class="icon-sm"></lucide-icon>
                 Nuevo Plato
@@ -131,12 +127,12 @@ interface Categoria {
           </div>
 
           <div class="search-box-wrapper">
-            <lucide-icon name="search" class="search-icon"></lucide-icon>
+            <lucide-icon name="search" [size]="15" class="search-icon"></lucide-icon>
             <input 
               type="text" 
               [ngModel]="searchQuery()" 
               (ngModelChange)="searchQuery.set($event)"
-              placeholder="Buscar plato..." 
+              placeholder="Buscar plato o bebida..." 
               class="search-input"
             />
           </div>
@@ -184,18 +180,28 @@ interface Categoria {
                         <div class="agotado-top-badge">Agotado</div>
                       }
 
-                      <!-- Edit Pencil Floating Button -->
+                      <!-- Edit & Delete Floating Buttons (Admin Only) -->
                       @if (isAdmin()) {
-                        <button 
-                          type="button"
-                          class="btn-pencil-edit" 
-                          (click)="activarEdicionRapida(plato, $event)" 
-                          title="Editar Precios"
-                          id="btn-edit-plato-{{ plato.id }}"
-                        >
-                          <lucide-icon name="pencil" class="icon-xs"></lucide-icon>
-                        </button>
-
+                        <div class="card-floating-actions">
+                          <button 
+                            type="button"
+                            class="btn-pencil-edit" 
+                            (click)="activarEdicionRapida(plato, $event)" 
+                            title="Editar Precios"
+                            id="btn-edit-plato-{{ plato.id }}"
+                          >
+                            <lucide-icon name="pencil" class="icon-xs"></lucide-icon>
+                          </button>
+                          <button 
+                            type="button"
+                            class="btn-pencil-edit btn-trash-delete" 
+                            (click)="confirmarEliminarPlato(plato, $event)" 
+                            title="Retirar o eliminar plato"
+                            id="btn-del-plato-{{ plato.id }}"
+                          >
+                            <lucide-icon name="trash-2" class="icon-xs"></lucide-icon>
+                          </button>
+                        </div>
                       }
                     </div>
 
@@ -344,19 +350,26 @@ interface Categoria {
             <div class="breadcrumb">
               <span class="crumb-brand" (click)="cerrarCrearPlato()" style="cursor: pointer;">Tukuypaj</span>
               <span class="crumb-sep">></span>
-              <span class="crumb-current">Añadir Nuevo Plato</span>
+              <span class="crumb-current">Registrar Nuevo Plato</span>
             </div>
             <div class="header-status-pill">
-              <span class="status-dot-active"></span> SISTEMA OPERATIVO
+              <span class="status-dot-active"></span> CARTA EN VIVO
             </div>
           </div>
 
           <div class="create-title-section">
-            <h1 class="font-playfair brand-title-gold">Crear nueva delicia</h1>
+            <h1 class="font-playfair brand-title-gold">Registrar Nuevo Plato</h1>
             <p class="subtitle-text">
-              Complete la información detallada para registrar un nuevo plato en el sistema. Asegúrese de que las imágenes y descripciones reflejen la calidad de nuestra cocina.
+              Completa los datos del plato o bebida, sus precios y su fotografía para publicarlo en la carta.
             </p>
           </div>
+
+          @if (formError()) {
+            <div class="form-error-banner">
+              <lucide-icon name="alert-circle" [size]="16"></lucide-icon>
+              <span>{{ formError() }}</span>
+            </div>
+          }
 
           <!-- 2-Column Main Form Grid -->
           <div class="create-grid-layout">
@@ -495,7 +508,7 @@ interface Categoria {
 
             </div>
 
-            <!-- Right Column: Media Upload & Tags -->
+            <!-- Right Column: Media Upload & Initial Stock -->
             <div class="form-col-sidebar">
               
               <!-- Widget 1: Imagen del Plato -->
@@ -503,7 +516,12 @@ interface Categoria {
                 <div class="sidebar-widget-header">IMAGEN DEL PLATO</div>
                 <div class="sidebar-widget-body">
                   
-                  <div class="upload-dropzone-box" (click)="triggerFormFileInput()">
+                  <div
+                    class="upload-dropzone-box"
+                    (click)="triggerFormFileInput()"
+                    (dragover)="$event.preventDefault()"
+                    (drop)="onFormImageDrop($event)"
+                  >
                     @if (isUploadingFormImage()) {
                       <div class="dropzone-spinner">
                         <div class="micro-spinner"></div>
@@ -511,7 +529,7 @@ interface Categoria {
                       </div>
                     } @else if (formPlato.imagenUrl) {
                       <div class="image-preview-wrapper">
-                        <img [src]="formPlato.imagenUrl" alt="Vista previa del plato" class="form-preview-img" />
+                        <img [src]="getFormPreviewUrl()" alt="Vista previa del plato" class="form-preview-img" />
                         <div class="preview-overlay-btn">Cambiar Imagen</div>
                       </div>
                     } @else {
@@ -520,45 +538,52 @@ interface Categoria {
                           <lucide-icon name="upload" class="icon-md"></lucide-icon>
                         </div>
                         <p class="dropzone-text">
-                          Arrastra o haz clic para subir una imagen de alta resolución
+                          Arrastra o haz clic para subir la foto del plato
                         </p>
-                        <span class="dropzone-subtext">PNG O JPG • MAX 5MB</span>
+                        <span class="dropzone-subtext">WEBP, PNG O JPG • MÁX. 5 MB</span>
                       </div>
                     }
 
                     <input 
                       type="file" 
                       id="form-file-input" 
-                      accept="image/*" 
+                      accept="image/webp,image/png,image/jpeg,image/jpg" 
                       style="display: none" 
                       (change)="uploadFormImage($event)"
                     />
                   </div>
 
-                  <div class="tip-recommendation-box">
-                    <span class="bulb-icon">💡</span>
-                    <p>Recomendamos usar fondos oscuros o texturizados para resaltar los colores del plato.</p>
-                  </div>
-
                 </div>
               </div>
 
-              <!-- Widget 2: Etiquetas de Menú -->
+              <!-- Widget 2: Control de Stock Inicial -->
               <div class="form-panel-card glass-panel">
-                <div class="sidebar-widget-header">ETIQUETAS DE MENÚ</div>
+                <div class="sidebar-widget-header">CONTROL DE PORCIONES</div>
                 <div class="sidebar-widget-body">
-                  <div class="tags-pills-row">
-                    @for (tag of availableTags; track tag) {
-                      <button 
-                        type="button" 
-                        class="tag-pill-btn" 
-                        [class.selected]="hasTag(tag)"
-                        (click)="toggleTag(tag)"
-                      >
-                        {{ tag }}
-                      </button>
-                    }
+                  <div class="toggle-estado-box" style="margin-bottom: 12px;">
+                    <span>Controlar stock por porción</span>
+                    <label class="switch switch-master">
+                      <input type="checkbox" [(ngModel)]="formPlato.controlarStock" />
+                      <span class="slider round"></span>
+                    </label>
                   </div>
+
+                  @if (formPlato.controlarStock) {
+                    <div class="stock-form-inputs">
+                      <div class="form-group-field">
+                        <label>PORCIONES INICIALES</label>
+                        <input type="number" [(ngModel)]="formPlato.stockActual" min="1" class="custom-input" />
+                      </div>
+                      <div class="form-group-field">
+                        <label>ALERTA MÍNIMA</label>
+                        <input type="number" [(ngModel)]="formPlato.stockMinimo" min="1" class="custom-input" />
+                      </div>
+                    </div>
+                  } @else {
+                    <p style="font-size: 0.78rem; color: #8c8277; margin: 0;">
+                      Sin límite de porciones: el plato estará disponible hasta que se desactive manualmente.
+                    </p>
+                  }
                 </div>
               </div>
 
@@ -568,41 +593,15 @@ interface Categoria {
 
           <!-- Bottom Fixed Action Bar -->
           <div class="create-bottom-bar">
-            <button type="button" class="btn-cancelar-panel" (click)="cerrarCrearPlato()">
+            <button type="button" class="btn-cancelar-panel" (click)="cerrarCrearPlato()" [disabled]="guardandoPlato()">
               Cancelar
             </button>
-            <button type="button" class="btn-guardar-plato" (click)="guardarNuevoPlatoCompleto()">
+            <button type="button" class="btn-guardar-plato" (click)="guardarNuevoPlatoCompleto()" [disabled]="guardandoPlato() || isUploadingFormImage()">
               <lucide-icon name="check" class="icon-sm"></lucide-icon>
-              Guardar Plato
+              <span>{{ guardandoPlato() ? 'Guardando...' : 'Guardar Plato' }}</span>
             </button>
           </div>
 
-        </div>
-      }
-
-      <!-- Modal: Añadir Categoría -->
-      @if (showCategoriaModal()) {
-        <div class="modal-backdrop animate-fade-in" (click)="cerrarModales()">
-          <div class="modal-card glass-panel" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3 class="font-playfair">Añadir Nueva Categoría</h3>
-              <button type="button" class="btn-close" (click)="cerrarModales()">&times;</button>
-            </div>
-            <div class="modal-body">
-              <div class="form-group">
-                <label>Nombre de la Categoría</label>
-                <input type="text" [(ngModel)]="nuevaCategoria.nombre" placeholder="Ej. Parrillas & Carnes" class="modal-input" />
-              </div>
-              <div class="form-group">
-                <label>Descripción Subtítulo</label>
-                <input type="text" [(ngModel)]="nuevaCategoria.descripcion" placeholder="Ej. Cortes seleccionados a la brasa" class="modal-input" />
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn-modal-cancel" (click)="cerrarModales()">Cancelar</button>
-              <button type="button" class="btn-modal-save" (click)="guardarCategoria()">Guardar Categoría</button>
-            </div>
-          </div>
         </div>
       }
 
@@ -1015,6 +1014,34 @@ interface Categoria {
       }
 
     </div>
+
+    <!-- Modal: Confirmar Retiro / Eliminación de Plato (fuera de .animate-in para centrar en viewport) -->
+    @if (platoAEliminar()) {
+      <div class="modal-backdrop" (click)="platoAEliminar.set(null)">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="font-playfair">Retirar Plato de la Carta</h3>
+            <button type="button" class="btn-close" (click)="platoAEliminar.set(null)">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p style="color: #ede4d8; font-size: 0.92rem; line-height: 1.5; margin: 0;">
+              ¿Deseas retirar <strong>{{ platoAEliminar()?.nombre }}</strong> de la carta?
+            </p>
+            <p style="color: #9a8e80; font-size: 0.82rem; line-height: 1.45; margin: 0;">
+              Si el plato nunca tuvo ventas registradas, se eliminará permanentemente. Si ya tiene historial en comandas, quedará oculto de la carta digital del cliente para conservar tus reportes intactos.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-modal-cancel" (click)="platoAEliminar.set(null)" [disabled]="eliminandoPlato()">
+              Cancelar
+            </button>
+            <button type="button" class="btn-danger-confirm" (click)="ejecutarEliminarPlato()" [disabled]="eliminandoPlato()">
+              {{ eliminandoPlato() ? 'Procesando...' : 'Confirmar Retiro' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .carta-container {
@@ -1164,29 +1191,32 @@ interface Categoria {
       position: relative;
       display: flex;
       align-items: center;
-      width: 240px;
+      width: 260px;
 
       .search-icon {
         position: absolute;
         left: 12px;
-        width: 15px;
-        height: 15px;
-        color: #8c8277;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #9c8f80;
+        pointer-events: none;
       }
 
       .search-input {
         width: 100%;
-        background: rgba(18, 14, 11, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 6px;
-        padding: 7px 12px 7px 34px;
+        background: rgba(18, 14, 11, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 9px 14px 9px 38px;
         color: #f3ebe2;
-        font-size: 0.82rem;
+        font-size: 0.84rem;
         outline: none;
-        transition: border-color 0.2s ease;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
         &:focus {
           border-color: #d4af37;
+          box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
         }
 
         &::placeholder {
@@ -1324,14 +1354,21 @@ interface Categoria {
         letter-spacing: 0.5px;
       }
 
-      .btn-pencil-edit {
+      .card-floating-actions {
         position: absolute;
         top: 12px;
         right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        z-index: 5;
+      }
+
+      .btn-pencil-edit {
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: rgba(18, 14, 11, 0.75);
+        background: rgba(18, 14, 11, 0.78);
         border: 1px solid rgba(255, 255, 255, 0.15);
         color: #f3ebe2;
         display: flex;
@@ -1339,13 +1376,18 @@ interface Categoria {
         justify-content: center;
         cursor: pointer;
         transition: all 0.2s ease;
-        z-index: 5;
 
         &:hover {
           background: #d4af37;
           border-color: #d4af37;
           color: #140f0b;
           transform: scale(1.08);
+        }
+
+        &.btn-trash-delete:hover {
+          background: #c94a4a;
+          border-color: #c94a4a;
+          color: #ffffff;
         }
       }
 
@@ -2019,9 +2061,54 @@ interface Categoria {
         }
       }
 
+      .custom-select {
+        color-scheme: dark;
+      }
+
       .custom-select option {
         background: #140f0b;
         color: #f3ebe2;
+      }
+    }
+
+    .form-error-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(201, 74, 74, 0.14);
+      border: 1px solid rgba(201, 74, 74, 0.45);
+      color: #fca5a5;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .stock-form-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-danger-confirm {
+      background: #c94a4a;
+      color: #ffffff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: #dc2626;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
     }
 
@@ -2389,10 +2476,13 @@ interface Categoria {
     /* Modal Backdrop & Dialogs */
     .modal-backdrop {
       position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.75);
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.78);
       backdrop-filter: blur(4px);
-      z-index: 1000;
+      z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3473,7 +3563,7 @@ export class CartaComponent implements OnInit, OnDestroy {
   showCategoriaModal = signal(false);
   nuevaCategoria = { nombre: '', descripcion: '' };
 
-  // Dedicated Form Model for "Crear nueva delicia"
+  // Dedicated Form Model for "Registrar Nuevo Plato"
   formPlato = {
     nombre: '',
     categoriaId: 1,
@@ -3481,15 +3571,20 @@ export class CartaComponent implements OnInit, OnDestroy {
     descripcion: '',
     precioVenta: 45,
     imagenUrl: '',
-    etiquetas: ['Más Vendido'] as string[],
+    controlarStock: false,
+    stockActual: 15,
+    stockMinimo: 3,
     variantes: [
       { nombre: 'Personal', precio: 45, disponible: true },
       { nombre: 'Familiar', precio: 120, disponible: true }
     ]
   };
 
-  availableTags = ['Más Vendido', 'Nuevo', 'Picante', 'Especialidad'];
   isUploadingFormImage = signal(false);
+  formError = signal<string | null>(null);
+  guardandoPlato = signal(false);
+  platoAEliminar = signal<any | null>(null);
+  eliminandoPlato = signal(false);
 
   // Inline Price Editing States (Grid View)
   editingPlatoId = signal<string | null>(null);
@@ -3907,6 +4002,7 @@ export class CartaComponent implements OnInit, OnDestroy {
   /* Navigation View Controller */
   abrirCrearPlato(catId?: number) {
     const selectedCat = catId || (this.categorias().length > 0 ? this.categorias()[0].id : 1);
+    this.formError.set(null);
     this.formPlato = {
       nombre: '',
       categoriaId: selectedCat,
@@ -3914,7 +4010,9 @@ export class CartaComponent implements OnInit, OnDestroy {
       descripcion: '',
       precioVenta: 45,
       imagenUrl: '',
-      etiquetas: ['Más Vendido'],
+      controlarStock: false,
+      stockActual: 15,
+      stockMinimo: 3,
       variantes: [
         { nombre: 'Personal', precio: 45, disponible: true },
         { nombre: 'Familiar', precio: 120, disponible: true }
@@ -3924,7 +4022,31 @@ export class CartaComponent implements OnInit, OnDestroy {
   }
 
   cerrarCrearPlato() {
+    this.formError.set(null);
     this.currentView.set('list');
+  }
+
+  confirmarEliminarPlato(plato: any, event: Event) {
+    event.stopPropagation();
+    this.platoAEliminar.set(plato);
+  }
+
+  ejecutarEliminarPlato() {
+    const plato = this.platoAEliminar();
+    if (!plato || this.eliminandoPlato()) return;
+    this.eliminandoPlato.set(true);
+
+    this.http.delete<any>(`${this.baseUrl}/carta/platos/${plato.id}`).subscribe({
+      next: () => {
+        this.eliminandoPlato.set(false);
+        this.platoAEliminar.set(null);
+        this.cargarCarta();
+      },
+      error: (err) => {
+        this.eliminandoPlato.set(false);
+        console.error('Error al retirar plato:', err);
+      },
+    });
   }
 
   /* Form Actions */
@@ -3940,17 +4062,17 @@ export class CartaComponent implements OnInit, OnDestroy {
     this.formPlato.variantes.splice(index, 1);
   }
 
-  hasTag(tag: string): boolean {
-    return this.formPlato.etiquetas.includes(tag);
-  }
-
-  toggleTag(tag: string) {
-    const idx = this.formPlato.etiquetas.indexOf(tag);
-    if (idx >= 0) {
-      this.formPlato.etiquetas.splice(idx, 1);
-    } else {
-      this.formPlato.etiquetas.push(tag);
+  getFormPreviewUrl(): string {
+    const url = this.formPlato.imagenUrl;
+    if (!url) return '';
+    if (url.startsWith('/public/')) {
+      const host =
+        typeof window !== 'undefined' && window.location?.hostname
+          ? window.location.hostname
+          : 'localhost';
+      return `http://${host}:3000${url}`;
     }
+    return url;
   }
 
   triggerFormFileInput() {
@@ -3958,32 +4080,52 @@ export class CartaComponent implements OnInit, OnDestroy {
     fileInput?.click();
   }
 
+  onFormImageDrop(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      this.subirArchivoFormulario(file);
+    }
+  }
+
   uploadFormImage(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
+    this.subirArchivoFormulario(input.files[0]);
+  }
 
+  private subirArchivoFormulario(file: File) {
+    this.formError.set(null);
     this.isUploadingFormImage.set(true);
     this.uploadService.uploadImage(file).subscribe({
-      next: (secureUrl) => {
-        this.formPlato.imagenUrl = secureUrl;
+      next: (localUrl) => {
+        this.formPlato.imagenUrl = localUrl;
         this.isUploadingFormImage.set(false);
       },
       error: (err) => {
-        console.error('Error al subir imagen:', err);
+        this.formError.set(err?.message || 'No se pudo subir la imagen.');
         this.isUploadingFormImage.set(false);
       }
     });
   }
 
   guardarNuevoPlatoCompleto() {
-    if (!this.formPlato.nombre.trim()) return;
+    this.formError.set(null);
+    if (!this.formPlato.nombre.trim()) {
+      this.formError.set('Ingresa el nombre del plato o bebida antes de guardar.');
+      return;
+    }
 
-    // Determine min base price
+    const variantesValidas = this.formPlato.variantes.filter((v) => v.nombre.trim() !== '');
     let precioFinal = Number(this.formPlato.precioVenta);
-    if (this.formPlato.variantes.length > 0) {
-      const validPrecios = this.formPlato.variantes.map((v) => Number(v.precio));
+    if (variantesValidas.length > 0) {
+      const validPrecios = variantesValidas.map((v) => Number(v.precio));
       precioFinal = Math.min(...validPrecios);
+    }
+
+    if (!precioFinal || precioFinal <= 0) {
+      this.formError.set('El precio debe ser mayor a Bs. 0.');
+      return;
     }
 
     const payload = {
@@ -3991,17 +4133,25 @@ export class CartaComponent implements OnInit, OnDestroy {
       categoriaId: Number(this.formPlato.categoriaId),
       precioVenta: precioFinal,
       descripcion: this.formPlato.descripcion.trim(),
-      imagenUrl: this.formPlato.imagenUrl,
+      imagenUrl: this.formPlato.imagenUrl || undefined,
       disponible: this.formPlato.disponible,
-      variantes: this.formPlato.variantes.filter((v) => v.nombre.trim() !== '')
+      controlarStock: this.formPlato.controlarStock,
+      stockActual: this.formPlato.controlarStock ? Number(this.formPlato.stockActual || 15) : null,
+      stockMinimo: Number(this.formPlato.stockMinimo || 3),
+      variantes: variantesValidas,
     };
 
+    this.guardandoPlato.set(true);
     this.http.post<any>(`${this.baseUrl}/carta/platos`, payload).subscribe({
       next: () => {
+        this.guardandoPlato.set(false);
         this.cargarCarta();
         this.cerrarCrearPlato();
       },
-      error: (err) => console.error('Error al guardar plato completo', err)
+      error: (err) => {
+        this.guardandoPlato.set(false);
+        this.formError.set(err?.error?.message || 'No se pudo guardar el plato.');
+      }
     });
   }
 

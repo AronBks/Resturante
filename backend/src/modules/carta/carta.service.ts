@@ -99,6 +99,9 @@ export class CartaService {
     categoriaId: number;
     imagenUrl?: string;
     disponible?: boolean;
+    controlarStock?: boolean;
+    stockActual?: number | null;
+    stockMinimo?: number;
     variantes?: { nombre: string; precio: number; disponible?: boolean }[];
   }) {
     const created = await this.prisma.plato.create({
@@ -109,6 +112,9 @@ export class CartaService {
         categoriaId: Number(data.categoriaId),
         imagenUrl: data.imagenUrl,
         disponible: data.disponible !== undefined ? data.disponible : true,
+        controlarStock: !!data.controlarStock,
+        stockActual: data.controlarStock ? (data.stockActual ?? 10) : null,
+        stockMinimo: data.stockMinimo ?? 3,
         variantes: data.variantes && data.variantes.length > 0 ? {
           create: data.variantes.map(v => ({
             nombre: v.nombre,
@@ -127,6 +133,35 @@ export class CartaService {
     this.pedidosGateway.server?.emit('menu:actualizado', { platoId: created.id });
 
     return created;
+  }
+
+  async deletePlato(id: string) {
+    await this.findOnePlato(id);
+    const ordenesCount = await this.prisma.detallePedido.count({ where: { platoId: id } });
+
+    if (ordenesCount > 0) {
+      const archived = await this.prisma.plato.update({
+        where: { id },
+        data: { disponible: false },
+      });
+      this.cartaGateway.server?.emit('menu:actualizado', { platoId: id });
+      this.pedidosGateway.server?.emit('menu:actualizado', { platoId: id });
+      return {
+        eliminado: false,
+        archivado: true,
+        plato: archived,
+        mensaje: 'El plato tiene historial de ventas y fue retirado de la carta pública (desactivado).',
+      };
+    }
+
+    await this.prisma.plato.delete({ where: { id } });
+    this.cartaGateway.server?.emit('menu:actualizado', { platoId: id });
+    this.pedidosGateway.server?.emit('menu:actualizado', { platoId: id });
+    return {
+      eliminado: true,
+      archivado: false,
+      mensaje: 'Plato eliminado permanentemente del catálogo.',
+    };
   }
 
   async updatePlato(

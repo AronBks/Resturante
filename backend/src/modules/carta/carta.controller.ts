@@ -4,6 +4,7 @@ import {
   Post,
   Patch,
   Put,
+  Delete,
   Param,
   Body,
   Query,
@@ -78,6 +79,9 @@ export class CartaController {
       categoriaId: number;
       imagenUrl?: string;
       disponible?: boolean;
+      controlarStock?: boolean;
+      stockActual?: number | null;
+      stockMinimo?: number;
       variantes?: { nombre: string; precio: number; disponible?: boolean }[];
     },
   ) {
@@ -151,6 +155,12 @@ export class CartaController {
   @Roles('ADMIN')
   toggleDisponible(@Param('id') id: string) {
     return this.cartaService.toggleDisponible(id);
+  }
+
+  @Delete('platos/:id')
+  @Roles('ADMIN')
+  removePlato(@Param('id') id: string) {
+    return this.cartaService.deletePlato(id);
   }
 
   @Patch('variantes/:id/toggle')
