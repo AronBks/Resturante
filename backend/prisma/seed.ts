@@ -37,12 +37,6 @@ async function main() {
         rol: RolUsuario.MESERO,
       },
       {
-        nombre: 'Lucía Fernández',
-        email: 'lucia@tukuypaj.com',
-        passwordHash: await bcrypt.hash('mesero123', salt),
-        rol: RolUsuario.MESERO,
-      },
-      {
         nombre: 'Luis Fernando Quispe',
         email: 'luis.quispe@tukuypaj.com',
         passwordHash: await bcrypt.hash('mesero123', salt),
@@ -77,21 +71,27 @@ async function main() {
   });
   console.log('✅ Usuarios creados (6)');
 
-  // ── 2. MESAS ──
+  // ── 2. MESAS (15 Mesas en Salón — 5 por cada mesero) ──
   const carlos = await prisma.usuario.findUnique({ where: { email: 'carlos@tukuypaj.com' } });
-  const lucia = await prisma.usuario.findUnique({ where: { email: 'lucia@tukuypaj.com' } });
+  const luis = await prisma.usuario.findUnique({ where: { email: 'luis.quispe@tukuypaj.com' } });
+  const valeria = await prisma.usuario.findUnique({ where: { email: 'valeria.arce@tukuypaj.com' } });
 
   const mesasData = [
-    { numero: 'M01', capacidad: 6, meseroId: carlos?.id, posicion: { x: 80,  y: 180, zona: 'Zona Central' } },
-    { numero: 'M02', capacidad: 4, meseroId: carlos?.id, posicion: { x: 230, y: 180, zona: 'Zona Central' } },
-    { numero: 'M03', capacidad: 4, meseroId: carlos?.id, posicion: { x: 380, y: 180, zona: 'Zona Central' } },
-    { numero: 'M04', capacidad: 6, meseroId: carlos?.id, posicion: { x: 530, y: 180, zona: 'Zona Central' } },
-    { numero: 'M05', capacidad: 4, meseroId: carlos?.id, posicion: { x: 80,  y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'M06', capacidad: 2, meseroId: lucia?.id,  posicion: { x: 230, y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'M07', capacidad: 4, meseroId: lucia?.id,  posicion: { x: 380, y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'M08', capacidad: 2, meseroId: lucia?.id,  posicion: { x: 530, y: 320, zona: 'Zona Ventanales' } },
-    { numero: 'B01', capacidad: 2, meseroId: lucia?.id,  posicion: { x: 700, y: 180, zona: 'Barra' } },
-    { numero: 'B02', capacidad: 3, meseroId: lucia?.id,  posicion: { x: 700, y: 320, zona: 'Barra' } },
+    { numero: 'M01', capacidad: 6, mesero: carlos,  posicion: { x: 80,  y: 180, zona: 'Zona Central' } },
+    { numero: 'M02', capacidad: 4, mesero: carlos,  posicion: { x: 230, y: 180, zona: 'Zona Central' } },
+    { numero: 'M03', capacidad: 4, mesero: carlos,  posicion: { x: 380, y: 180, zona: 'Zona Central' } },
+    { numero: 'M04', capacidad: 6, mesero: carlos,  posicion: { x: 530, y: 180, zona: 'Zona Central' } },
+    { numero: 'M05', capacidad: 4, mesero: carlos,  posicion: { x: 80,  y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M06', capacidad: 4, mesero: luis,    posicion: { x: 230, y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M07', capacidad: 4, mesero: luis,    posicion: { x: 380, y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M08', capacidad: 4, mesero: luis,    posicion: { x: 530, y: 320, zona: 'Zona Ventanales' } },
+    { numero: 'M09', capacidad: 4, mesero: luis,    posicion: { x: 700, y: 180, zona: 'Barra' } },
+    { numero: 'M10', capacidad: 4, mesero: luis,    posicion: { x: 700, y: 320, zona: 'Barra' } },
+    { numero: 'M11', capacidad: 4, mesero: valeria, posicion: { x: 80,  y: 460, zona: 'Zona Central' } },
+    { numero: 'M12', capacidad: 6, mesero: valeria, posicion: { x: 230, y: 460, zona: 'Zona Central' } },
+    { numero: 'M13', capacidad: 4, mesero: valeria, posicion: { x: 380, y: 460, zona: 'Zona Ventanales' } },
+    { numero: 'M14', capacidad: 4, mesero: valeria, posicion: { x: 530, y: 460, zona: 'Zona Ventanales' } },
+    { numero: 'M15', capacidad: 6, mesero: valeria, posicion: { x: 700, y: 460, zona: 'Salón Principal' } },
   ];
 
   for (const mesa of mesasData) {
@@ -99,13 +99,13 @@ async function main() {
       data: {
         numero: mesa.numero,
         capacidad: mesa.capacidad,
-        meseroAsignadoId: mesa.meseroId || null,
+        meseroAsignadoId: mesa.mesero?.id || null,
         posicion: JSON.stringify(mesa.posicion),
       },
     });
 
-    if (mesa.meseroId) {
-      const nombreMesero = mesa.meseroId === carlos?.id ? 'Carlos Condori Vargas' : 'Lucía Fernández';
+    if (mesa.mesero) {
+      const nombreMesero = mesa.mesero.nombre;
       await (prisma as any).auditoriaEvento.create({
         data: {
           tipoEvento: 'ASIGNACION_MESERO',
@@ -115,12 +115,12 @@ async function main() {
           rolUsuario: 'ADMIN',
           meseroResponsableNombre: nombreMesero,
           descripcion: `Apertura de turno: Mesa ${mesaCreada.numero} asignada al mesero ${nombreMesero}`,
-          metadata: { meseroId: mesa.meseroId, meseroNombre: nombreMesero },
+          metadata: { meseroId: mesa.mesero.id, meseroNombre: nombreMesero },
         },
       });
     }
   }
-  console.log('✅ Mesas creadas (10) con meseros asignados y auditoría inicial');
+  console.log('✅ Mesas creadas (15) con meseros asignados y auditoría inicial');
 
   // ── 3. CATEGORÍAS ──
   const catPlatos = await prisma.categoriaPlato.create({
