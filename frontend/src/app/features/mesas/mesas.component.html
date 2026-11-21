@@ -21,10 +21,10 @@
         <strong class="pill-amount">Bs. {{ montoMesasAbiertas() | number:'1.2-2' }}</strong>
       </div>
 
-      <!-- Botón de Sistema Operativo -->
-      <button class="sys-operative-btn" (click)="cargarMesas()" title="Actualizar salón">
-        <span>Sistema Operativo</span>
-        <lucide-icon name="printer" [size]="16"></lucide-icon>
+      <!-- Botón de Actualizar Salón -->
+      <button class="sys-operative-btn" (click)="cargarMesas()" title="Actualizar estado del salón">
+        <span>Actualizar Salón</span>
+        <lucide-icon name="refresh-cw" [size]="15"></lucide-icon>
       </button>
     </div>
   </header>
@@ -64,7 +64,7 @@
           <option value="TODOS">Todos los meseros</option>
           <option value="MIS_MESAS" *ngIf="authService.currentUserSignal()">Mis Mesas Asignadas</option>
           @for (m of meseros(); track m.id) {
-            <option [value]="m.id">{{ m.nombre }} ({{ m.rol }})</option>
+            <option [value]="m.id">{{ m.nombre }}</option>
           }
         </select>
       </div>
@@ -201,7 +201,7 @@
               } @else {
                 <div class="clean-status">
                   <lucide-icon name="check-circle-2" [size]="12"></lucide-icon>
-                  <span>Limpia</span>
+                  <span>Disponible</span>
                 </div>
               }
             </div>
@@ -536,7 +536,7 @@
         </div>
 
         <p class="modal-assign-desc">
-          Mesa <strong>{{ mesaParaAsignar()?.numero }}</strong> — Designa al mesero físico de turno responsable de la atención presencial, despacho de platos y registro de auditoría.
+          Mesa <strong>{{ mesaParaAsignar()?.numero }}</strong> — Selecciona al garzón encargado de la atención y entrega de pedidos en esta mesa.
         </p>
 
         <div class="meseros-list-options">

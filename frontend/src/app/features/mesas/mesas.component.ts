@@ -285,6 +285,7 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   abrirAsignarMesero(mesa: Mesa, ev: MouseEvent) {
     ev.stopPropagation();
+    this.cargarMeseros();
     this.mesaParaAsignar.set(mesa);
   }
 

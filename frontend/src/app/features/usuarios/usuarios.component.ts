@@ -46,9 +46,9 @@ export interface MiembroEquipo {
             <lucide-icon name="shield-check" [size]="13"></lucide-icon>
             <span>ADMINISTRACIÓN DE PERSONAL</span>
           </div>
-          <h1 class="font-playfair">Equipo de Trabajo & Caja</h1>
+          <h1 class="font-playfair">Equipo de Trabajo</h1>
           <p class="header-desc">
-            Gestione las cuentas de acceso, roles (Administración, Caja, Salón y Cocina/Despacho) y la matriz personalizada de permisos para cada colaborador.
+            Administra las cuentas de acceso, roles operativos y permisos del personal del restaurante.
           </p>
         </div>
 
@@ -80,47 +80,47 @@ export interface MiembroEquipo {
           </div>
         </article>
 
-        <!-- Card 2: Cocina & Despacho -->
+        <!-- Card 2: Cocina -->
         <article class="kpi-card">
           <div class="kpi-icon-circle kpi-icon-amber">
             <lucide-icon name="concierge-bell" [size]="20"></lucide-icon>
           </div>
           <div class="kpi-info">
-            <span class="kpi-label">COCINA & DESPACHO</span>
+            <span class="kpi-label">COCINA</span>
             <strong class="kpi-value font-playfair">{{ cocinaCount() }}</strong>
             <span class="kpi-subtext text-amber">
-              <span class="dot-amber"></span> Pase y KDS
+              <span class="dot-amber"></span> Preparación de pedidos
             </span>
           </div>
         </article>
 
-        <!-- Card 3: Cajeros Responsables -->
+        <!-- Card 3: Caja -->
         <article class="kpi-card">
           <div class="kpi-icon-circle kpi-icon-emerald">
             <lucide-icon name="landmark" [size]="20"></lucide-icon>
           </div>
           <div class="kpi-info">
-            <span class="kpi-label">CAJEROS DE SALA</span>
+            <span class="kpi-label">CAJA</span>
             <strong class="kpi-value font-playfair">{{ cajerosCount() }}</strong>
             <span class="kpi-subtext text-emerald">
-              <span class="dot-online"></span> Habilitados para Caja
+              <span class="dot-online"></span> Cobros y cierre de turno
             </span>
           </div>
         </article>
 
-        <!-- Card 4: Meseros en Sala -->
+        <!-- Card 4: Meseros en Salón -->
         <article class="kpi-card">
           <div class="kpi-icon-circle kpi-icon-purple">
             <lucide-icon name="utensils-crossed" [size]="20"></lucide-icon>
           </div>
           <div class="kpi-info">
-            <span class="kpi-label">MESEROS DE SALA</span>
+            <span class="kpi-label">MESEROS DE SALÓN</span>
             <strong class="kpi-value font-playfair">{{ meserosCount() }}</strong>
-            <span class="kpi-subtext">Atención y comandas</span>
+            <span class="kpi-subtext">Atención en mesas</span>
           </div>
         </article>
 
-        <!-- Card 5: Personal Activo Ahora -->
+        <!-- Card 5: Personal Activo -->
         <article class="kpi-card">
           <div class="kpi-icon-circle kpi-icon-blue">
             <lucide-icon name="user-check" [size]="20"></lucide-icon>
@@ -128,7 +128,7 @@ export interface MiembroEquipo {
           <div class="kpi-info">
             <span class="kpi-label">ACTIVOS EN TURNO</span>
             <strong class="kpi-value font-playfair">{{ activosAhoraCount() }}</strong>
-            <span class="kpi-subtext">Cuentas con acceso hoy</span>
+            <span class="kpi-subtext">Cuentas habilitadas</span>
           </div>
         </article>
 
@@ -1060,13 +1060,19 @@ export interface MiembroEquipo {
 
         .select-custom {
           background: #110e0c;
-          border: 1px solid rgba(255, 255, 255, 0.09);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 8px;
           padding: 7px 12px;
           color: #f3ebe2;
           font-size: 0.8rem;
           outline: none;
           cursor: pointer;
+          color-scheme: dark;
+
+          option {
+            background: #18130f;
+            color: #f3ebe2;
+          }
 
           &:focus {
             border-color: #e5c158;
@@ -1892,7 +1898,13 @@ export class UsuariosComponent implements OnInit {
         this.cargando.set(false);
         const users = Array.isArray(res) ? res : res.data || [];
         if (users.length > 0) {
-          const filtrados = users.filter((u: any) => !u.email.includes('ia@'));
+          const roleOrder: Record<string, number> = { ADMIN: 1, CAJERO: 2, CHEF: 3, MESERO: 4 };
+          const filtrados = users
+            .filter((u: any) => !u.email.includes('ia@'))
+            .sort((a: any, b: any) => {
+              const diff = (roleOrder[a.rol] || 9) - (roleOrder[b.rol] || 9);
+              return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
+            });
           const mapped: MiembroEquipo[] = filtrados.map((u: any, idx: number) => {
             const prefix =
               u.rol === 'ADMIN'
@@ -1930,8 +1942,9 @@ export class UsuariosComponent implements OnInit {
   }
 
   generarTelefonoMock(id: string): string {
-    const num = Math.abs(id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 70000000)) % 10000000;
-    return `+591 7${String(num).padStart(7, '0').substring(0, 3)} ${String(num).substring(3, 7)}`;
+    const hash = Math.abs(id.split('').reduce((acc, char) => acc * 31 + char.charCodeAt(0), 7));
+    const sevenDigits = String(1000000 + (hash % 8999999));
+    return `+591 7${sevenDigits.substring(0, 3)} ${sevenDigits.substring(3, 7)}`;
   }
 
   getRolLabel(rol: RolUsuario): string {
