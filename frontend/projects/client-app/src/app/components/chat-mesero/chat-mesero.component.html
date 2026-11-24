@@ -12,7 +12,7 @@
         </div>
       </div>
       <div class="header-info">
-        <h2 class="mesero-name">Don Beto <span class="badge-role">Garzón Tukuypaj</span></h2>
+        <h2 class="mesero-name">Tukuy IA <span class="badge-role">Asistente Virtual</span></h2>
         <p class="mesero-status">En línea • Atendiendo Mesa {{ mesaNumero() }}</p>
       </div>
     </div>
@@ -39,7 +39,7 @@
             <div class="msg-row assistant-row">
               <div class="msg-avatar">👨🏽‍🍳</div>
               <div class="msg-bubble assistant-bubble">
-                <div class="msg-author">Don Beto</div>
+                <div class="msg-author">Tukuy IA</div>
                 <div class="msg-text" [innerText]="msg.texto"></div>
                 <span class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</span>
               </div>
@@ -58,7 +58,7 @@
                 <div class="typing-dots">
                   <span></span><span></span><span></span>
                 </div>
-                <span class="thinking-text">Don Beto está anotando...</span>
+                <span class="thinking-text">Tukuy IA está procesando tu pedido...</span>
               </div>
             </div>
           }
@@ -82,7 +82,7 @@
           #inputRef
           type="text"
           class="chat-input"
-          placeholder="Escriba a Don Beto (ej: 'Un Pique Macho mediano y 2 limonadas')..."
+          placeholder="Escribe a Tukuy IA (ej: 'Un Pique mediano y 2 limonadas')..."
           [(ngModel)]="inputTexto"
           (keyup.enter)="enviarMensaje()"
           [disabled]="iaService.loading() || pedidoConfirmado()"
@@ -113,7 +113,7 @@
             <div class="empty-ticket-state">
               <span class="empty-icon">🍽️</span>
               <p class="empty-title">Su comanda está vacía</p>
-              <p class="empty-sub">Hable con Don Beto para ir agregando platos y bebidas a su mesa.</p>
+              <p class="empty-sub">Escríbale a Tukuy IA para ir agregando platos y bebidas a su mesa.</p>
             </div>
           } @else {
             <div class="items-list">
@@ -181,7 +181,7 @@
       <div class="summary-card-modal">
         <div class="summary-card-header">
           <span class="tukuypaj-logo">✨ Peña Tukuypaj</span>
-          <h2>Resumen de Comanda — Don Beto</h2>
+          <h2>Resumen de Comanda — Tukuy IA</h2>
           <p>Favor confirme el pedido para marcharlo a cocina en la Mesa {{ mesaNumero() }}.</p>
         </div>
 

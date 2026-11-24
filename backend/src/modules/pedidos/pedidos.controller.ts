@@ -55,7 +55,7 @@ export class PedidosController {
     // Verificar que la mesa existe
     const mesa = await this.iaPedidosService.resolverMesa(dto.mesaNumero);
 
-    // Interpretar con IA (Don Beto)
+    // Interpretar con IA (Tukuy IA)
     const resultado = await this.iaPedidosService.interpretarPedido(
       dto.texto,
       dto.historial || [],
@@ -63,7 +63,7 @@ export class PedidosController {
     );
 
     this.logger.log(
-      `🤖 Don Beto (${resultado.motor}) | Estado: ${resultado.estadoConversacion} | Items: ${resultado.comandaActualizada.length} | Total: Bs. ${resultado.totalEstimado}`,
+      `🤖 Tukuy IA (${resultado.motor}) | Estado: ${resultado.estadoConversacion} | Items: ${resultado.comandaActualizada.length} | Total: Bs. ${resultado.totalEstimado}`,
     );
 
     return {

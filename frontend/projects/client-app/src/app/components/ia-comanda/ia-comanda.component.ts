@@ -420,7 +420,7 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
         } catch (_) {}
 
         if (!respuestaLimpia) {
-          respuestaLimpia = '¡Anotado caserito! Enseguida lo marcho con la cocina.';
+          respuestaLimpia = '¡Perfecto! Tu pedido fue registrado y enseguida lo enviamos a cocina.';
         }
 
         // Limpiar cualquier ofrecimiento prematuro de cobro mientras el cliente aún está armando su pedido
@@ -678,7 +678,7 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
           const msgErr: MensajeChat = {
             id: `err-marchado-${Date.now()}`,
             emisor: 'don-beto',
-            texto: `⚠️ **Aviso de Don Beto:** ${Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg}`,
+            texto: `⚠️ **Aviso de Tukuy IA:** ${Array.isArray(errorMsg) ? errorMsg.join(', ') : errorMsg}`,
             timestamp: new Date(),
           };
 
@@ -779,13 +779,13 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
   }
 
   /**
-   * Pide el plato seleccionado a Don Beto directamente en el chat
+   * Pide el plato seleccionado a Tukuy IA directamente en el chat
    */
   pedirPlatoADonBeto(plato: PlatoPublico, event?: Event): void {
     if (event) event.stopPropagation();
     const v = this.getVarianteActual(plato);
     const nombreVar = v ? ` (${v.nombre})` : '';
-    const texto = `Don Beto, por favor anóteme 1x ${plato.nombre}${nombreVar}`;
+    const texto = `Tukuy IA, por favor anótame 1x ${plato.nombre}${nombreVar}`;
     this.drawerCartaAbierto.set(false);
     this.enviarMensaje(texto);
   }
@@ -797,7 +797,7 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
     if (event) event.stopPropagation();
     const v = this.getVarianteActual(plato);
     const nombreVar = v ? ` ${v.nombre}` : '';
-    this.inputTexto.set(`Don Beto, quiero 1x ${plato.nombre}${nombreVar}, `);
+    this.inputTexto.set(`Tukuy IA, quiero 1x ${plato.nombre}${nombreVar}, `);
     this.drawerCartaAbierto.set(false);
     setTimeout(() => {
       if (this.inputRef?.nativeElement) {
@@ -935,8 +935,8 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
     const v = this.getVarianteActual(plato);
     const nombreVar = v ? ` (${v.nombre})` : '';
     const textoMensaje = pregunta
-      ? `Don Beto, sobre el ${plato.nombre}${nombreVar}: ${pregunta}`
-      : `Don Beto, tengo una consulta sobre el ${plato.nombre}${nombreVar}: `;
+      ? `Tukuy IA, sobre el ${plato.nombre}${nombreVar}: ${pregunta}`
+      : `Tukuy IA, tengo una consulta sobre el ${plato.nombre}${nombreVar}: `;
 
     this.platoConsultaDuda.set(null);
     this.drawerCartaAbierto.set(false);
@@ -1037,8 +1037,8 @@ export class IaComandaComponent implements OnInit, AfterViewChecked {
         id: `init-${Date.now()}`,
         emisor: 'don-beto',
         texto:
-          `${saludoHora} Sea muy bienvenido. Es un gusto tenerlo con nosotros en la **Mesa ${this.mesaDisplay()}**. Póngase cómodo, por favor.\n\n` +
-          `Soy **Don Beto** y estoy a su entera disposición. Tómese su tiempo con la carta, o dígame con toda confianza qué se le antoja hoy: ¿le gustaría empezar con una jarrita de hervido calientito o prefiere que le vaya anotando algún platito tradicional?`,
+          `${saludoHora} Bienvenido a **Peña Restaurant Tukuypaj**. Es un gusto atenderte en la **Mesa ${this.mesaDisplay()}**.\n\n` +
+          `Soy **Tukuy IA**, tu asistente virtual gastronómico. Puedes explorar nuestra carta o indicarme directamente qué deseas ordenar o consultar hoy.`,
         timestamp: new Date(),
       },
     ]);

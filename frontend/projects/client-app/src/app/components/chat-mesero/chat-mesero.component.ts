@@ -41,11 +41,11 @@ export class ChatMeseroComponent implements OnInit, AfterViewChecked {
   shouldScroll = false;
 
   sugerenciasRapidas = [
-    '👋 ¡Hola Don Beto! ¿Qué nos recomienda hoy?',
-    '🥩 Quisiera un Pique Macho Mediano',
-    '🍳 Tráeme un Silpancho especial',
-    '🍹 Una jarrita de limonada de 2L',
-    '🍺 Una chicha cochabambina helada',
+    '👋 ¡Hola Tukuy IA! ¿Qué nos recomiendas hoy?',
+    '🥩 Quisiera un Pique Mediano',
+    '🍳 Quisiera un Charque Entero',
+    '🍹 Una jarra de jugo Del Valle',
+    '🍺 Una cerveza Huari bien fría',
     '✅ Eso es todo, por favor enviar a cocina',
   ];
 
@@ -69,12 +69,12 @@ export class ChatMeseroComponent implements OnInit, AfterViewChecked {
       this.mesaNumero.set(mesa);
     });
 
-    // Saludo inicial de Don Beto
+    // Saludo inicial de Tukuy IA
     this.mensajes.set([
       {
         id: '1',
         rol: 'asistente',
-        texto: `¡Buenas tardes y sea muy bienvenido a **Peña Restaurant Tukuypaj**, casero! 🌾\n\nSoy **Don Beto**, su mesero de confianza. Estoy a su servicio para anotarle lo que más le apetezca de nuestra tradicional carta cochabambina.\n\n¿Le provendría un sabroso **Pique Macho**, un **Chicharrón** bien crocante o prefiere ver alguna recomendación?`,
+        texto: `¡Bienvenido a **Peña Restaurant Tukuypaj**!\n\nSoy **Tukuy IA**, tu asistente virtual gastronómico. Estoy a tu disposición para recomendarte nuestras especialidades o registrar tu pedido directamente para la **Mesa ${this.mesaNumero()}**.\n\n¿Deseas ordenar un **Pique**, un **Charque**, una **Planchita** o prefieres conocer nuestras recomendaciones del día?`,
         timestamp: new Date(),
       },
     ]);
@@ -111,13 +111,13 @@ export class ChatMeseroComponent implements OnInit, AfterViewChecked {
         texto: m.texto,
       }));
 
-    // Indicador de escritura "Don Beto está anotando..."
+    // Indicador de escritura "Tukuy IA está procesando tu pedido..."
     this.mensajes.update((list) => [
       ...list,
       {
         id: 'thinking',
         rol: 'sistema',
-        texto: 'Don Beto está anotando...',
+        texto: 'Tukuy IA está procesando tu pedido...',
         timestamp: new Date(),
       },
     ]);

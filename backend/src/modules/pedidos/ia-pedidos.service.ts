@@ -51,7 +51,7 @@ export class IaPedidosService {
   }
 
   /**
-   * Interpreta la interacción del cliente con el Mesero Virtual "Don Beto".
+   * Interpreta la interacción del cliente con el Asistente Virtual "Tukuy IA".
    */
   async interpretarPedido(
     textoCliente: string,
@@ -82,7 +82,7 @@ export class IaPedidosService {
   }
 
   // ─────────────────────────────────────────────
-  // MOTOR PRIMARIO: Google Gemini (Don Beto - Mesero Virtual)
+  // MOTOR PRIMARIO: Google Gemini (Tukuy IA - Asistente Virtual)
   // ─────────────────────────────────────────────
 
   private async interpretarConGemini(
@@ -104,46 +104,44 @@ export class IaPedidosService {
       };
     });
 
-    const systemPrompt = `Eres "Don Beto", el cordial, educado y atento mesero virtual de "Peña Restaurant Tukuypaj" en Cochabamba, Bolivia.
+    const systemPrompt = `Eres "Tukuy IA", el asistente virtual gastronómico de "Peña Restaurant Tukuypaj" en Cochabamba, Bolivia.
 
-PERSONALIDAD Y TONO VALLUNO:
-- Tu trato es siempre muy atento, amigable, respetuoso y con la calidez típica de la llajta cochabambina.
-- Usas expresiones amables como: "¡Buen provecho!", "Con mucho gusto", "¿Gusta alguna cosita más?", "Le sugiero nuestra jarrita de limonada bien helada", "¡Servido casero/casera!".
+PERSONALIDAD Y TONO PROFESIONAL:
+- Tu trato es siempre cordial, atento, respetuoso, claro y hospitalario.
+- Evita jergas informales o muletillas; comunícate con calidez y profesionalismo propios de un restaurante tradicional de alta calidad.
+- Usa expresiones amables como: "¡Bienvenido a Peña Restaurant Tukuypaj!", "Con mucho gusto", "¿Desea agregar algo más a su pedido?", "Le recomiendo acompañar su plato con nuestra jarra de limonada", "¡Excelente elección!".
 
 COMPORTAMIENTO Y REGLAS DE CONVERSACIÓN:
 1. SALUDO O CONSULTAS DE MENÚ:
    - Si el cliente solo saluda (ej: "hola", "buenas tardes", "buen día") o pregunta qué recomienda la casa, NO fuerces la comanda de inmediato.
-   - Saluda cordialmente, ofrece las especialidades estrella de la peña (Pique Macho, Chicharrón, Silpancho o Parrillada Tukuypaj) y sugiere bebidas tradicionales.
+   - Saluda cordialmente, presenta las especialidades de la casa (Pique Macho, Charque, Planchita, Lapping o Matambre) y sugiere bebidas tradicionales.
    - Marca "estadoConversacion": "SALUDO".
 
 2. ELECCIÓN DE TAMAÑOS Y VARIANTES:
-   - Si el cliente solicita un plato con variantes de tamaño (ej: "Quiero un Pique Macho") y NO aclara la porción, pregúntale amablemente qué tamaño prefiere explicándole las porciones:
-     * Personal (para 1 persona)
-     * Mediano (para 2 o 3 personas)
-     * Grande / Familiar (para compartir en familia)
-   - Si especifica tamaño (ej: "un Pique mediano"), asigna el varianteId correspondiente.
+   - Si el cliente solicita un plato con variantes de tamaño (ej: "Quiero un Pique") y NO aclara la porción, pregúntale amablemente qué tamaño prefiere explicándole las opciones disponibles (por ejemplo, Medio o Entero).
+   - Si especifica tamaño (ej: "un Pique entero"), asigna el varianteId correspondiente.
    - Marca "estadoConversacion": "TOMANDO_PEDIDO".
 
 3. SUGERENCIA INTELIGENTE DE BEBIDAS / MARIDAJE:
-   - De manera fluida y natural, al pedir platos fuertes (Pique, Chicharrón, Parrillada), sugiere acompañar la mesa con limonada con hierba buena, chicha cochabambina o una cerveza bien fría.
+   - De manera fluida y natural, al pedir platos fuertes, sugiere acompañar la mesa con nuestros jugos, hervidos, gaseosas o cervezas disponibles en carta.
 
 4. CONTROL ESTRICTO DE STOCK EN TIEMPO REAL Y SINCRONIZACIÓN DE PORCIONES:
    - Revisa minuciosamente el campo "stockDisponible" de cada plato en la carta.
-   - Si "stockDisponible" es '0 (AGOTADO)' o un número <= 0, el plato está completamente terminado por hoy. Si el cliente lo pide, explícaselo con suma calidez y respeto: "Mil disculpas casero/a, ese platito ya se nos terminó por hoy en cocina. ¿Le gustaría que le prepare [plato alternativo con stock]?". NUNCA lo agregues a "comandaActualizada".
+   - Si "stockDisponible" es '0 (AGOTADO)' o un número <= 0, el plato está agotado por hoy. Si el cliente lo pide, infórmalo con amabilidad: "Le pedimos disculpas, ese plato se encuentra agotado en cocina en este momento. ¿Le gustaría que le sugiera [plato alternativo con stock]?". NUNCA lo agregues a "comandaActualizada".
    - Si el cliente solicita N porciones (ej: 2) de un plato pero "stockDisponible" es menor (ej: 1):
      * NUNCA confirmes ni dupliques porciones inexistentes.
-     * Acláraselo con total claridad: "Casero/a, de [Nombre del plato] solo nos queda [X] porción en cocina. Le aseguro esa última porción [X] y para completar le sugiero [Plato alternativo]."
+     * Acláralo con claridad: "De [Nombre del plato] actualmente nos queda [X] porción disponible en cocina. Le reservo esa porción y para completar puedo sugerirle [Plato alternativo]."
      * En "comandaActualizada", asigna como cantidad MÁXIMA las porciones realmente disponibles (ej: 1), NUNCA la cantidad solicitada que sobrepasa el stock.
 
 5. CONFIRMACIÓN FINAL:
-   - Si el cliente indica que completó su elección (ej: "eso es todo", "confirmar pedido", "envíalo a cocina", "ya está"), agradece con calidez y asigna "estadoConversacion": "CONFIRMACION_FINAL".
+   - Si el cliente indica que completó su elección (ej: "eso es todo", "confirmar pedido", "envíalo a cocina", "ya está"), agradece con cordialidad y asigna "estadoConversacion": "CONFIRMACION_FINAL".
 
 6. ACUMULACIÓN DE COMANDA:
    - Mantén en "comandaActualizada" los platos de la comanda previa, actualizándolos o agregando nuevos si el cliente añade más ítems válidos con stock.
 
 FORMATO DE SALIDA (RESPONDE ÚNICAMENTE CON JSON VÁLIDO CON ESTA ESTRUCTURA EXACTA):
 {
-  "respuestaMesero": "Mensaje en lenguaje natural de Don Beto con calidez valluna.",
+  "respuestaMesero": "Mensaje claro, cálido y profesional de Tukuy IA.",
   "comandaActualizada": [
     {
       "platoId": "uuid-del-plato",
@@ -222,12 +220,12 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
           // ── VALIDACIÓN ATÓMICA DE STOCK EN BACKEND ──
           if (plato.controlarStock && plato.stockActual !== null && plato.stockActual !== undefined) {
             if (plato.stockActual <= 0) {
-              this.logger.warn(`[IA Don Beto] Plato agotado "${plato.nombre}", omitiendo de comanda.`);
+              this.logger.warn(`[Tukuy IA] Plato agotado "${plato.nombre}", omitiendo de comanda.`);
               continue;
             }
             if (item.cantidad > plato.stockActual) {
               this.logger.warn(
-                `[IA Don Beto] Cantidad solicitada (${item.cantidad}) excede stock disponible (${plato.stockActual}) para "${plato.nombre}". Ajustando a ${plato.stockActual}.`,
+                `[Tukuy IA] Cantidad solicitada (${item.cantidad}) excede stock disponible (${plato.stockActual}) para "${plato.nombre}". Ajustando a ${plato.stockActual}.`,
               );
               item.cantidad = plato.stockActual;
             }
@@ -373,21 +371,21 @@ ${JSON.stringify(cartaJSON, null, 2)}`;
 
     let complementoAvisos = '';
     if (avisosAgotados.length > 0) {
-      complementoAvisos += `\n⚠️ Casero/a, mil disculpas: ${avisosAgotados.join(', ')} ya se agotó en cocina por hoy.`;
+      complementoAvisos += `\n⚠️ Le informamos que ${avisosAgotados.join(', ')} se encuentra agotado en cocina en este momento.`;
     }
     if (avisosStockAjustado.length > 0) {
-      complementoAvisos += `\n⚠️ Nota de stock: ${avisosStockAjustado.join('; ')}.`;
+      complementoAvisos += `\n⚠️ Nota de disponibilidad: ${avisosStockAjustado.join('; ')}.`;
     }
 
     if (itemsEncontrados.length > 0) {
       const resumen = itemsEncontrados.map((i) => `${i.cantidad}x ${i.nombre}`).join(', ');
-      mensaje = `¡Con mucho gusto, casero! Le anoto: ${resumen}.${complementoAvisos} El total estimado es Bs. ${total.toFixed(2)}. ¿Gusta alguna cosita más o lo enviamos a cocina?`;
+      mensaje = `¡Con mucho gusto! He registrado en su pedido: ${resumen}.${complementoAvisos} El total estimado es Bs. ${total.toFixed(2)}. ¿Desea agregar algo más o confirmamos su orden a cocina?`;
     } else if (avisosAgotados.length > 0) {
       estado = 'TOMANDO_PEDIDO';
-      mensaje = `¡Mil disculpas, casero! Justamente el plato ${avisosAgotados.join(', ')} se nos acaba de agotar en cocina. Le sugiero probar nuestro sabroso Pique Macho, un Chicharrón o Parrillada Tukuypaj. ¿Qué le preparamos?`;
+      mensaje = `Le pedimos disculpas, el plato ${avisosAgotados.join(', ')} se encuentra agotado en cocina en este momento. Le recomendamos probar nuestro Pique, Charque o Planchita. ¿Cuál prefiere que le preparemos?`;
     } else {
       estado = 'SALUDO';
-      mensaje = '¡Sea bienvenido a Peña Tukuypaj, casero! Le sugiero probar nuestro sabroso Pique Macho, un Chicharrón bien dorado o un Silpancho. ¿Con qué le podemos servir hoy?';
+      mensaje = '¡Bienvenido a Peña Restaurant Tukuypaj! Soy Tukuy IA, su asistente virtual. Puedo recomendarle especialidades como nuestro Pique, Charque o Lapping, y registrar su pedido directamente. ¿Qué desea ordenar hoy?';
     }
 
     if (textoNorm.includes('eso es todo') || textoNorm.includes('confirmar') || textoNorm.includes('enviar')) {

@@ -632,7 +632,7 @@ export class PedidosService {
       canalOrigen: origenFinal,
       descripcion:
         origenFinal === 'IA_DON_BETO'
-          ? `Comanda autónoma registrada vía Don Beto IA en Mesa ${result.pedido.mesa?.numero} por Bs. ${Number(result.pedido.total).toFixed(2)} (Responsable de mesa: ${nombreMeseroResp})`
+          ? `Comanda autónoma registrada vía Tukuy IA en Mesa ${result.pedido.mesa?.numero} por Bs. ${Number(result.pedido.total).toFixed(2)} (Responsable de mesa: ${nombreMeseroResp})`
           : `Comanda creada en POS para Mesa ${result.pedido.mesa?.numero} por ${nombreMeseroResp} (Bs. ${Number(result.pedido.total).toFixed(2)})`,
       metadata: {
         pedidoId: result.pedido.id,
@@ -891,7 +891,7 @@ export class PedidosService {
       meseroResponsableNombre: respNombre,
       canalOrigen: esIA ? 'IA_DON_BETO' : 'MESERO_POS',
       descripcion: esIA
-        ? `Nuevos platos agregados vía Don Beto IA a Mesa ${mesa?.numero} (+Bs. ${subtotalNuevo.toFixed(2)}) — Responsable: ${respNombre}`
+        ? `Nuevos platos agregados vía Tukuy IA a Mesa ${mesa?.numero} (+Bs. ${subtotalNuevo.toFixed(2)}) — Responsable: ${respNombre}`
         : `Nuevos platos agregados en POS a Mesa ${mesa?.numero} (+Bs. ${subtotalNuevo.toFixed(2)}) por ${respNombre}`,
       metadata: {
         pedidoId: pedidoActualizado.id,

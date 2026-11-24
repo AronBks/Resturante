@@ -1543,7 +1543,7 @@ export class CocinaComponent implements OnInit, OnDestroy {
   getOrigenLabel(origen?: string): string {
     switch (origen) {
       case 'CLIENTE_DIGITAL': return 'Cliente QR';
-      case 'IA_DON_BETO': return 'Don Beto IA';
+      case 'IA_DON_BETO': return 'Tukuy IA';
       default: return 'Salón';
     }
   }

@@ -1,5 +1,5 @@
 <!-- ============================================================
-     DON BETO — Asistente Culinario Virtual Integrado
+     TUKUY IA — Asistente Culinario Virtual Integrado
      Peña Restaurant Tukuypaj — Cochabamba, Bolivia
      ============================================================ -->
 
@@ -20,8 +20,8 @@
 
       <div class="header-info">
         <div class="name-badge-row">
-          <h1 class="mesero-name">Don Beto</h1>
-          <span class="badge-role">IA</span>
+          <h1 class="mesero-name">Tukuy IA</h1>
+          <span class="badge-role">Asistente Virtual</span>
         </div>
         <p class="mesero-status">
           @if (cargando()) {
@@ -65,7 +65,7 @@
             <div class="msg-bubble assistant-bubble">
               <div class="msg-author">
                 <lucide-icon name="sparkles" [size]="12"></lucide-icon>
-                <span>Don Beto</span>
+                <span>Tukuy IA</span>
               </div>
               <div class="msg-text" [innerHTML]="formatearTexto(msg.texto)"></div>
 
@@ -175,7 +175,7 @@
             <lucide-icon name="chef-hat" [size]="15"></lucide-icon>
           </div>
           <div class="msg-bubble assistant-bubble thinking-bubble">
-            <div class="typing-label">Don Beto está anotando...</div>
+            <div class="typing-label">Tukuy IA está procesando tu pedido...</div>
             <div class="typing-dots">
               <span></span><span></span><span></span>
             </div>
@@ -435,7 +435,7 @@
             <div class="empty-drawer">
               <lucide-icon name="shopping-bag" [size]="36" class="empty-icon-lucide"></lucide-icon>
               <p>Tu comanda está vacía</p>
-              <small>Dile a Don Beto o explora la carta para agregar platos.</small>
+              <small>Escríbele a Tukuy IA o explora la carta para agregar platos.</small>
             </div>
           }
         </div>
@@ -604,7 +604,7 @@
                         type="button"
                         class="btn-duda-ia"
                         (click)="abrirConsultarDuda(item.plato, $event)"
-                        title="Preguntar a Don Beto sobre este plato"
+                        title="Consultar a Tukuy IA sobre este plato"
                       >
                         <lucide-icon name="message-square" [size]="12"></lucide-icon>
                         <span>Dudas / Consultar</span>
@@ -687,14 +687,14 @@
           </div>
           <button class="btn-listo-volver" (click)="toggleDrawerCarta()">
             <lucide-icon name="arrow-left" [size]="15"></lucide-icon>
-            <span>Volver al Chat con Don Beto</span>
+            <span>Volver al Chat con Tukuy IA</span>
           </button>
         </div>
       </div>
     </div>
   }
 
-  <!-- ── Modal de Preguntas Frecuentes / Dudas con Don Beto ── -->
+  <!-- ── Modal de Preguntas Frecuentes / Dudas con Tukuy IA ── -->
   @if (platoConsultaDuda()) {
     <div class="duda-backdrop animate-fade-in" (click)="cerrarConsultarDuda()">
       <div class="duda-sheet animate-slide-up" (click)="$event.stopPropagation()">
@@ -702,7 +702,7 @@
           <div class="duda-title-group">
             <lucide-icon name="sparkles" [size]="16" class="gold-icon"></lucide-icon>
             <div>
-              <span class="duda-kicker">CONSULTA A DON BETO</span>
+              <span class="duda-kicker">CONSULTA A TUKUY IA</span>
               <h4>{{ platoConsultaDuda()?.nombre }}</h4>
             </div>
           </div>
@@ -770,7 +770,7 @@
             <div class="duda-btn-icon"><lucide-icon name="message-square" [size]="15"></lucide-icon></div>
             <div class="duda-btn-text">
               <strong>Escribir otra pregunta en el chat</strong>
-              <small>Chatea libremente con Don Beto</small>
+              <small>Chatea libremente con Tukuy IA</small>
             </div>
           </button>
         </div>
