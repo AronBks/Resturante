@@ -110,10 +110,6 @@
           <lucide-icon name="user" [size]="16"></lucide-icon>
           <span>Mesa {{ mesaNumero() }}</span>
         </button>
-        <div class="desktop-sync-status">
-          <span class="live-pulse-dot"></span>
-          <span>Carta en Vivo</span>
-        </div>
       </div>
 
       <div class="desktop-header__right">
@@ -144,9 +140,10 @@
           <lucide-icon name="menu" [size]="22"></lucide-icon>
         </button>
 
-        <!-- Logo Central Cochabamba Peña -->
+        <!-- Logo Central Tukuypaj -->
         <div class="mobile-header__brand">
-          <h1>COCHABAMBA PEÑA</h1>
+          <h1>TUKUYPAJ</h1>
+          <span>Peña Restaurant</span>
         </div>
 
         <!-- Botón de Mi Pedido / Comanda en Header Móvil -->
@@ -191,14 +188,21 @@
       </nav>
     </header>
 
-    <!-- Hero Section Inmersiva "Nuestra Herencia Gastronómica" -->
+    <!-- Hero Section Editorial "Tradición Cochabambina" -->
     <section class="hero-fine-dining">
       <div class="hero-fine-dining__overlay"></div>
       <div class="hero-fine-dining__content">
-        <h2 class="hero-fine-dining__title">Nuestra Herencia Gastronómica</h2>
+        <span class="hero-fine-dining__eyebrow">PEÑA RESTAURANT TUKUYPAJ</span>
+        <h2 class="hero-fine-dining__title">Nuestra Carta</h2>
         <p class="hero-fine-dining__desc">
-          Una cuidadosa selección de recetas tradicionales cochabambinas, elevadas con ingredientes premium en un ambiente de peña exclusiva.
+          Auténtica cocina valluna: platos típicos, caldos de la casa y bebidas tradicionales preparados cada día con sazón propia.
         </p>
+        <div class="hero-fine-dining__meta">
+          <span class="meta-pill">
+            <lucide-icon name="clock" [size]="13"></lucide-icon>
+            <span>Horario de atención: 09:00 – 17:00</span>
+          </span>
+        </div>
       </div>
     </section>
 
@@ -488,7 +492,7 @@
       </button>
       <a [routerLink]="['/pedido-ia']" [queryParams]="{ mesa: mesaNumero() }" (click)="toggleMobileNav()" class="drawer-link gold-highlight">
         <lucide-icon name="bot" [size]="18"></lucide-icon>
-        <span>Pedir con IA (Don Beto)</span>
+        <span>Pedir con Tukuy IA</span>
       </a>
       <button (click)="abrirMesaModal(); toggleMobileNav()" class="drawer-link">
         <lucide-icon name="user" [size]="18"></lucide-icon>

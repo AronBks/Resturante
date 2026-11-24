@@ -63,31 +63,44 @@ import { LucideAngularModule } from 'lucide-angular';
               id="cta-pedir-ia"
             >
               <lucide-icon name="bot" [size]="16"></lucide-icon>
-              <span>Pedir con Don Beto (IA)</span>
+              <span>Pedir con Tukuy IA</span>
             </a>
           </div>
         </div>
 
-        <!-- Scroll indicator -->
-        <div class="hero__scroll-indicator">
-          <div class="hero__scroll-mouse">
-            <div class="hero__scroll-wheel"></div>
+        <!-- Scroll & Touch indicator (Optimizado para Móvil y Escritorio) -->
+        <button
+          type="button"
+          class="hero__scroll-indicator"
+          (click)="scrollToConcierge()"
+          aria-label="Ver más información del restaurante"
+        >
+          <span class="scroll-lbl">Más Información</span>
+          <div class="hero__scroll-visual">
+            <div class="hero__scroll-ring">
+              <svg class="hero__scroll-chevrons" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline class="chevron-1" points="7 8 12 13 17 8"></polyline>
+                <polyline class="chevron-2" points="7 14 12 19 17 14"></polyline>
+              </svg>
+            </div>
+            <div class="hero__scroll-track">
+              <span class="hero__scroll-beam"></span>
+            </div>
           </div>
-          <span class="scroll-lbl">Información & Concierge</span>
-        </div>
+        </button>
       </section>
 
-      <!-- CONCIERGE / INFO SECTION -->
+      <!-- INFORMACIÓN DEL RESTAURANTE SECTION -->
       <section class="concierge" id="info">
         <div class="concierge__container animate-in">
           <div class="concierge__header">
-            <h2 class="concierge__title">Concierge</h2>
+            <h2 class="concierge__title">Información del Restaurante</h2>
             <div class="concierge__divider">
               <span class="concierge__divider-line"></span>
               <span class="concierge__divider-diamond">◆</span>
               <span class="concierge__divider-line"></span>
             </div>
-            <p class="concierge__subtitle">INFORMACIÓN PARA SU VISITA</p>
+            <p class="concierge__subtitle">HORARIOS, UBICACIÓN Y RESERVAS</p>
           </div>
 
           <div class="concierge__grid">
@@ -99,9 +112,9 @@ import { LucideAngularModule } from 'lucide-angular';
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               </div>
-              <h3 class="concierge__card-title">Horarios</h3>
-              <p class="concierge__card-detail">Lunes a Domingo</p>
-              <p class="concierge__card-highlight">11:30 — 23:00</p>
+              <h3 class="concierge__card-title">Horario de Atención</h3>
+              <p class="concierge__card-detail">Atención en Salón y Peña</p>
+              <p class="concierge__card-highlight">Lunes a Domingo · 09:00 — 17:00</p>
             </div>
 
             <!-- Ubicación -->
@@ -112,7 +125,7 @@ import { LucideAngularModule } from 'lucide-angular';
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
               </div>
-              <h3 class="concierge__card-title">Ubicación</h3>
+              <h3 class="concierge__card-title">Nuestra Ubicación</h3>
               <p class="concierge__card-detail">Av. Capitán Victor Ustariz</p>
               <p class="concierge__card-highlight">Km 3.5, Cochabamba</p>
               <a
@@ -122,7 +135,7 @@ import { LucideAngularModule } from 'lucide-angular';
                 class="concierge__card-link"
                 id="link-google-maps"
               >
-                ABRIR EN GOOGLE MAPS →
+                VER UBICACIÓN EN GOOGLE MAPS →
               </a>
             </div>
 
@@ -133,8 +146,8 @@ import { LucideAngularModule } from 'lucide-angular';
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                 </svg>
               </div>
-              <h3 class="concierge__card-title">Contacto</h3>
-              <p class="concierge__card-detail">WhatsApp / Llamadas</p>
+              <h3 class="concierge__card-title">Reservas y Contacto</h3>
+              <p class="concierge__card-detail">Atención por WhatsApp y Llamadas</p>
               <p class="concierge__card-highlight">(+591) 71727374</p>
               <a
                 href="https://wa.me/59171727374"
@@ -143,7 +156,7 @@ import { LucideAngularModule } from 'lucide-angular';
                 class="concierge__card-link"
                 id="link-whatsapp"
               >
-                ESCRIBIR POR WHATSAPP →
+                CONTACTAR POR WHATSAPP →
               </a>
             </div>
           </div>
@@ -215,6 +228,13 @@ export class LandingHeroComponent implements OnInit {
       this.mesaNumero.set(mesa);
       this.carritoService.consultarPedidoActivoMesa(mesa).subscribe();
     });
+  }
+
+  scrollToConcierge(): void {
+    const el = document.getElementById('info');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 }
 

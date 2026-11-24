@@ -252,50 +252,119 @@
   flex-shrink: 0;
 }
 
-/* ── Scroll Indicator ── */
+/* ── Scroll & Touch Indicator (Mobile-First Luxury) ── */
 .hero__scroll-indicator {
   position: absolute;
-  bottom: max(24px, env(safe-area-inset-bottom));
+  bottom: max(18px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-  animation: float 2.8s ease-in-out infinite;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 8px 18px 4px;
+  cursor: pointer;
+  z-index: 5;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
 
   .scroll-lbl {
-    font-size: 0.65rem;
-    letter-spacing: 1px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: #9e9484;
+    color: rgba(226, 215, 197, 0.72);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    transition: color 0.3s ease, letter-spacing 0.3s ease;
   }
 
-  &:hover {
-    opacity: 1;
+  &:hover,
+  &:active {
+    transform: translateX(-50%) translateY(2px);
+
+    .scroll-lbl {
+      color: #e5b342;
+    }
+
+    .hero__scroll-ring {
+      border-color: rgba(229, 179, 66, 0.75);
+      background: rgba(229, 179, 66, 0.14);
+      box-shadow: 0 0 22px rgba(229, 179, 66, 0.35);
+    }
   }
 }
 
-.hero__scroll-mouse {
-  width: 22px;
-  height: 36px;
-  border: 1.5px solid rgba(229, 179, 66, 0.4);
-  border-radius: 12px;
+.hero__scroll-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.hero__scroll-ring {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(229, 179, 66, 0.38);
+  background: rgba(20, 16, 12, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.55),
+    0 0 14px rgba(229, 179, 66, 0.15);
+  transition: all 0.3s ease;
+  animation: ringBreathe 2.8s ease-in-out infinite;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid rgba(229, 179, 66, 0.22);
+    animation: ringRipple 2.8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+    pointer-events: none;
+  }
+}
+
+.hero__scroll-chevrons {
+  width: 17px;
+  height: 17px;
+  color: #e5b342;
+
+  .chevron-1 {
+    animation: chevronCascade 1.8s ease-in-out infinite;
+  }
+
+  .chevron-2 {
+    animation: chevronCascade 1.8s ease-in-out 0.25s infinite;
+  }
+}
+
+.hero__scroll-track {
+  width: 1.5px;
+  height: 22px;
+  background: rgba(229, 179, 66, 0.16);
+  border-radius: 999px;
+  overflow: hidden;
   position: relative;
 }
 
-.hero__scroll-wheel {
-  width: 3px;
-  height: 7px;
-  background: #e5b342;
-  border-radius: 2px;
+.hero__scroll-beam {
   position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  animation: pulseWarm 2s ease-in-out infinite;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 65%;
+  background: linear-gradient(180deg, transparent 0%, #e5b342 60%, #fff3c4 100%);
+  border-radius: 999px;
+  animation: beamDrop 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* ==========================================================================
@@ -562,23 +631,49 @@
   }
 }
 
-@keyframes pulseWarm {
+@keyframes chevronCascade {
   0%, 100% {
-    opacity: 0.4;
-    transform: translate(-50%, 0);
+    opacity: 0.25;
+    transform: translateY(-2px);
   }
   50% {
     opacity: 1;
-    transform: translate(-50%, 6px);
+    transform: translateY(2px);
+    filter: drop-shadow(0 0 4px rgba(229, 179, 66, 0.7));
   }
 }
 
-@keyframes float {
+@keyframes beamDrop {
+  0% {
+    top: -70%;
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+@keyframes ringBreathe {
   0%, 100% {
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
   50% {
-    transform: translate(-50%, -6px);
+    transform: translateY(3px);
+  }
+}
+
+@keyframes ringRipple {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.65;
+  }
+  70%, 100% {
+    transform: scale(1.25);
+    opacity: 0;
   }
 }
 
