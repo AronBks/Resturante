@@ -180,14 +180,30 @@ interface Categoria {
                         <div class="agotado-top-badge">Agotado</div>
                       }
 
-                      <!-- Edit & Delete Floating Buttons (Admin Only) -->
+                      <!-- Photo, Edit & Delete Floating Buttons (Admin Only) -->
                       @if (isAdmin()) {
                         <div class="card-floating-actions">
+                          <button
+                            type="button"
+                            class="btn-pencil-edit"
+                            (click)="triggerFileInput(plato.id, $event)"
+                            title="Cambiar fotografía local"
+                            id="btn-img-plato-{{ plato.id }}"
+                          >
+                            <lucide-icon name="camera" class="icon-xs"></lucide-icon>
+                          </button>
+                          <input
+                            type="file"
+                            [id]="'file-input-' + plato.id"
+                            accept="image/webp,image/png,image/jpeg,image/jpg"
+                            style="display: none"
+                            (change)="onFileSelected($event, plato)"
+                          />
                           <button 
                             type="button"
                             class="btn-pencil-edit" 
                             (click)="activarEdicionRapida(plato, $event)" 
-                            title="Editar Precios"
+                            title="Editar plato y precios"
                             id="btn-edit-plato-{{ plato.id }}"
                           >
                             <lucide-icon name="pencil" class="icon-xs"></lucide-icon>
@@ -227,7 +243,23 @@ interface Categoria {
                       <!-- Inline Edit Form mode -->
                       @if (editingPlatoId() === plato.id) {
                         <div class="inline-edit-form animate-fade-in" (click)="$event.stopPropagation()">
-                          <div class="form-title">Editar Precios</div>
+                          <div class="form-title">Editar Plato y Precios</div>
+
+                          <div class="inline-field-stack">
+                            <input
+                              type="text"
+                              [(ngModel)]="editingNombre"
+                              placeholder="Nombre del plato"
+                              class="inline-text-input"
+                            />
+                            <textarea
+                              [(ngModel)]="editingDescripcion"
+                              rows="2"
+                              placeholder="Descripción breve..."
+                              class="inline-textarea"
+                            ></textarea>
+                          </div>
+
                           @if (plato.variantes && plato.variantes.length > 0) {
                             @for (v of editingVariantes(); track v.id) {
                               <div class="edit-row">
@@ -351,9 +383,6 @@ interface Categoria {
               <span class="crumb-brand" (click)="cerrarCrearPlato()" style="cursor: pointer;">Tukuypaj</span>
               <span class="crumb-sep">></span>
               <span class="crumb-current">Registrar Nuevo Plato</span>
-            </div>
-            <div class="header-status-pill">
-              <span class="status-dot-active"></span> CARTA EN VIVO
             </div>
           </div>
 
@@ -617,9 +646,9 @@ interface Categoria {
                 <span class="crumb-sep">/</span>
                 <span class="crumb-current">Platos del Día & Disponibilidad</span>
               </div>
-              <h1 class="font-playfair">¿Qué platos tenemos para hoy?</h1>
+              <h1 class="font-playfair">Control de Stock y Disponibilidad Diaria</h1>
               <p class="subtitle">
-                Revise cuántas porciones quedan de cada plato para hoy. Cuando un plato se termina, el sistema y Don Beto IA avisan al instante a los clientes y garzones para que no se pida.
+                Supervisa en tiempo real las porciones disponibles de cada plato y bebida. Al llegar a cero, el producto se bloquea al instante en el menú digital y en salón.
               </p>
             </div>
 
@@ -637,41 +666,27 @@ interface Categoria {
             </div>
           </div>
 
-          <!-- Role Access Notice -->
-          @if (canManageStock()) {
-            <div class="role-badge-panel success glass-panel">
+          <!-- Aviso de Solo Lectura (solo para roles sin permiso de edición) -->
+          @if (!canManageStock()) {
+            <div class="role-badge-panel warning glass-panel" style="padding: 12px 18px;">
               <div class="role-badge-left">
-                <lucide-icon name="shield-check" class="icon-md text-emerald"></lucide-icon>
-                <div>
-                  <div class="role-badge-title">PERMISO PARA MODIFICAR CANTIDADES ACTIVO ({{ currentUser()?.rol }})</div>
-                  <div class="role-badge-sub">
-                    Operador: <strong>{{ currentUser()?.nombre || 'Administración' }}</strong>. Puede aumentar porciones, descontar o marcar platos terminados.
-                  </div>
+                <lucide-icon name="lock" [size]="16" class="text-amber"></lucide-icon>
+                <div class="role-badge-sub" style="margin: 0; font-size: 0.84rem;">
+                  Vista de consulta en vivo — Verifica disponibilidad antes de tomar pedidos en mesa.
                 </div>
               </div>
-              <span class="live-sync-indicator">
-                <span class="live-pulse"></span>
-                Actualizando a todos en vivo
-              </span>
-            </div>
-          } @else {
-            <div class="role-badge-panel warning glass-panel">
-              <div class="role-badge-left">
-                <lucide-icon name="lock" class="icon-md text-amber"></lucide-icon>
-                <div>
-                  <div class="role-badge-title">VISTA INFORMATIVA PARA GARZONES</div>
-                  <div class="role-badge-sub">
-                    Rol: <strong>MESERO</strong>. Vea con exactitud qué platos quedan y cuáles ya se terminaron para informar con seguridad a los clientes en las mesas.
-                  </div>
-                </div>
-              </div>
-              <span class="readonly-tag">SÓLO LECTURA</span>
+              <span class="readonly-tag">SOLO LECTURA</span>
             </div>
           }
 
-          <!-- Stock KPI Cards -->
+          <!-- Stock KPI Cards (Interactivos para filtrar) -->
           <div class="stock-kpi-grid">
-            <div class="stock-kpi-card glass-panel">
+            <div
+              class="stock-kpi-card glass-panel"
+              style="cursor: pointer;"
+              [class.kpi-selected]="stockFilterState() === 'todos'"
+              (click)="stockFilterState.set('todos')"
+            >
               <div class="kpi-icon-wrap bg-blue-subtle">
                 <lucide-icon name="sliders-horizontal" class="icon-lg text-blue"></lucide-icon>
               </div>
@@ -682,36 +697,53 @@ interface Categoria {
               </div>
             </div>
 
-            <div class="stock-kpi-card glass-panel" [class.danger-glow]="totalAgotados() > 0">
+            <div
+              class="stock-kpi-card glass-panel"
+              style="cursor: pointer;"
+              [class.danger-glow]="totalAgotados() > 0"
+              [class.kpi-selected]="stockFilterState() === 'agotados'"
+              (click)="stockFilterState.set('agotados')"
+            >
               <div class="kpi-icon-wrap bg-red-subtle">
                 <lucide-icon name="alert-triangle" class="icon-lg text-red"></lucide-icon>
               </div>
               <div class="kpi-content">
-                <div class="kpi-label">Ya se Terminaron</div>
+                <div class="kpi-label">Agotados</div>
                 <div class="kpi-number text-red">{{ totalAgotados() }}</div>
-                <div class="kpi-hint">No se pueden pedir hoy</div>
+                <div class="kpi-hint">Bloqueados en el menú</div>
               </div>
             </div>
 
-            <div class="stock-kpi-card glass-panel" [class.warning-glow]="totalStockBajo() > 0">
+            <div
+              class="stock-kpi-card glass-panel"
+              style="cursor: pointer;"
+              [class.warning-glow]="totalStockBajo() > 0"
+              [class.kpi-selected]="stockFilterState() === 'bajo'"
+              (click)="stockFilterState.set('bajo')"
+            >
               <div class="kpi-icon-wrap bg-amber-subtle">
                 <lucide-icon name="clock" class="icon-lg text-amber"></lucide-icon>
               </div>
               <div class="kpi-content">
-                <div class="kpi-label">Quedan Pocos</div>
+                <div class="kpi-label">Stock Bajo</div>
                 <div class="kpi-number text-amber">{{ totalStockBajo() }}</div>
-                <div class="kpi-hint">Por terminarse pronto</div>
+                <div class="kpi-hint">Próximos a terminarse</div>
               </div>
             </div>
 
-            <div class="stock-kpi-card glass-panel">
+            <div
+              class="stock-kpi-card glass-panel"
+              style="cursor: pointer;"
+              [class.kpi-selected]="stockFilterState() === 'disponibles'"
+              (click)="stockFilterState.set('disponibles')"
+            >
               <div class="kpi-icon-wrap bg-emerald-subtle">
                 <lucide-icon name="utensils" class="icon-lg text-emerald"></lucide-icon>
               </div>
               <div class="kpi-content">
-                <div class="kpi-label">Porciones Disponibles</div>
+                <div class="kpi-label">Porciones Listas</div>
                 <div class="kpi-number text-emerald">{{ totalPorcionesDisponibles() }}</div>
-                <div class="kpi-hint">Listas para servir a los comensales</div>
+                <div class="kpi-hint">Disponibles para servicio</div>
               </div>
             </div>
           </div>
@@ -719,12 +751,12 @@ interface Categoria {
           <!-- Filters Row: Category & Search -->
           <div class="stock-filter-toolbar glass-panel">
             <div class="stock-search-wrap">
-              <lucide-icon name="search" class="search-icon"></lucide-icon>
+              <lucide-icon name="search" [size]="15" class="search-icon"></lucide-icon>
               <input 
                 type="text" 
                 [ngModel]="stockSearchQuery()" 
                 (ngModelChange)="stockSearchQuery.set($event)"
-                placeholder="Buscar plato o bebida en carta..." 
+                placeholder="Buscar plato o bebida..." 
                 class="stock-search-input"
               />
             </div>
@@ -758,7 +790,8 @@ interface Categoria {
                 [class.active]="stockFilterState() === 'agotados'"
                 (click)="stockFilterState.set('agotados')"
               >
-                🔴 Terminados ({{ totalAgotados() }})
+                <span class="chip-dot dot-red"></span>
+                <span>Agotados ({{ totalAgotados() }})</span>
               </button>
               <button 
                 type="button" 
@@ -766,7 +799,8 @@ interface Categoria {
                 [class.active]="stockFilterState() === 'bajo'"
                 (click)="stockFilterState.set('bajo')"
               >
-                🟡 Quedan Pocos ({{ totalStockBajo() }})
+                <span class="chip-dot dot-amber"></span>
+                <span>Stock Bajo ({{ totalStockBajo() }})</span>
               </button>
               <button 
                 type="button" 
@@ -774,7 +808,8 @@ interface Categoria {
                 [class.active]="stockFilterState() === 'disponibles'"
                 (click)="stockFilterState.set('disponibles')"
               >
-                🟢 Disponibles ({{ totalConStock() }})
+                <span class="chip-dot dot-green"></span>
+                <span>Disponibles ({{ totalConStock() }})</span>
               </button>
             </div>
           </div>
@@ -783,9 +818,9 @@ interface Categoria {
           <div class="stock-table-card glass-panel">
             <div class="stock-table-header">
               <div class="col-item">Plato o Bebida</div>
-              <div class="col-status">Estado Actual</div>
-              <div class="col-qty">¿Cuántos Quedan?</div>
-              <div class="col-actions">Cambiar Cantidad</div>
+              <div class="col-status">Estado</div>
+              <div class="col-qty">Stock Actual</div>
+              <div class="col-actions">Ajuste Rápido</div>
             </div>
 
             <div class="stock-table-body">
@@ -931,89 +966,89 @@ interface Categoria {
         </div>
       }
 
-      <!-- MODAL PREPARACIÓN DEL DÍA -->
-      @if (modalAperturaOpen()) {
-        <div class="modal-backdrop-custom animate-in" (click)="modalAperturaOpen.set(false)">
-          <div class="modal-card-custom glass-panel" (click)="$event.stopPropagation()">
-            <div class="modal-header-custom">
-              <div class="modal-title-wrap">
-                <lucide-icon name="sparkles" class="icon-md text-gold"></lucide-icon>
-                <div>
-                  <h2 class="modal-title font-playfair">Preparación del Día: ¿Cuántos platos se hicieron hoy?</h2>
-                  <p class="modal-sub">Indique cuántas porciones o unidades prepararon hoy en el restaurante para saber con claridad qué se puede servir.</p>
-                </div>
+    </div>
+
+    <!-- MODAL PREPARACIÓN DEL DÍA (fuera de .animate-in para centrar en viewport) -->
+    @if (modalAperturaOpen()) {
+      <div class="modal-backdrop-custom" (click)="modalAperturaOpen.set(false)">
+        <div class="modal-card-custom glass-panel" (click)="$event.stopPropagation()">
+          <div class="modal-header-custom">
+            <div class="modal-title-wrap">
+              <lucide-icon name="sparkles" class="icon-md text-gold"></lucide-icon>
+              <div>
+                <h2 class="modal-title font-playfair">Preparación del Día — Stock de Apertura</h2>
+                <p class="modal-sub">Define las porciones iniciales disponibles para cada plato y bebida en el turno actual.</p>
               </div>
-              <button type="button" class="btn-close-custom" (click)="modalAperturaOpen.set(false)">
-                <lucide-icon name="x" class="icon-sm"></lucide-icon>
+            </div>
+            <button type="button" class="btn-close-custom" (click)="modalAperturaOpen.set(false)">
+              <lucide-icon name="x" class="icon-sm"></lucide-icon>
+            </button>
+          </div>
+
+          <div class="modal-body-custom scrollbar-custom">
+            <div class="apertura-quick-presets">
+              <span class="preset-title">Aplicar a todos:</span>
+              <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(15)">
+                15 porciones
+              </button>
+              <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(20)">
+                20 porciones
+              </button>
+              <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(30)">
+                30 porciones
+              </button>
+              <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(50)">
+                50 porciones
               </button>
             </div>
 
-            <div class="modal-body-custom scrollbar-custom">
-              <div class="apertura-quick-presets">
-                <span class="preset-title">Poner a todos:</span>
-                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(15)">
-                  15 a todos
-                </button>
-                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(20)">
-                  20 a todos
-                </button>
-                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(30)">
-                  30 a todos
-                </button>
-                <button type="button" class="btn-preset" (click)="aplicarPresetMasivo(50)">
-                  50 a todos
-                </button>
-              </div>
-
-              <div class="apertura-items-list">
-                @for (item of aperturaItems(); track item.platoId) {
-                  <div class="apertura-row">
-                    <div class="apertura-info">
-                      <span class="apertura-cat">{{ item.categoria }}</span>
-                      <strong class="apertura-name">{{ item.nombre }}</strong>
-                    </div>
-
-                    <div class="apertura-qty-input-wrap">
-                      <label>Listos hoy:</label>
-                      <input 
-                        type="number" 
-                        min="0" 
-                        max="999"
-                        class="apertura-input"
-                        [(ngModel)]="item.stockActual"
-                      />
-                      <span class="apertura-unit">porc.</span>
-                    </div>
-
-                    <div class="apertura-min-wrap">
-                      <label>Avisar al quedar:</label>
-                      <input 
-                        type="number" 
-                        min="1" 
-                        max="50"
-                        class="apertura-input-min"
-                        [(ngModel)]="item.stockMinimo"
-                      />
-                    </div>
+            <div class="apertura-items-list">
+              @for (item of aperturaItems(); track item.platoId) {
+                <div class="apertura-row">
+                  <div class="apertura-info">
+                    <span class="apertura-cat">{{ item.categoria }}</span>
+                    <strong class="apertura-name">{{ item.nombre }}</strong>
                   </div>
-                }
-              </div>
-            </div>
 
-            <div class="modal-footer-custom">
-              <button type="button" class="btn-action-outline-gold" (click)="modalAperturaOpen.set(false)">
-                Cancelar
-              </button>
-              <button type="button" class="btn-action-filled-gold" (click)="guardarAperturaMasiva()" [disabled]="guardandoApertura()">
-                <lucide-icon name="check" class="icon-sm"></lucide-icon>
-                {{ guardandoApertura() ? 'Guardando...' : 'Guardar Platos de Hoy' }}
-              </button>
+                  <div class="apertura-qty-input-wrap">
+                    <label>Listos hoy:</label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="999"
+                      class="apertura-input"
+                      [(ngModel)]="item.stockActual"
+                    />
+                    <span class="apertura-unit">porc.</span>
+                  </div>
+
+                  <div class="apertura-min-wrap">
+                    <label>Alerta mínima:</label>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      max="50"
+                      class="apertura-input-min"
+                      [(ngModel)]="item.stockMinimo"
+                    />
+                  </div>
+                </div>
+              }
             </div>
           </div>
-        </div>
-      }
 
-    </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn-action-outline-gold" (click)="modalAperturaOpen.set(false)">
+              Cancelar
+            </button>
+            <button type="button" class="btn-action-filled-gold" (click)="guardarAperturaMasiva()" [disabled]="guardandoApertura()">
+              <lucide-icon name="check" class="icon-sm"></lucide-icon>
+              {{ guardandoApertura() ? 'Guardando...' : 'Guardar Stock del Día' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
 
     <!-- Modal: Confirmar Retiro / Eliminación de Plato (fuera de .animate-in para centrar en viewport) -->
     @if (platoAEliminar()) {
@@ -2071,6 +2106,31 @@ interface Categoria {
       }
     }
 
+    .inline-field-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+
+      .inline-text-input,
+      .inline-textarea {
+        width: 100%;
+        background: #0d0a07;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        padding: 6px 10px;
+        color: #f3ebe2;
+        font-size: 0.8rem;
+        outline: none;
+        font-family: inherit;
+        resize: none;
+
+        &:focus {
+          border-color: #d4af37;
+        }
+      }
+    }
+
     .form-error-banner {
       display: flex;
       align-items: center;
@@ -2773,6 +2833,11 @@ interface Categoria {
           border-color: rgba(212, 175, 55, 0.3);
         }
 
+        &.kpi-selected {
+          border-color: rgba(212, 175, 55, 0.55);
+          background: rgba(34, 25, 16, 0.9);
+        }
+
         &.danger-glow {
           border-color: rgba(239, 68, 68, 0.4);
           box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
@@ -2854,9 +2919,11 @@ interface Categoria {
           left: 14px;
           top: 50%;
           transform: translateY(-50%);
-          color: #8c8277;
-          width: 16px;
-          height: 16px;
+          color: #9c8f80;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
         }
 
         .stock-search-input {
@@ -2864,14 +2931,15 @@ interface Categoria {
           background: #100c08;
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 8px;
-          padding: 10px 14px 10px 38px;
+          padding: 10px 14px 10px 40px;
           color: #f3ebe2;
           font-size: 0.84rem;
           outline: none;
-          transition: border-color 0.2s ease;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
           &:focus {
             border-color: #d4af37;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
           }
         }
       }
@@ -2890,13 +2958,19 @@ interface Categoria {
 
         .stock-select {
           background: #100c08;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 8px;
           padding: 9px 14px;
           color: #f3ebe2;
           font-size: 0.84rem;
           outline: none;
           cursor: pointer;
+          color-scheme: dark;
+
+          option {
+            background: #18130f;
+            color: #f3ebe2;
+          }
 
           &:focus {
             border-color: #d4af37;
@@ -2911,7 +2985,21 @@ interface Categoria {
         flex-wrap: wrap;
 
         .chip-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
           background: rgba(255, 255, 255, 0.05);
+
+          .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+
+            &.dot-red { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.7); }
+            &.dot-amber { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.7); }
+            &.dot-green { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.7); }
+          }
           border: 1px solid rgba(255, 255, 255, 0.08);
           color: #a89f91;
           padding: 7px 14px;
@@ -3276,13 +3364,16 @@ interface Categoria {
     /* ── Modal Apertura Masiva ── */
     .modal-backdrop-custom {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background: rgba(8, 5, 3, 0.85);
       backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 9999;
       padding: 20px;
 
       .modal-card-custom {
@@ -3586,10 +3677,12 @@ export class CartaComponent implements OnInit, OnDestroy {
   platoAEliminar = signal<any | null>(null);
   eliminandoPlato = signal(false);
 
-  // Inline Price Editing States (Grid View)
+  // Inline Edit States (Grid View)
   editingPlatoId = signal<string | null>(null);
   editingVariantes = signal<Variante[]>([]);
   editingSinglePrecio = 0;
+  editingNombre = '';
+  editingDescripcion = '';
 
   // Local Upload & Image Editing States
   uploadingPlatoId = signal<string | null>(null);
@@ -3950,6 +4043,8 @@ export class CartaComponent implements OnInit, OnDestroy {
   activarEdicionRapida(plato: any, event: Event) {
     event.stopPropagation();
     this.editingPlatoId.set(plato.id);
+    this.editingNombre = plato.nombre || '';
+    this.editingDescripcion = plato.descripcion || '';
     if (plato.variantes && plato.variantes.length > 0) {
       this.editingVariantes.set(
         plato.variantes.map((v: any) => ({ ...v, precio: Number(v.precio) }))
@@ -3968,25 +4063,35 @@ export class CartaComponent implements OnInit, OnDestroy {
   guardarEdicion(plato: any, event: Event) {
     event.stopPropagation();
     const platoId = plato.id;
+    const nombreLimpio = this.editingNombre.trim() || plato.nombre;
+    const descLimpia = this.editingDescripcion.trim();
 
     if (plato.variantes && plato.variantes.length > 0) {
-      const updates = this.editingVariantes().map((ev) =>
+      const minPrecio = Math.min(...this.editingVariantes().map((v) => Number(v.precio)));
+      const platoUpdate = this.http.patch<any>(`${this.baseUrl}/carta/platos/${platoId}`, {
+        nombre: nombreLimpio,
+        descripcion: descLimpia,
+        precioVenta: minPrecio,
+      });
+      const varUpdates = this.editingVariantes().map((ev) =>
         this.http.put<any>(`${this.baseUrl}/carta/variantes/${ev.id}/precio`, {
           precio: Number(ev.precio),
         })
       );
 
-      forkJoin(updates).subscribe({
+      forkJoin([platoUpdate, ...varUpdates]).subscribe({
         next: () => {
           this.editingPlatoId.set(null);
           this.editingVariantes.set([]);
           this.cargarCarta();
         },
-        error: (err) => console.error('Error al actualizar precios de variantes', err),
+        error: (err) => console.error('Error al actualizar plato y variantes', err),
       });
     } else {
       this.http
         .patch<any>(`${this.baseUrl}/carta/platos/${platoId}`, {
+          nombre: nombreLimpio,
+          descripcion: descLimpia,
           precioVenta: Number(this.editingSinglePrecio),
         })
         .subscribe({
@@ -3994,7 +4099,7 @@ export class CartaComponent implements OnInit, OnDestroy {
             this.editingPlatoId.set(null);
             this.cargarCarta();
           },
-          error: (err) => console.error('Error al actualizar precio único', err),
+          error: (err) => console.error('Error al actualizar plato', err),
         });
     }
   }
