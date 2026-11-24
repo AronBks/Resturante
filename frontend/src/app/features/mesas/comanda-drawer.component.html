@@ -102,27 +102,29 @@
       <!-- ── CUERPO PRINCIPAL CON SCROLL ── -->
       <div class="drawer-scrollable-body scrollbar-custom">
         
-        <!-- Banner Informativo de Asistencia de Garzón en Sala -->
+        <!-- Banner Informativo de Asistencia de Mesero en Sala -->
         @if (llamadaActiva && !esSolicitudPago()) {
           <div class="comanda-call-alert-banner animate-in">
-            <div class="cca-icon-wrapper">
-              <lucide-icon name="bell-ring" [size]="18"></lucide-icon>
-            </div>
-            <div class="cca-info-box">
-              <div class="cca-header-row">
-                <strong class="cca-title">Llamada de Asistencia en Sala</strong>
-                <span class="cca-badge">Atención en Sala</span>
+            <div class="cca-top-row">
+              <div class="cca-icon-wrapper">
+                <lucide-icon name="bell-ring" [size]="18"></lucide-icon>
               </div>
-              <p class="cca-desc">{{ llamadaActiva.motivo }}</p>
+              <div class="cca-info-box">
+                <div class="cca-header-row">
+                  <span class="cca-badge">Solicitud en vivo</span>
+                  <strong class="cca-title">Asistencia en Mesa</strong>
+                </div>
+                <p class="cca-desc">{{ llamadaActiva.motivo }}</p>
+              </div>
             </div>
             <button
               type="button"
               class="cca-atender-btn"
               (click)="atenderLlamadaDirecta()"
-              title="Marcar solicitud como atendida"
+              title="Confirmar que ya atendiste la mesa"
             >
               <lucide-icon name="check" [size]="14"></lucide-icon>
-              <span>Atendido</span>
+              <span>Marcar atendida</span>
             </button>
           </div>
         }
