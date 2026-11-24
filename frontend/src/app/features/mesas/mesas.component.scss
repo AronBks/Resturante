@@ -1721,3 +1721,246 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE MÓVIL PARA GARZÓN / MESERO DE SALÓN
+   (Mantiene intacto el diseño de escritorio)
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .cmd-center-wrapper {
+    gap: 14px;
+    padding: 0 2px 32px;
+  }
+
+  .cmd-top-header {
+    gap: 10px;
+    padding: 2px 0 4px;
+  }
+
+  .header-breadcrumb-block {
+    gap: 8px;
+
+    .cmd-main-title {
+      font-size: 1.35rem;
+    }
+
+    .breadcrumb-separator,
+    .breadcrumb-trail {
+      display: none;
+    }
+  }
+
+  .header-right-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .kpi-open-tables-pill {
+    flex: 1;
+    justify-content: space-between;
+    padding: 7px 12px;
+    border-radius: 12px;
+
+    .pill-label {
+      font-size: 0.62rem;
+    }
+
+    .pill-amount {
+      font-size: 0.98rem;
+    }
+  }
+
+  .sys-operative-btn {
+    padding: 9px 13px;
+    font-size: 0.78rem;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Barra de filtros táctil para el mesero */
+  .cmd-filter-legend-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .mesero-turn-selector {
+    width: 100%;
+    gap: 6px;
+
+    .mesero-tab-pill {
+      flex: 1 1 auto;
+      justify-content: center;
+      padding: 8px 10px;
+      font-size: 0.74rem;
+    }
+
+    .mesero-dropdown-box {
+      width: 100%;
+
+      .select-mesero-operativo {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 0.78rem;
+      }
+    }
+  }
+
+  .zone-filter-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
+    gap: 6px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .zone-tab {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      font-size: 0.76rem;
+    }
+  }
+
+  .status-legend-inline {
+    font-size: 0.72rem;
+    color: #9e9484;
+  }
+
+  /* Grilla de 2 columnas en móvil para vista rápida del salón */
+  .cmd-tables-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .mesa-card-cmd {
+    padding: 13px 11px;
+    border-radius: 16px;
+    min-height: 210px;
+  }
+
+  .card-cmd-header {
+    .mesa-title-wrap {
+      .mesa-label-text {
+        font-size: 0.88rem;
+      }
+      .mesa-big-number {
+        font-size: 1.4rem;
+      }
+    }
+  }
+
+  .badge-cmd-status {
+    font-size: 0.64rem;
+    padding: 3px 8px;
+    gap: 4px;
+  }
+
+  .card-cmd-subtitle {
+    font-size: 0.68rem;
+    margin-bottom: 8px;
+  }
+
+  .card-cmd-mesero-row {
+    margin: 2px 0 6px;
+
+    .btn-mesero-asignado {
+      width: 100%;
+      max-width: 100%;
+      justify-content: space-between;
+      padding: 4px 8px;
+      font-size: 0.68rem;
+    }
+  }
+
+  .metrics-two-boxes {
+    gap: 6px;
+    margin-bottom: 10px;
+
+    .metric-box {
+      padding: 6px 4px;
+      font-size: 0.68rem;
+      border-radius: 8px;
+    }
+  }
+
+  .comanda-activa-block {
+    margin-bottom: 8px;
+
+    .comanda-heading {
+      font-size: 0.66rem;
+    }
+
+    .comanda-item-row {
+      font-size: 0.68rem;
+
+      .dish-name-with-tag {
+        max-width: 105px;
+      }
+
+      .dish-name {
+        max-width: 78px;
+      }
+    }
+  }
+
+  .card-waiter-control-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    margin-top: 8px;
+
+    .delivery-waiter-label {
+      max-width: 100%;
+      font-size: 0.66rem;
+    }
+
+    .btn-deliver-order,
+    .badge-delivered-ok {
+      width: 100%;
+      justify-content: center;
+      padding: 6px 8px;
+      font-size: 0.72rem;
+    }
+  }
+
+  .libre-body-box {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 0 4px;
+
+    .pax-dashed-circle {
+      width: 64px;
+      height: 64px;
+      font-size: 0.76rem;
+    }
+
+    .btn-take-order-prompt {
+      width: 100%;
+      justify-content: center;
+      padding: 6px 8px;
+      font-size: 0.72rem;
+      margin-top: 2px;
+    }
+  }
+
+  .total-cobrar-inner {
+    padding: 10px 8px;
+
+    .total-cobrar-amount {
+      font-size: 1.3rem;
+    }
+  }
+}
+
+@media (max-width: 359px) {
+  .cmd-tables-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

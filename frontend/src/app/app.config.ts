@@ -83,9 +83,11 @@ import {
   UserX,
   ShieldAlert,
   Ban,
+  Menu,
 } from 'lucide-angular';
 
 export const appIcons = {
+  Menu,
   Ban,
   Star,
   UserX,

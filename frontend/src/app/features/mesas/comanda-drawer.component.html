@@ -38,8 +38,8 @@
             <span>{{ mesa?.capacidad || 4 }} pax</span>
           </div>
           @if (activeCanalOrigen() === 'IA_DON_BETO') {
-            <div class="meta-item badge-ia-comanda" title="Pedido autónomo procesado por Don Beto IA">
-              <span>🤖 Don Beto IA</span>
+            <div class="meta-item badge-ia-comanda" title="Pedido autónomo procesado por Tukuy IA">
+              <span>🤖 Tukuy IA</span>
             </div>
           }
         </div>
@@ -72,7 +72,7 @@
                 <span>Cobrar</span>
               </button>
             } @else {
-              <span class="badge-cobro-caja-waiter" title="El cobro oficial y factura lo emite el cajero en Caja">
+              <span class="badge-cobro-caja-waiter" title="El cobro y cierre de mesa se procesa en caja">
                 <lucide-icon name="shield" [size]="12"></lucide-icon>
                 <span>Cobro en Caja</span>
               </span>
@@ -81,21 +81,21 @@
         </section>
       }
 
-      <!-- ── 3 BOTONES DE ACCIONES RÁPIDAS ── -->
+      <!-- ── ACCIONES RÁPIDAS DEL MESERO ── -->
       <section class="quick-actions-bar">
         <button class="qa-btn" (click)="abrirCatalogoAgregar()" title="Añadir platos a la orden">
           <lucide-icon name="plus-circle" [size]="18" class="qa-icon"></lucide-icon>
-          <span>Añadir</span>
+          <span>Añadir Platos</span>
         </button>
 
-        <button class="qa-btn" (click)="llamarMesero()" title="Llamar al garzón">
-          <lucide-icon name="bell" [size]="18" class="qa-icon"></lucide-icon>
-          <span>Llamar</span>
-        </button>
-
-        <button class="qa-btn" (click)="cambiarMesa()" title="Cambiar o trasladar mesa">
-          <lucide-icon name="arrow-left-right" [size]="18" class="qa-icon"></lucide-icon>
-          <span>Cambiar</span>
+        <button
+          class="qa-btn"
+          [class.qa-btn--success]="asistenciaEnviada()"
+          (click)="atenderLlamadaDirecta()"
+          title="Notificar al comensal que te diriges a asistir la mesa"
+        >
+          <lucide-icon [name]="asistenciaEnviada() ? 'check-circle-2' : 'concierge-bell'" [size]="18" class="qa-icon"></lucide-icon>
+          <span>{{ asistenciaEnviada() ? 'Aviso Enviado' : 'Asistir Mesa' }}</span>
         </button>
       </section>
 
@@ -134,22 +134,10 @@
               <span class="section-label">COMANDA ACTIVA</span>
               <span class="section-code" *ngIf="activePedidoId()">#CMD-{{ activePedidoId()!.substring(0, 4) | uppercase }}</span>
             </div>
-
-            <!-- Botón de Entrega Rápida: Servir Todo -->
-            <button
-              type="button"
-              class="btn-servir-todo"
-              *ngIf="activeSentItems().length > 0"
-              (click)="servirTodo()"
-              title="Marcar todos los platos como servidos"
-            >
-              <lucide-icon name="check-circle-2" [size]="13"></lucide-icon>
-              <span>Servir Todo</span>
-            </button>
           </div>
 
           <div class="active-dishes-list">
-            <!-- LISTA DE PLATOS REALES CON ESTADOS POR ÍTEM -->
+            <!-- LISTA DE PLATOS REALES CON ESTADO EN TIEMPO REAL (SOLO LECTURA) -->
             @for (item of activeSentItems(); track item.id) {
               <div class="dish-detail-card">
                 <div class="dish-qty-box">
@@ -158,89 +146,22 @@
                 <div class="dish-info-middle">
                   <strong class="dish-title">{{ item.nombre }}</strong>
                   
-                  <!-- Selector Interactivo de Estado por Ítem (Senior UX) -->
+                  <!-- Indicador Informativo de Estado (Actualizado por Cocina / Despacho) -->
                   <div class="item-status-wrapper">
-                    <button
-                      type="button"
-                      class="item-status-selector-btn"
+                    <span
+                      class="item-status-selector-btn item-status-readonly"
                       [ngClass]="{
                         'por-servir': item.estado === 'PENDIENTE',
                         'en-cocina': item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA',
                         'listo': item.estado === 'LISTO',
                         'servido': item.estado === 'ENTREGADO' || item.estado === 'SERVIDO'
                       }"
-                      (click)="toggleItemMenu(item.id, $event)"
-                      title="Haz clic para cambiar el estado de este plato"
                     >
                       <span class="status-indicator-dot"></span>
                       <span class="status-label-text">
                         {{ (item.estado === 'ENTREGADO' || item.estado === 'SERVIDO') ? 'Servido' : (item.estado === 'LISTO' ? 'Listo para Servir' : (item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA' ? 'En Cocina' : 'Por Servir')) }}
                       </span>
-                      <lucide-icon name="chevron-down" [size]="12" class="status-chevron"></lucide-icon>
-                    </button>
-
-                    <!-- Menú Desplegable Flotante de Estados -->
-                    @if (itemMenuAbiertoId() === item.id) {
-                      <div class="item-status-dropdown-menu" (click)="$event.stopPropagation()">
-                        <div class="dropdown-header-title">Cambiar estado del plato:</div>
-                        
-                        <button
-                          type="button"
-                          class="status-option-row"
-                          [class.selected]="item.estado === 'PENDIENTE'"
-                          (click)="cambiarEstadoItemDirecto(item, 'PENDIENTE', $event)"
-                        >
-                          <span class="opt-dot dot-pendiente"></span>
-                          <div class="opt-texts">
-                            <strong>Por Servir</strong>
-                            <span>En espera de preparación</span>
-                          </div>
-                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'PENDIENTE'"></lucide-icon>
-                        </button>
-
-                        <button
-                          type="button"
-                          class="status-option-row"
-                          [class.selected]="item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"
-                          (click)="cambiarEstadoItemDirecto(item, 'PREPARANDO', $event)"
-                        >
-                          <span class="opt-dot dot-cocina"></span>
-                          <div class="opt-texts">
-                            <strong>En Cocina</strong>
-                            <span>En preparación activa</span>
-                          </div>
-                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'PREPARANDO' || item.estado === 'EN_COCINA'"></lucide-icon>
-                        </button>
-
-                        <button
-                          type="button"
-                          class="status-option-row"
-                          [class.selected]="item.estado === 'LISTO'"
-                          (click)="cambiarEstadoItemDirecto(item, 'LISTO', $event)"
-                        >
-                          <span class="opt-dot dot-listo"></span>
-                          <div class="opt-texts">
-                            <strong>Listo para Servir</strong>
-                            <span>Plato preparado en cocina</span>
-                          </div>
-                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'LISTO'"></lucide-icon>
-                        </button>
-
-                        <button
-                          type="button"
-                          class="status-option-row"
-                          [class.selected]="item.estado === 'ENTREGADO' || item.estado === 'SERVIDO'"
-                          (click)="cambiarEstadoItemDirecto(item, 'ENTREGADO', $event)"
-                        >
-                          <span class="opt-dot dot-servido"></span>
-                          <div class="opt-texts">
-                            <strong>Servido</strong>
-                            <span>Entregado en mesa</span>
-                          </div>
-                          <lucide-icon name="check" [size]="14" class="opt-check" *ngIf="item.estado === 'ENTREGADO' || item.estado === 'SERVIDO'"></lucide-icon>
-                        </button>
-                      </div>
-                    }
+                    </span>
                   </div>
 
                   <!-- Nota / Instrucción Especial de Preparación -->
@@ -325,7 +246,7 @@
           } @else {
             <div class="waiter-readonly-caja-banner">
               <lucide-icon name="info" [size]="16" class="text-gold"></lucide-icon>
-              <span>El cobro oficial y facturación lo procesa Caja Central.</span>
+              <span>Cuenta abierta · El cobro y cierre de mesa se realiza en caja.</span>
             </div>
           }
         } @else {
@@ -340,13 +261,53 @@
   }
 
   <!-- ═══════════════════════════════════════════════════════
-       VISTA 2: MODAL "AGREGAR PRODUCTO" (2 COLUMNAS MOCKUP)
+       VISTA 2: MODAL "AGREGAR PRODUCTO" (2 COLUMNAS DESKTOP / TABS MÓVIL)
        ═══════════════════════════════════════════════════════ -->
   @if (viewMode() === 'CATALOG') {
     <div class="modal-agregar-producto-container animate-fade-in">
+
+      <!-- Barra superior de navegación móvil para el Mesero (Solo visible en <= 860px) -->
+      <div class="mobile-pos-topbar">
+        <div class="mobile-pos-topbar__title-row">
+          <button type="button" class="mobile-pos-back-btn" (click)="volverADetalle()">
+            <lucide-icon name="arrow-left" [size]="18"></lucide-icon>
+          </button>
+          <div class="mobile-pos-topbar__text">
+            <strong>Tomar Pedido · Mesa {{ mesa?.numero?.replace('M', '') || mesa?.numero }}</strong>
+            <span>{{ activeMeseroNombre() || 'Garzón de Salón' }}</span>
+          </div>
+          <button type="button" class="mobile-pos-close-btn" (click)="volverADetalle()" title="Cerrar">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="mobile-pos-tabs-switch">
+          <button
+            type="button"
+            class="mobile-pos-tab"
+            [class.active]="mobileCatalogTab() === 'CATALOGO'"
+            (click)="mobileCatalogTab.set('CATALOGO')"
+          >
+            <lucide-icon name="utensils" [size]="14"></lucide-icon>
+            <span>Carta de Platos</span>
+          </button>
+          <button
+            type="button"
+            class="mobile-pos-tab"
+            [class.active]="mobileCatalogTab() === 'BANDEJA'"
+            (click)="mobileCatalogTab.set('BANDEJA')"
+          >
+            <lucide-icon name="receipt" [size]="14"></lucide-icon>
+            <span>Nuevos Ítems</span>
+            @if (getDraftTotalCount() > 0) {
+              <span class="mobile-pos-tab-badge">{{ getDraftTotalCount() }}</span>
+            }
+          </button>
+        </div>
+      </div>
       
       <!-- ── COLUMNA IZQUIERDA: CATÁLOGO DE PLATOS ── -->
-      <section class="modal-catalog-left">
+      <section class="modal-catalog-left" [class.mobile-pane-hidden]="mobileCatalogTab() !== 'CATALOGO'">
         
         <!-- Header: Título y Cerrar -->
         <div class="modal-left-header">
@@ -394,6 +355,9 @@
               
               <!-- Imagen / Thumbnail con Alto Fijo -->
               <div class="dish-card-thumb" [class.dish-card-thumb--beverage]="esBebida(plato)">
+                @if (getPlatoDraftQty(plato.id) > 0) {
+                  <span class="draft-qty-badge-card">{{ getPlatoDraftQty(plato.id) }} en orden</span>
+                }
                 <span class="variant-indicator-tag" *ngIf="plato.tieneVariantes">
                   <lucide-icon name="sparkles" [size]="11"></lucide-icon>
                   <span>{{ plato.variantes?.length || 2 }} Tamaños</span>
@@ -449,16 +413,42 @@
           }
         </div>
 
+        <!-- Barra Flotante Inferior en Móvil cuando hay platos seleccionados -->
+        @if (comandaItems().length > 0) {
+          <div class="mobile-floating-order-bar">
+            <button type="button" class="mfob-review-btn" (click)="mobileCatalogTab.set('BANDEJA')">
+              <span class="mfob-count">{{ getDraftTotalCount() }}</span>
+              <div class="mfob-info">
+                <strong>Ver Orden / Notas</strong>
+                <span>Bs. {{ getDraftSubtotal() | number:'1.2-2' }}</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="mfob-send-btn"
+              [disabled]="isSubmitting()"
+              (click)="submitComanda()"
+            >
+              <lucide-icon name="send" [size]="15"></lucide-icon>
+              <span>{{ isSubmitting() ? 'Enviando...' : 'Enviar a Cocina' }}</span>
+            </button>
+          </div>
+        }
+
       </section>
 
       <!-- ── COLUMNA DERECHA: NUEVOS ITEMS ── -->
-      <aside class="modal-order-tray-right">
+      <aside class="modal-order-tray-right" [class.mobile-pane-hidden]="mobileCatalogTab() !== 'BANDEJA'">
         
         <!-- Header de la Bandeja -->
         <div class="tray-right-header">
           <div class="tray-title-group">
             <lucide-icon name="receipt" [size]="18" class="tray-ico-gold"></lucide-icon>
             <h3 class="tray-main-title">Nuevos Items</h3>
+            <button type="button" class="btn-mobile-add-more" (click)="mobileCatalogTab.set('CATALOGO')">
+              <lucide-icon name="plus" [size]="13"></lucide-icon>
+              <span>Seguir agregando</span>
+            </button>
           </div>
           <span class="tray-mesa-sub">Mesa {{ mesa?.numero?.replace('M', '') || mesa?.numero }} • Salón Principal</span>
         </div>
@@ -494,7 +484,7 @@
                 <lucide-icon name="pencil" [size]="12" class="note-ico"></lucide-icon>
                 <input
                   type="text"
-                  placeholder="Nota a cocina (ej: sin picante)"
+                  placeholder="Notas: ej. sin cebolla..."
                   [(ngModel)]="item.notas"
                   class="input-note"
                 />
@@ -601,7 +591,7 @@
             <lucide-icon name="pencil" [size]="14" class="pencil-ico"></lucide-icon>
             <input
               type="text"
-              placeholder="Ej: Poco azúcar, bien caliente, sin llajua..."
+              placeholder="Notas: ej. sin cebolla..."
               [ngModel]="notaPersonalizada()"
               (ngModelChange)="notaPersonalizada.set($event)"
               class="customizer-input-text"

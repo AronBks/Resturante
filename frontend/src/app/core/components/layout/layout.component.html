@@ -1,8 +1,13 @@
 <div class="app-layout">
+  <!-- Backdrop móvil para cerrar el sidebar al tocar fuera -->
+  @if (mobileSidebarOpen()) {
+    <div class="sidebar-mobile-backdrop" (click)="closeMobileSidebar()"></div>
+  }
+
   <!-- ═══════════════════════════════════════════
        SIDEBAR — Peña Tukuypaj Brand Shell
        ═══════════════════════════════════════════ -->
-  <aside class="sidebar">
+  <aside class="sidebar" [class.sidebar--mobile-open]="mobileSidebarOpen()">
     <!-- Brand Header: Isotipo "T" + Nombre -->
     <div class="sidebar-header">
       <div class="brand-isotipo">T</div>
@@ -10,6 +15,9 @@
         <h2>Tukuypaj</h2>
         <span>Peña & Restaurant</span>
       </div>
+      <button type="button" class="sidebar-mobile-close" (click)="closeMobileSidebar()" aria-label="Cerrar menú">
+        <lucide-icon name="x" [size]="18"></lucide-icon>
+      </button>
     </div>
 
     <!-- Separador decorativo con gradiente de marca -->
@@ -22,6 +30,7 @@
           [routerLink]="item.route"
           routerLinkActive="active"
           class="nav-link"
+          (click)="closeMobileSidebar()"
         >
           <span class="nav-icon">
             <lucide-icon [name]="item.iconName" class="icon-md"></lucide-icon>
@@ -57,6 +66,9 @@
     <!-- Top Navbar -->
     <header class="navbar">
       <div class="nav-left">
+        <button type="button" class="mobile-menu-trigger" (click)="toggleMobileSidebar()" aria-label="Abrir menú">
+          <lucide-icon name="menu" [size]="20"></lucide-icon>
+        </button>
         <span class="breadcrumb-brand">Tukuypaj</span>
         <span class="breadcrumb-slash">/</span>
         <span class="breadcrumb-current">{{ tituloSeccion() }}</span>

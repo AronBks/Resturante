@@ -98,6 +98,7 @@ export class ComandaDrawerComponent implements OnChanges {
   selectedWaitership = signal('');
   isSubmitting = signal(false);
   errorMessage = signal('');
+  asistenciaEnviada = signal(false);
 
   activePedidoId = signal<string | null>(null);
   activeMeseroNombre = signal('');
@@ -112,6 +113,7 @@ export class ComandaDrawerComponent implements OnChanges {
 
   // Modos de vista: 'DETAIL' | 'CATALOG' | 'CONFIRMATION'
   viewMode = signal<'DETAIL' | 'CATALOG' | 'CONFIRMATION'>('DETAIL');
+  mobileCatalogTab = signal<'CATALOGO' | 'BANDEJA'>('CATALOGO');
   lastSubmittedSummary = signal<any>(null);
   activeSentItems = signal<any[]>([]);
   tiempoTranscurridoText = signal<string>('En curso');
@@ -175,6 +177,8 @@ export class ComandaDrawerComponent implements OnChanges {
       meseroNombre,
     }).subscribe({
       next: () => {
+        this.asistenciaEnviada.set(true);
+        setTimeout(() => this.asistenciaEnviada.set(false), 3500);
         this.saved.emit();
         this.cargarAuditoriaMesa(this.mesa!.numero);
       },
@@ -658,6 +662,16 @@ export class ComandaDrawerComponent implements OnChanges {
     );
   }
 
+  getDraftTotalCount(): number {
+    return this.comandaItems().reduce((sum, item) => sum + item.cantidad, 0);
+  }
+
+  getPlatoDraftQty(platoId: string): number {
+    return this.comandaItems()
+      .filter((i) => i.platoId === platoId)
+      .reduce((sum, i) => sum + i.cantidad, 0);
+  }
+
   quitarItem(platoId: string, varianteId?: string) {
     this.comandaItems.update((items) =>
       items.filter((i) => !(i.platoId === platoId && i.varianteId === (varianteId || undefined)))
@@ -801,10 +815,12 @@ export class ComandaDrawerComponent implements OnChanges {
   }
 
   abrirCatalogoAgregar() {
+    this.mobileCatalogTab.set('CATALOGO');
     this.viewMode.set('CATALOG');
   }
 
   volverADetalle() {
+    this.mobileCatalogTab.set('CATALOGO');
     this.viewMode.set('DETAIL');
   }
 

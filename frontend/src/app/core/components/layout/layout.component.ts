@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -26,6 +26,15 @@ export class LayoutComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   user = this.authService.currentUserSignal;
+  mobileSidebarOpen = signal(false);
+
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update((v) => !v);
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen.set(false);
+  }
 
   tituloSeccion = computed(() => {
     const url = this.router.url;
