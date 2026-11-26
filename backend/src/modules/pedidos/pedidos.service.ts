@@ -935,13 +935,37 @@ export class PedidosService {
   }
 
   /**
-   * Obtiene los últimos pedidos despachados recientemente para auditoría y opción de deshacer
+   * Obtiene pedidos despachados filtrados por período ('hoy', 'ayer', 'recientes') o fecha exacta (YYYY-MM-DD)
    */
-  async obtenerPedidosDespachadosRecientes(limite = 20) {
+  async obtenerPedidosDespachadosRecientes(
+    periodo: 'hoy' | 'ayer' | 'recientes' = 'recientes',
+    fecha?: string,
+  ) {
+    const where: any = {
+      estado: EstadoPedido.ENTREGADO,
+    };
+
+    let takeLimit: number | undefined = undefined;
+
+    if (fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      const [y, m, d] = fecha.split('-').map(Number);
+      const inicio = new Date(y, m - 1, d, 0, 0, 0, 0);
+      const fin = new Date(y, m - 1, d, 23, 59, 59, 999);
+      where.updatedAt = { gte: inicio, lte: fin };
+    } else if (periodo === 'hoy' || periodo === 'ayer') {
+      const base = new Date();
+      if (periodo === 'ayer') {
+        base.setDate(base.getDate() - 1);
+      }
+      const inicio = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 0, 0, 0, 0);
+      const fin = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 59, 999);
+      where.updatedAt = { gte: inicio, lte: fin };
+    } else {
+      takeLimit = 30;
+    }
+
     return this.prisma.pedido.findMany({
-      where: {
-        estado: EstadoPedido.ENTREGADO,
-      },
+      where,
       include: {
         detalles: {
           include: {
@@ -960,7 +984,7 @@ export class PedidosService {
       orderBy: {
         updatedAt: 'desc',
       },
-      take: limite,
+      ...(takeLimit ? { take: takeLimit } : {}),
     });
   }
   async obtenerPedidoActivoPorMesa(mesaId: number) {
@@ -1186,6 +1210,25 @@ export class PedidosService {
       where: { id: pedidoId },
       data: { estado: nuevoEstado },
     });
+
+    // Sincronizar ítems cuando se marca el pedido completo como LISTO o ENTREGADO
+    if (nuevoEstado === EstadoPedido.LISTO) {
+      await this.prisma.detallePedido.updateMany({
+        where: {
+          pedidoId,
+          estadoItem: { in: [EstadoItemPedido.PENDIENTE, EstadoItemPedido.PREPARANDO] },
+        },
+        data: { estadoItem: EstadoItemPedido.LISTO },
+      });
+    } else if (nuevoEstado === EstadoPedido.ENTREGADO) {
+      await this.prisma.detallePedido.updateMany({
+        where: {
+          pedidoId,
+          estadoItem: { not: EstadoItemPedido.CANCELADO },
+        },
+        data: { estadoItem: EstadoItemPedido.ENTREGADO },
+      });
+    }
 
     // Difundir estado a admin y a la carta pública
     this.gateway.broadcastEstadoPedido(pedidoId, nuevoEstado);

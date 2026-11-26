@@ -5,6 +5,7 @@ import {
   Patch,
   Param,
   Body,
+  Query,
   UseGuards,
   Logger,
 } from '@nestjs/common';
@@ -256,8 +257,11 @@ export class PedidosController {
   @Get('despachados-recientes')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN', 'CHEF', 'MESERO', 'CAJERO')
-  obtenerDespachadosRecientes() {
-    return this.pedidosService.obtenerPedidosDespachadosRecientes();
+  obtenerDespachadosRecientes(
+    @Query('periodo') periodo?: 'hoy' | 'ayer' | 'recientes',
+    @Query('fecha') fecha?: string,
+  ) {
+    return this.pedidosService.obtenerPedidosDespachadosRecientes(periodo, fecha);
   }
 
   @Get('mesa/:mesaId')
