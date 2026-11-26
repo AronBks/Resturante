@@ -57,30 +57,41 @@ interface Pedido {
           <div class="breadcrumb">
             <span class="brand">Tukuypaj</span>
             <span class="sep">/</span>
-            <span class="current">Pase & Despacho de Cocina</span>
+            <span class="current">Pase &amp; Despacho de Cocina</span>
           </div>
-          <div class="live-status-pill">
-            <span class="pulse-dot"></span>
-            <span>Despacho en Vivo</span>
+          <div class="header-live-group">
+            <div class="live-clock-pill" title="Hora actual del monitor">
+              <lucide-icon name="clock" class="icon-xs"></lucide-icon>
+              <span>{{ tickReloj() | date:'HH:mm' }}</span>
+            </div>
           </div>
         </div>
 
         <div class="header-main-row">
           <div>
-            <h1 class="page-title">Pase de Platos & Despacho</h1>
+            <h1 class="page-title">Pase de Platos &amp; Despacho</h1>
             <p class="page-subtitle">
-              Diseñado para horas pico: Control claro de platos que salen del fogón a la barra y confirmación de entrega a mesa.
+              Monitor de cocina en tiempo real · Control de preparación, aviso a sala y despacho de comandas.
             </p>
           </div>
 
-          <!-- Herramientas superiores -->
+          <!-- Herramientas táctiles superiores -->
           <div class="header-tools">
-            <button 
-              type="button" 
-              class="btn-audio-toggle" 
-              [class.active]="sonidoHabilitado()" 
+            <button
+              type="button"
+              class="btn-tool-refresh"
+              (click)="cargarPedidosActivos(); cargarDespachadosRecientes()"
+              title="Actualizar comandas manualmente"
+            >
+              <lucide-icon name="refresh-cw" class="icon-sm"></lucide-icon>
+              <span>Actualizar</span>
+            </button>
+            <button
+              type="button"
+              class="btn-audio-toggle"
+              [class.active]="sonidoHabilitado()"
               (click)="toggleSonido()"
-              title="Aviso sonoro al entrar pedidos o salir comida"
+              title="Aviso sonoro al entrar pedidos o marcar platos listos"
             >
               <lucide-icon [name]="sonidoHabilitado() ? 'bell' : 'bell-ring'" class="icon-sm"></lucide-icon>
               <span>{{ sonidoHabilitado() ? 'Timbre: Activo' : 'Timbre: Silenciado' }}</span>
@@ -89,7 +100,7 @@ interface Pedido {
         </div>
       </div>
 
-      <!-- ── Pestañas Principales (Activas vs Despachadas Recientes) ── -->
+      <!-- ── Pestañas Principales (En Preparación vs Historial de Despacho) ── -->
       <div class="main-tabs-bar no-print">
         <button 
           type="button" 
@@ -98,7 +109,7 @@ interface Pedido {
           (click)="tabActiva.set('activas')"
         >
           <lucide-icon name="flame" class="icon-sm"></lucide-icon>
-          <span>En Cocina & Barra</span>
+          <span>En Preparación</span>
           <span class="tab-badge-count">{{ totalComandas() }}</span>
         </button>
 
@@ -108,9 +119,11 @@ interface Pedido {
           [class.active]="tabActiva() === 'despachadas'"
           (click)="tabActiva.set('despachadas')"
         >
-          <lucide-icon name="check-circle-2" class="icon-sm"></lucide-icon>
-          <span>Recién Despachadas (Últimas)</span>
-          <span class="tab-badge-count success">{{ despachadosRecientes().length }}</span>
+          <lucide-icon name="history" class="icon-sm"></lucide-icon>
+          <span>Historial de Despacho</span>
+          @if (despachadosHoyCount() > 0) {
+            <span class="tab-badge-count success">{{ despachadosHoyCount() }} hoy</span>
+          }
         </button>
       </div>
 
@@ -123,19 +136,19 @@ interface Pedido {
           <div class="stats-row">
             <div class="stat-pill" [class.highlight]="totalComandas() > 0">
               <span class="stat-num">{{ totalComandas() }}</span>
-              <span class="stat-lbl">Mesas en Espera</span>
+              <span class="stat-lbl">Comandas Activas</span>
             </div>
             <div class="stat-pill warning" [class.highlight]="platosEnPreparacion() > 0">
               <span class="stat-num">{{ platosEnPreparacion() }}</span>
-              <span class="stat-lbl">En Fogón / Olla</span>
+              <span class="stat-lbl">En Preparación</span>
             </div>
             <div class="stat-pill success pulse-glow" [class.highlight]="platosListosEnMostrador() > 0">
               <span class="stat-num">{{ platosListosEnMostrador() }}</span>
-              <span class="stat-lbl">¡Listos en Barra!</span>
+              <span class="stat-lbl">Listos para Servir</span>
             </div>
           </div>
 
-          <!-- Filtros visuales para hora pico -->
+          <!-- Filtros táctiles -->
           <div class="filter-chips">
             <button 
               type="button" 
@@ -152,7 +165,7 @@ interface Pedido {
               (click)="filtroSeleccionado.set('listos')"
             >
               <lucide-icon name="check-circle-2" class="icon-xs"></lucide-icon>
-              <span>Listos en Barra ({{ comandasConPlatosListos() }})</span>
+              <span>Listos ({{ comandasConPlatosListos() }})</span>
             </button>
             <button 
               type="button" 
@@ -161,7 +174,7 @@ interface Pedido {
               (click)="filtroSeleccionado.set('demora')"
             >
               <lucide-icon name="clock" class="icon-xs"></lucide-icon>
-              <span>Demorados +15 min ({{ comandasDemoradas() }})</span>
+              <span>Demora +15 min ({{ comandasDemoradas() }})</span>
             </button>
           </div>
         </div>
@@ -179,36 +192,47 @@ interface Pedido {
               <div class="ticket-header">
                 <div class="mesa-badge-wrap">
                   <span class="mesa-title">MESA {{ pedido.mesa.numero }}</span>
-                  <span class="origen-tag" [ngClass]="getOrigenClass(pedido.canalOrigen)">
-                    {{ getOrigenLabel(pedido.canalOrigen) }}
-                  </span>
                 </div>
-                <div class="time-badge" [class.time-danger]="getTiempoTranscurrido(pedido.createdAt) >= 15">
+                <div class="time-badge" [class.time-danger]="!todosPlatosListos(pedido) && getTiempoTranscurrido(pedido.createdAt) >= 15">
                   <lucide-icon name="clock" class="icon-xs"></lucide-icon>
-                  <span>Hace {{ getTiempoTranscurrido(pedido.createdAt) }} min</span>
+                  <span>{{ formatTiempoTranscurrido(pedido.createdAt) }}</span>
                 </div>
+              </div>
+
+              <!-- Progreso de platos en la comanda -->
+              <div class="ticket-progress-row">
+                <div class="ticket-progress-track">
+                  <div
+                    class="ticket-progress-fill"
+                    [class.fill-complete]="todosPlatosListos(pedido)"
+                    [style.width.%]="getProgresoPorcentaje(pedido)"
+                  ></div>
+                </div>
+                <span class="ticket-progress-lbl">
+                  {{ getPlatosListosCount(pedido) }}/{{ pedido.detalles.length }} listos
+                </span>
               </div>
 
               <!-- Banner de Estado de Comanda (Claridad Visual Inmediata) -->
               <div class="comanda-status-banner" [class.banner-ready]="todosPlatosListos(pedido)">
                 @if (todosPlatosListos(pedido)) {
                   <lucide-icon name="check-circle-2" class="icon-xs"></lucide-icon>
-                  <span>COMIDA LISTA EN BARRA — Esperando retiro por garzón</span>
+                  <span>LISTO EN BARRA · Esperando que el mesero retire</span>
                 } @else {
                   <lucide-icon name="flame" class="icon-xs"></lucide-icon>
-                  <span>En Cocina — Preparando comanda</span>
+                  <span>En Preparación · {{ getPlatosPendientesCount(pedido) === 1 ? 'Falta 1 plato' : 'Faltan ' + getPlatosPendientesCount(pedido) + ' platos' }}</span>
                 }
               </div>
 
               <div class="ticket-meta">
                 <div class="mesero-info">
                   <lucide-icon name="user" class="icon-xs text-muted"></lucide-icon>
-                  <span>Garzón: <strong>{{ pedido.mesero.nombre }}</strong></span>
+                  <span>Mesero: <strong>{{ pedido.mesero.nombre }}</strong></span>
                 </div>
-                @if (pedido.notas) {
+                @if (getNotaVisible(pedido.notas); as notaLimpia) {
                   <div class="ticket-notes">
                     <lucide-icon name="alert-circle" class="icon-xs"></lucide-icon>
-                    <span>Nota: {{ pedido.notas }}</span>
+                    <span>Nota: {{ notaLimpia }}</span>
                   </div>
                 }
               </div>
@@ -217,7 +241,7 @@ interface Pedido {
               <div class="ticket-body">
                 <ul class="items-list">
                   @for (item of pedido.detalles; track item.id) {
-                    <li [class.item-listo]="item.estadoItem === 'LISTO'">
+                    <li [class.item-listo]="item.estadoItem === 'LISTO' || item.estadoItem === 'ENTREGADO'">
                       <div class="item-info-col">
                         <div class="item-name-row">
                           <span class="qty-pill">{{ item.cantidad }}x</span>
@@ -231,23 +255,33 @@ interface Pedido {
                         }
                       </div>
 
-                      <!-- Botón de 1 toque individual por plato -->
+                      <!-- Botón táctil de 1 toque individual por plato -->
                       <div class="item-action-wrap">
-                        @if (item.estadoItem !== 'LISTO') {
+                        @if (item.estadoItem === 'ENTREGADO') {
+                          <span class="badge-item-servido" title="Ya fue retirado y servido en la mesa por el mesero">
+                            <lucide-icon name="check-check" class="icon-xs"></lucide-icon>
+                            <span>Servido</span>
+                          </span>
+                        } @else if (item.estadoItem !== 'LISTO') {
                           <button 
                             type="button" 
                             class="btn-item-touch" 
                             (click)="marcarPlatoEnBarra(pedido.id, item.id)"
-                            title="Tocar si este plato ya salió a la barra caliente"
+                            title="Tocar para marcar este plato como listo"
                           >
-                            <span>Pase a Barra</span>
-                            <lucide-icon name="chevron-right" class="icon-xs"></lucide-icon>
+                            <lucide-icon name="check" class="icon-xs"></lucide-icon>
+                            <span>Marcar Listo</span>
                           </button>
                         } @else {
-                          <span class="badge-item-ready" (click)="revertirPlatoAFogon(pedido.id, item.id)" title="Click para devolver a fogón si hubo error">
+                          <button
+                            type="button"
+                            class="badge-item-ready"
+                            (click)="revertirPlatoAFogon(pedido.id, item.id)"
+                            title="Tocar para devolver a preparación si hubo un error"
+                          >
                             <lucide-icon name="check-circle-2" class="icon-xs"></lucide-icon>
-                            <span>En Barra</span>
-                          </span>
+                            <span>Listo</span>
+                          </button>
                         }
                       </div>
                     </li>
@@ -255,7 +289,7 @@ interface Pedido {
                 </ul>
               </div>
 
-              <!-- ── Pie del Ticket: FLUJO INTUITIVO DE ACCIÓN ── -->
+              <!-- ── Pie del Ticket: FLUJO TÁCTIL EN 2 PASOS ── -->
               <div class="ticket-footer">
                 @if (!todosPlatosListos(pedido)) {
                   <!-- PASO 1: Aún faltan platos por salir de cocina -->
@@ -264,39 +298,39 @@ interface Pedido {
                       type="button" 
                       class="btn-step-action btn-poner-barra" 
                       (click)="ponerTodaLaComidaEnBarra(pedido.id)"
-                      title="Pasa todos los platos a la barra caliente de un solo toque"
+                      title="Marca todos los platos de esta mesa como listos"
                     >
                       <lucide-icon name="concierge-bell" class="icon-sm"></lucide-icon>
                       <div class="btn-text-block">
-                        <span class="main-txt">1. Comida en Barra</span>
-                        <span class="sub-txt">Avisar comanda completa en mostrador</span>
+                        <span class="main-txt">Marcar Todo Listo</span>
+                        <span class="sub-txt">Avisar comanda completa a sala</span>
                       </div>
                     </button>
 
-                    <!-- Atajo rápido opcional para cuando el mesero saca directo a mesa sin pasar por barra -->
+                    <!-- Atajo rápido para despacho inmediato a mesa -->
                     <button 
                       type="button" 
                       class="btn-shortcut-direct" 
                       (click)="confirmarEntregaDirecta(pedido)"
-                      title="Atajo de hora pico: El garzón sacó la comida volando directo a la mesa"
+                      title="Confirmar que la comanda ya fue entregada directamente a la mesa"
                     >
                       <lucide-icon name="send" class="icon-xs"></lucide-icon>
-                      <span>Servicio Directo</span>
+                      <span>Entregar ya</span>
                     </button>
                   </div>
                 } @else {
-                  <!-- PASO 2: Todo listo en barra esperando que el mesero se lo lleve -->
+                  <!-- PASO 2: Todo listo en barra esperando retiro del mesero -->
                   <div class="footer-step-2">
                     <button 
                       type="button" 
-                      class="btn-step-action btn-entregar-mesa-ready pulse-green-btn" 
+                      class="btn-step-action btn-entregar-mesa-ready" 
                       (click)="marcarPedidoEntregado(pedido)"
-                      title="Tocar cuando el mesero levanta la bandeja y la lleva al salón"
+                      title="Tocar cuando el mesero ya retiró los platos de la barra"
                     >
                       <lucide-icon name="check-circle-2" class="icon-md"></lucide-icon>
                       <div class="btn-text-block">
-                        <span class="main-txt">2. Entregar a Mesa (Servido)</span>
-                        <span class="sub-txt">Confirmar comanda retirada por garzón</span>
+                        <span class="main-txt">Retirado por Mesero</span>
+                        <span class="sub-txt">Confirmar despacho de comanda</span>
                       </div>
                     </button>
                   </div>
@@ -317,18 +351,38 @@ interface Pedido {
       </div>
 
       <!-- ═══════════════════════════════════════════
-           VISTA 2: RECIÉN DESPACHADAS (HISTORIAL + SALVAVIDAS DESHACER)
+           VISTA 2: HISTORIAL DE DESPACHO (AUDITORÍA Y DESHACER)
            ═══════════════════════════════════════════ -->
       <div *ngIf="tabActiva() === 'despachadas'" class="despachadas-view">
         <div class="despachadas-header-card glass-panel">
           <div class="info-block">
-            <h3><lucide-icon name="history" class="icon-sm text-gold"></lucide-icon> Historial Inmediato de Despacho</h3>
-            <p>Aquí quedan guardados los últimos pedidos entregados. Si alguien tocó una mesa por error, puedes devolverla a cocina con un clic:</p>
+            <h3><lucide-icon name="history" class="icon-sm text-gold"></lucide-icon> Historial de Despacho</h3>
+            <p>Registro de comandas entregadas. Puedes consultar el turno actual o los últimos despachos y devolver una orden a cocina si se marcó por error.</p>
           </div>
-          <button type="button" class="btn-refresh" (click)="cargarDespachadosRecientes()">
-            <lucide-icon name="refresh-cw" class="icon-xs"></lucide-icon>
-            <span>Actualizar</span>
-          </button>
+          <div class="despachadas-tools">
+            <div class="historial-period-tabs">
+              <button
+                type="button"
+                class="period-tab-btn"
+                [class.active]="filtroHistorial() === 'hoy'"
+                (click)="cambiarFiltroHistorial('hoy')"
+              >
+                Turno de Hoy
+              </button>
+              <button
+                type="button"
+                class="period-tab-btn"
+                [class.active]="filtroHistorial() === 'recientes'"
+                (click)="cambiarFiltroHistorial('recientes')"
+              >
+                Últimos 30
+              </button>
+            </div>
+            <button type="button" class="btn-refresh" (click)="cargarDespachadosRecientes()">
+              <lucide-icon name="refresh-cw" class="icon-xs"></lucide-icon>
+              <span>Actualizar</span>
+            </button>
+          </div>
         </div>
 
         <div class="despachadas-grid">
@@ -342,14 +396,14 @@ interface Pedido {
                   </span>
                 </div>
                 <span class="time-despacho-lbl">
-                  {{ pedido.updatedAt || pedido.createdAt | date:'shortTime' }}
+                  {{ formatFechaDespacho(pedido.updatedAt || pedido.createdAt) }}
                 </span>
               </div>
 
               <div class="ticket-meta">
                 <div class="mesero-info">
                   <lucide-icon name="user" class="icon-xs text-muted"></lucide-icon>
-                  <span>Garzón: <strong>{{ pedido.mesero.nombre }}</strong></span>
+                  <span>Mesero: <strong>{{ pedido.mesero.nombre }}</strong></span>
                 </div>
               </div>
 
@@ -370,16 +424,24 @@ interface Pedido {
                   type="button" 
                   class="btn-deshacer-error" 
                   (click)="recuperarPedidoACocina(pedido)"
-                  title="¿Se marcó por error? Toca aquí para regresar la comanda a la barra/cocina"
+                  title="¿Se marcó por error? Toca aquí para regresar la comanda a cocina"
                 >
                   <lucide-icon name="rotate-ccw" class="icon-xs"></lucide-icon>
-                  <span>Devolver a Barra (Deshacer)</span>
+                  <span>Devolver a Cocina</span>
                 </button>
               </div>
             </div>
           } @empty {
             <div class="empty-state-panel glass-panel">
-              <p>No hay pedidos despachados recientemente en este turno.</p>
+              <div class="empty-icon-box">
+                <lucide-icon name="history" class="icon-xl text-gold"></lucide-icon>
+              </div>
+              <h2>{{ filtroHistorial() === 'hoy' ? 'Sin despachos en el turno de hoy' : 'Sin registros recientes' }}</h2>
+              <p>
+                {{ filtroHistorial() === 'hoy'
+                  ? 'Las comandas que marques como entregadas hoy aparecerán aquí. Puedes cambiar a "Últimos 30" para consultar despachos anteriores.'
+                  : 'No hay pedidos despachados registrados.' }}
+              </p>
             </div>
           }
         </div>
@@ -426,6 +488,26 @@ interface Pedido {
         .brand { color: #c0a678; font-weight: 700; }
         .sep { color: rgba(255, 255, 255, 0.2); }
         .current { color: #e3dad0; font-weight: 500; }
+      }
+
+      .header-live-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .live-clock-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #f5ede4;
+        font-size: 0.78rem;
+        font-weight: 700;
+        border-radius: 20px;
+        font-variant-numeric: tabular-nums;
       }
 
       .live-status-pill {
@@ -478,18 +560,50 @@ interface Pedido {
         max-width: 720px;
       }
 
+      .header-tools {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn-tool-refresh {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 42px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #e5ded5;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.09);
+          border-color: rgba(229, 185, 76, 0.4);
+          color: #ffffff;
+        }
+      }
+
       .btn-audio-toggle {
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        min-height: 42px;
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: #a89f92;
         padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.82rem;
+        border-radius: 10px;
+        font-size: 0.84rem;
         font-weight: 600;
         cursor: pointer;
+        touch-action: manipulation;
         transition: all 0.2s ease;
 
         &:hover {
@@ -681,11 +795,11 @@ interface Pedido {
         transform: translateY(-2px);
       }
 
-      /* ESTADO: COMIDA EN BARRA ESPERANDO AL GARZÓN (VERDE RADIANTE) */
+      /* ESTADO: COMIDA EN BARRA ESPERANDO RETIRO (ESMERALDA SOBRIO Y ELEGANTE) */
       &.card-en-barra {
-        border-color: rgba(34, 197, 94, 0.6);
-        background: linear-gradient(135deg, rgba(20, 36, 22, 0.96) 0%, rgba(14, 26, 16, 0.98) 100%);
-        box-shadow: 0 12px 30px rgba(34, 197, 94, 0.15), 0 0 0 1px rgba(34, 197, 94, 0.3);
+        border-color: rgba(52, 168, 110, 0.45);
+        background: linear-gradient(135deg, rgba(24, 28, 24, 0.96) 0%, rgba(17, 20, 17, 0.98) 100%);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(52, 168, 110, 0.18);
       }
 
       &.card-demorada {
@@ -752,6 +866,40 @@ interface Pedido {
         }
       }
 
+      /* Barra de progreso visual dentro de cada comanda */
+      .ticket-progress-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+
+        .ticket-progress-track {
+          flex: 1;
+          height: 6px;
+          background: rgba(255, 255, 255, 0.07);
+          border-radius: 999px;
+          overflow: hidden;
+        }
+
+        .ticket-progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #e5b94c 0%, #f59e0b 100%);
+          border-radius: 999px;
+          transition: width 0.3s ease;
+
+          &.fill-complete {
+            background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+          }
+        }
+
+        .ticket-progress-lbl {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #a89f92;
+          white-space: nowrap;
+        }
+      }
+
       /* Banner de estado claro en la tarjeta */
       .comanda-status-banner {
         display: flex;
@@ -767,9 +915,9 @@ interface Pedido {
         margin-bottom: 8px;
 
         &.banner-ready {
-          background: rgba(34, 197, 94, 0.15);
-          border-color: rgba(34, 197, 94, 0.4);
-          color: #4ade80;
+          background: rgba(52, 168, 110, 0.12);
+          border-color: rgba(52, 168, 110, 0.32);
+          color: #6ee7a8;
         }
       }
 
@@ -822,10 +970,10 @@ interface Pedido {
             transition: all 0.2s ease;
 
             &.item-listo {
-              background: rgba(34, 197, 94, 0.1);
-              border-color: rgba(34, 197, 94, 0.3);
+              background: rgba(52, 168, 110, 0.08);
+              border-color: rgba(52, 168, 110, 0.25);
 
-              .plato-name { color: #86efac; }
+              .plato-name { color: #a7e8c4; }
             }
 
             .item-info-col {
@@ -873,18 +1021,21 @@ interface Pedido {
               .btn-item-touch {
                 display: inline-flex;
                 align-items: center;
-                gap: 5px;
-                padding: 6px 12px;
-                background: rgba(234, 179, 8, 0.12);
-                border: 1px solid rgba(234, 179, 8, 0.3);
+                justify-content: center;
+                gap: 6px;
+                min-height: 40px;
+                padding: 8px 14px;
+                background: rgba(234, 179, 8, 0.14);
+                border: 1px solid rgba(234, 179, 8, 0.38);
                 color: #fde047;
-                border-radius: 6px;
-                font-size: 0.76rem;
+                border-radius: 9px;
+                font-size: 0.8rem;
                 font-weight: 700;
                 cursor: pointer;
+                touch-action: manipulation;
                 transition: all 0.2s ease;
 
-                &:hover {
+                &:hover, &:active {
                   background: #eab308;
                   color: #120f0c;
                 }
@@ -893,20 +1044,39 @@ interface Pedido {
               .badge-item-ready {
                 display: inline-flex;
                 align-items: center;
-                gap: 4px;
-                font-size: 0.76rem;
-                font-weight: 800;
-                color: #4ade80;
-                background: rgba(34, 197, 94, 0.12);
-                border: 1px solid rgba(34, 197, 94, 0.25);
-                padding: 4px 8px;
-                border-radius: 6px;
+                justify-content: center;
+                gap: 5px;
+                min-height: 40px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                color: #6ee7a8;
+                background: rgba(52, 168, 110, 0.12);
+                border: 1px solid rgba(52, 168, 110, 0.32);
+                padding: 8px 14px;
+                border-radius: 9px;
                 cursor: pointer;
+                touch-action: manipulation;
+                transition: all 0.2s ease;
 
                 &:hover {
                   border-color: rgba(239, 68, 68, 0.5);
                   color: #fca5a5;
                 }
+              }
+
+              .badge-item-servido {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                min-height: 40px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                color: #9e9484;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 8px 14px;
+                border-radius: 9px;
               }
             }
           }
@@ -979,7 +1149,7 @@ interface Pedido {
           }
         }
 
-        /* PASO 2: EN BARRA LISTO PARA EL GARZÓN */
+        /* PASO 2: EN BARRA LISTO PARA RETIRO DEL MESERO */
         .footer-step-2 {
           .btn-entregar-mesa-ready {
             width: 100%;
@@ -988,18 +1158,20 @@ interface Pedido {
             justify-content: center;
             gap: 12px;
             padding: 14px 18px;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: #ffffff;
-            border: none;
+            background: rgba(52, 168, 110, 0.16);
+            color: #7ee8b2;
+            border: 1px solid rgba(52, 168, 110, 0.45);
             border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
             transition: all 0.2s ease;
 
             &:hover {
-              background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-              transform: translateY(-2px);
-              box-shadow: 0 8px 26px rgba(34, 197, 94, 0.55);
+              background: #2f9e66;
+              border-color: #3bb878;
+              color: #ffffff;
+              transform: translateY(-1px);
+              box-shadow: 0 6px 18px rgba(47, 158, 102, 0.35);
             }
 
             .btn-text-block {
@@ -1032,6 +1204,40 @@ interface Pedido {
         .info-block {
           h3 { margin: 0 0 4px; font-size: 1rem; color: #f5ede4; display: flex; align-items: center; gap: 8px; }
           p { margin: 0; font-size: 0.84rem; color: #9c9285; }
+        }
+
+        .despachadas-tools {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .historial-period-tabs {
+          display: inline-flex;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 9px;
+          padding: 3px;
+          gap: 4px;
+
+          .period-tab-btn {
+            background: transparent;
+            border: none;
+            color: #9c9285;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &.active {
+              background: rgba(229, 185, 76, 0.2);
+              color: #fcd34d;
+              border: 1px solid rgba(229, 185, 76, 0.35);
+            }
+          }
         }
 
         .btn-refresh {
@@ -1203,6 +1409,44 @@ interface Pedido {
       p { color: #b5ac9e; font-size: 0.95rem; margin: 0 0 6px; }
       .empty-sub { color: #7d7366; font-size: 0.8rem; }
     }
+
+    /* ── Optimización Táctil para Tablet y Móvil ── */
+    @media (max-width: 900px) {
+      .tickets-grid, .despachadas-grid {
+        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+        gap: 14px;
+      }
+
+      .main-tabs-bar {
+        flex-wrap: wrap;
+
+        .tab-main-btn {
+          flex: 1 1 auto;
+          justify-content: center;
+          min-height: 46px;
+        }
+      }
+
+      .stats-filters-bar .filter-chips .filter-chip {
+        min-height: 40px;
+        padding: 8px 14px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .tickets-grid, .despachadas-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ticket-card .ticket-footer .footer-step-1 {
+        flex-direction: column;
+
+        .btn-shortcut-direct {
+          min-height: 44px;
+          padding: 10px 14px;
+        }
+      }
+    }
   `],
 })
 export class CocinaComponent implements OnInit, OnDestroy {
@@ -1217,11 +1461,14 @@ export class CocinaComponent implements OnInit, OnDestroy {
   ultimoPedidoDespachado = signal<Pedido | null>(null);
 
   filtroSeleccionado = signal<'todos' | 'listos' | 'demora'>('todos');
+  filtroHistorial = signal<'hoy' | 'recientes'>('hoy');
   sonidoHabilitado = signal(true);
+  tickReloj = signal(Date.now());
 
   private subs: Subscription[] = [];
   private audioCtx: AudioContext | null = null;
   private toastTimer: any = null;
+  private clockInterval: any = null;
 
   // ── Métricas Computadas ──
   totalComandas = computed(() => this.pedidos().length);
@@ -1248,6 +1495,10 @@ export class CocinaComponent implements OnInit, OnDestroy {
     return this.pedidos().filter(p => !this.todosPlatosListos(p) && this.getTiempoTranscurrido(p.createdAt) >= 15).length;
   });
 
+  despachadosHoyCount = computed(() => {
+    return this.despachadosRecientes().filter(p => this.esDeHoy(p.updatedAt || p.createdAt)).length;
+  });
+
   pedidosFiltrados = computed(() => {
     const list = this.pedidos();
     const filtro = this.filtroSeleccionado();
@@ -1265,10 +1516,16 @@ export class CocinaComponent implements OnInit, OnDestroy {
     this.cargarPedidosActivos();
     this.cargarDespachadosRecientes();
     this.suscribirAActualizaciones();
+    this.clockInterval = setInterval(() => {
+      this.tickReloj.set(Date.now());
+    }, 30000);
   }
 
   ngOnDestroy() {
     this.subs.forEach(s => s.unsubscribe());
+    if (this.clockInterval) {
+      clearInterval(this.clockInterval);
+    }
     if (this.audioCtx) {
       this.audioCtx.close().catch(() => {});
     }
@@ -1317,7 +1574,7 @@ export class CocinaComponent implements OnInit, OnDestroy {
 
   todosPlatosListos(pedido: Pedido): boolean {
     return pedido.detalles.length > 0 && pedido.detalles.every(
-      (d) => d.estadoItem === 'LISTO' || d.estadoItem === 'CANCELADO'
+      (d) => d.estadoItem === 'LISTO' || d.estadoItem === 'ENTREGADO' || d.estadoItem === 'CANCELADO'
     );
   }
 
@@ -1330,8 +1587,14 @@ export class CocinaComponent implements OnInit, OnDestroy {
     });
   }
 
+  cambiarFiltroHistorial(periodo: 'hoy' | 'recientes') {
+    this.filtroHistorial.set(periodo);
+    this.cargarDespachadosRecientes();
+  }
+
   cargarDespachadosRecientes() {
-    this.http.get<any>(`${this.baseUrl}/pedidos/despachados-recientes`).subscribe({
+    const periodo = this.filtroHistorial();
+    this.http.get<any>(`${this.baseUrl}/pedidos/despachados-recientes?periodo=${periodo}`).subscribe({
       next: (res) => {
         this.despachadosRecientes.set(res.data || res || []);
       },
@@ -1382,20 +1645,39 @@ export class CocinaComponent implements OnInit, OnDestroy {
     const subItem = this.socketService
       .onEvent<{ pedidoId: string; itemId: string; estado: string }>('item:estado-actualizado')
       .subscribe((data) => {
+        let pedidoCompletado: Pedido | null = null;
+
         this.pedidos.update((lista) => {
-          return lista.map((pedido) => {
-            if (pedido.id === data.pedidoId) {
-              const nuevosDetalles = pedido.detalles.map((item) => {
-                if (item.id === data.itemId) {
-                  return { ...item, estadoItem: data.estado as any };
+          return lista
+            .map((pedido) => {
+              if (pedido.id === data.pedidoId) {
+                const nuevosDetalles = pedido.detalles.map((item) => {
+                  if (item.id === data.itemId) {
+                    return { ...item, estadoItem: data.estado as any };
+                  }
+                  return item;
+                });
+                const actualizado = { ...pedido, detalles: nuevosDetalles };
+                const todosEntregados =
+                  nuevosDetalles.length > 0 &&
+                  nuevosDetalles.every((d) => d.estadoItem === 'ENTREGADO' || d.estadoItem === 'CANCELADO');
+                if (todosEntregados) {
+                  pedidoCompletado = { ...actualizado, estado: 'ENTREGADO', updatedAt: new Date().toISOString() };
+                  return null;
                 }
-                return item;
-              });
-              return { ...pedido, detalles: nuevosDetalles };
-            }
-            return pedido;
-          });
+                return actualizado;
+              }
+              return pedido;
+            })
+            .filter((p): p is Pedido => p !== null);
         });
+
+        if (pedidoCompletado) {
+          this.despachadosRecientes.update((lista) => {
+            if (lista.some((p) => p.id === pedidoCompletado!.id)) return lista;
+            return [pedidoCompletado!, ...lista];
+          });
+        }
       });
 
     this.subs.push(subNuevo, subEstado, subItem);
@@ -1447,16 +1729,20 @@ export class CocinaComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ── PASO 1: Poner toda la comida en la barra ──
+  // ── PASO 1: Marcar toda la comanda como LISTO en barra ──
   ponerTodaLaComidaEnBarra(pedidoId: string) {
     this.http
-      .post(`${this.baseUrl}/pedidos/${pedidoId}/servir-todos`, {})
+      .patch(`${this.baseUrl}/pedidos/${pedidoId}/estado`, { estado: 'LISTO' })
       .subscribe({
         next: () => {
           this.pedidos.update((lista) => {
             return lista.map((p) => {
               if (p.id === pedidoId) {
-                const itemsListos = p.detalles.map((d) => ({ ...d, estadoItem: 'LISTO' as any }));
+                const itemsListos = p.detalles.map((d) =>
+                  d.estadoItem === 'ENTREGADO' || d.estadoItem === 'CANCELADO'
+                    ? d
+                    : { ...d, estadoItem: 'LISTO' as any }
+                );
                 return { ...p, estado: 'LISTO' as any, detalles: itemsListos };
               }
               return p;
@@ -1486,9 +1772,9 @@ export class CocinaComponent implements OnInit, OnDestroy {
             // Remover de la cola activa
             this.pedidos.update((lista) => lista.filter((p) => p.id !== pedido.id));
 
-            // Agregar a recientes
+            // Agregar a recientes en el turno actual
             const pedidoArchivado = { ...pedido, estado: 'ENTREGADO' as any, animandoSalida: false, updatedAt: new Date().toISOString() };
-            this.despachadosRecientes.update((lista) => [pedidoArchivado, ...lista.slice(0, 19)]);
+            this.despachadosRecientes.update((lista) => [pedidoArchivado, ...lista]);
 
             // Mostrar toast de deshacer por 8 segundos
             this.ultimoPedidoDespachado.set(pedidoArchivado);
@@ -1535,9 +1821,71 @@ export class CocinaComponent implements OnInit, OnDestroy {
 
   getTiempoTranscurrido(createdAt: string): number {
     const inicio = new Date(createdAt).getTime();
-    const ahora = new Date().getTime();
+    const ahora = this.tickReloj();
     const diffMinutos = Math.floor((ahora - inicio) / 1000 / 60);
     return Math.max(0, diffMinutos);
+  }
+
+  formatTiempoTranscurrido(createdAt: string): string {
+    const mins = this.getTiempoTranscurrido(createdAt);
+    if (mins < 1) return 'Recién llegado';
+    if (mins < 60) return `${mins} min`;
+    const horas = Math.floor(mins / 60);
+    const restoMin = mins % 60;
+    if (horas < 24) {
+      return restoMin > 0 ? `${horas}h ${restoMin}m` : `${horas}h`;
+    }
+    const dias = Math.floor(horas / 24);
+    const restoHoras = horas % 24;
+    return restoHoras > 0 ? `+${dias}d ${restoHoras}h` : `+${dias}d`;
+  }
+
+  getPlatosListosCount(pedido: Pedido): number {
+    return pedido.detalles.filter((d) => d.estadoItem === 'LISTO' || d.estadoItem === 'ENTREGADO' || d.estadoItem === 'CANCELADO').length;
+  }
+
+  getPlatosPendientesCount(pedido: Pedido): number {
+    return pedido.detalles.filter((d) => d.estadoItem !== 'LISTO' && d.estadoItem !== 'ENTREGADO' && d.estadoItem !== 'CANCELADO').length;
+  }
+
+  getProgresoPorcentaje(pedido: Pedido): number {
+    if (!pedido.detalles.length) return 0;
+    return Math.round((this.getPlatosListosCount(pedido) / pedido.detalles.length) * 100);
+  }
+
+  getNotaVisible(nota: string | null): string | null {
+    if (!nota) return null;
+    const limpia = nota.trim();
+    if (!limpia) return null;
+    if (
+      limpia.startsWith('[Pedido IA]') ||
+      limpia.toLowerCase().includes('pedido interactivo desde la carta digital')
+    ) {
+      return null;
+    }
+    return limpia;
+  }
+
+  esDeHoy(fechaStr: string): boolean {
+    if (!fechaStr) return false;
+    const d = new Date(fechaStr);
+    const hoy = new Date();
+    return (
+      d.getFullYear() === hoy.getFullYear() &&
+      d.getMonth() === hoy.getMonth() &&
+      d.getDate() === hoy.getDate()
+    );
+  }
+
+  formatFechaDespacho(fechaStr: string): string {
+    if (!fechaStr) return '';
+    const d = new Date(fechaStr);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const hora = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if (this.esDeHoy(fechaStr)) {
+      return `Hoy · ${hora}`;
+    }
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} · ${hora}`;
   }
 
   getOrigenLabel(origen?: string): string {

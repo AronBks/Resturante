@@ -7,12 +7,16 @@ import {
   signal,
   computed,
   OnChanges,
+  OnInit,
+  OnDestroy,
   SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { SocketService } from '../../core/services/socket.service';
 import { CajaCobroComponent, PedidoParaCobro } from './caja-cobro.component';
 import { resolverImagenLocalAdmin } from '../../core/utils/local-images.util';
 import { LucideAngularModule } from 'lucide-angular';
@@ -71,10 +75,12 @@ interface ItemComanda {
   templateUrl: './comanda-drawer.component.html',
   styleUrls: ['./comanda-drawer.component.scss'],
 })
-export class ComandaDrawerComponent implements OnChanges {
+export class ComandaDrawerComponent implements OnChanges, OnInit, OnDestroy {
   private http = inject(HttpClient);
+  private socketService = inject(SocketService);
   public readonly authService = inject(AuthService);
   private readonly baseUrl = 'http://localhost:3000/api';
+  private wsSubs: Subscription[] = [];
 
   @Input() mesa: Mesa | null = null;
   @Input() platos: Plato[] = [];
@@ -344,6 +350,33 @@ export class ComandaDrawerComponent implements OnChanges {
 
   constructor() {
     this.cargarWaiters();
+  }
+
+  ngOnInit() {
+    const subItem = this.socketService
+      .onEvent<{ pedidoId: string; itemId: string; estado: string }>('item:estado-actualizado')
+      .subscribe((data) => {
+        if (this.isOpen && this.activePedidoId() === data?.pedidoId) {
+          this.activeSentItems.update((items) =>
+            items.map((i) => (i.id === data.itemId ? { ...i, estado: data.estado } : i))
+          );
+        }
+      });
+
+    const subPedido = this.socketService
+      .onEvent<{ pedidoId: string; estado: string }>('pedido:estado-actualizado')
+      .subscribe((data) => {
+        if (this.isOpen && this.activePedidoId() === data?.pedidoId) {
+          this.activePedidoEstado.set(data.estado);
+          this.cargarPedidoActivo();
+        }
+      });
+
+    this.wsSubs.push(subItem, subPedido);
+  }
+
+  ngOnDestroy() {
+    this.wsSubs.forEach((s) => s.unsubscribe());
   }
 
   ngOnChanges(changes: SimpleChanges) {

@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
 import { SocketService } from '../../core/services/socket.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ComandaDrawerComponent } from './comanda-drawer.component';
@@ -178,6 +178,32 @@ export class MesasComponent implements OnInit, OnDestroy {
     const pedido = mesa.pedidos?.[0];
     if (!pedido || !pedido.id) return;
 
+    const detalles = pedido.detalles || [];
+    const listos = detalles.filter((d: any) => d.estadoItem === 'LISTO');
+    const pendientesEnCocina = detalles.filter(
+      (d: any) => d.estadoItem !== 'LISTO' && d.estadoItem !== 'ENTREGADO' && d.estadoItem !== 'SERVIDO' && d.estadoItem !== 'CANCELADO'
+    );
+
+    // Si hay platos listos pero aún quedan platos en cocina, solo servir los que están LISTO
+    if (listos.length > 0 && pendientesEnCocina.length > 0) {
+      const requests = listos.map((d: any) =>
+        this.http.patch(`${this.baseUrl}/pedidos/${pedido.id}/items/${d.id}/estado`, { estado: 'ENTREGADO' })
+      );
+      forkJoin(requests).subscribe({
+        next: () => {
+          this.agregarEvento({
+            tipo: 'COMANDA',
+            titulo: `Mesa ${mesa.numero}: ${listos.length} plato(s) servido(s)`,
+            descripcion: 'Retirados de barra. Los demás platos siguen en preparación en cocina.',
+          });
+          this.cargarMesas();
+        },
+        error: (err) => console.error('Error al servir platos listos', err),
+      });
+      return;
+    }
+
+    // Si todos los platos ya están listos (o no quedan pendientes en cocina), marcar comanda completa
     this.http.post<any>(`${this.baseUrl}/pedidos/${pedido.id}/servir-todos`, {}).subscribe({
       next: () => {
         this.agregarEvento({
@@ -919,7 +945,19 @@ const subMeseroAtendido = this.socketService
 
   getComandaItems(mesa: Mesa): { nombre: string; cantidad: number; subtotal: number; estadoItem: string }[] {
     const detalles = mesa.pedidos?.[0]?.detalles || [];
-    return detalles.slice(0, 3).map((d: any) => {
+    const prioridad = (estado: string) => {
+      if (estado === 'LISTO') return 0;
+      if (estado === 'PREPARANDO' || estado === 'EN_COCINA' || estado === 'PENDIENTE') return 1;
+      return 2;
+    };
+
+    const ordenados = [...detalles].sort((a: any, b: any) => {
+      const estA = a.estadoItem || a.estado || 'EN_COCINA';
+      const estB = b.estadoItem || b.estado || 'EN_COCINA';
+      return prioridad(estA) - prioridad(estB);
+    });
+
+    return ordenados.slice(0, 4).map((d: any) => {
       const precio = Number(d.precioUnitario) || Number(d.plato?.precioVenta) || 0;
       const cant = Number(d.cantidad) || 1;
       return {
@@ -929,6 +967,11 @@ const subMeseroAtendido = this.socketService
         estadoItem: d.estadoItem || d.estado || (mesa.pedidos?.[0]?.estado === 'LISTO' ? 'LISTO' : 'EN_COCINA'),
       };
     });
+  }
+
+  getComandaExtraCount(mesa: Mesa): number {
+    const total = (mesa.pedidos?.[0]?.detalles || []).length;
+    return total > 4 ? total - 4 : 0;
   }
 
   getMesaSubtotal(mesa: Mesa): number {

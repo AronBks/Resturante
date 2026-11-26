@@ -282,16 +282,15 @@
     }
   }
 
-  /* Estado Mesa con Platos Listos en Barra (Resaltado Esmeralda y Pulso de Alerta Suave) */
+  /* Estado Mesa con Platos Listos en Barra (Resaltado Esmeralda Sobrio y Elegante) */
   &.con-platos-listos {
-    border-color: rgba(16, 185, 129, 0.5) !important;
-    border-top: 3px solid #10b981 !important;
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.22) !important;
-    animation: mesa-listo-glow 2.5s infinite ease-in-out;
+    border-color: rgba(52, 168, 110, 0.45) !important;
+    border-top: 3px solid #34a86e !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(52, 168, 110, 0.14) !important;
 
     &:hover {
-      border-color: #10b981 !important;
-      box-shadow: 0 0 28px rgba(16, 185, 129, 0.35) !important;
+      border-color: #3bb878 !important;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(52, 168, 110, 0.22) !important;
     }
   }
 
@@ -557,9 +556,8 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%);
+    background: linear-gradient(90deg, #d4a359 0%, #34a86e 100%);
     border-radius: 6px;
-    box-shadow: 0 0 10px #3b82f6;
   }
 
   .progress-percent {
@@ -1672,22 +1670,27 @@
     }
 
     &.btn-recoger-barra {
-      background: #10b981;
-      border: 1px solid #34d399;
-      color: #0d1e16;
-      font-weight: 800;
-      padding: 5px 12px;
-      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+      background: rgba(52, 168, 110, 0.16);
+      border: 1px solid rgba(52, 168, 110, 0.45);
+      color: #7ee8b2;
+      font-weight: 700;
+      padding: 6px 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 
       lucide-icon {
-        color: #0d1e16;
+        color: #6ee7a8;
       }
 
       &:hover {
-        background: #34d399;
-        border-color: #6ee7b7;
-        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.6);
-        transform: translateY(-1px) scale(1.02);
+        background: #2f9e66;
+        border-color: #3bb878;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(47, 158, 102, 0.35);
+        transform: translateY(-1px);
+
+        lucide-icon {
+          color: #ffffff;
+        }
       }
     }
   }
@@ -1704,6 +1707,27 @@
     padding: 3px 8px;
     border-radius: 6px;
   }
+
+  .badge-waiting-kitchen {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #e5c158;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(229, 193, 88, 0.08);
+    border: 1px solid rgba(229, 193, 88, 0.22);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+}
+
+.comanda-extra-more {
+  margin-top: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #e5c158;
+  opacity: 0.85;
 }
 
 .animate-pulse-subtle {
@@ -1921,12 +1945,21 @@
     }
 
     .btn-deliver-order,
-    .badge-delivered-ok {
+    .badge-delivered-ok,
+    .badge-waiting-kitchen {
       width: 100%;
+      min-height: 40px;
       justify-content: center;
-      padding: 6px 8px;
-      font-size: 0.72rem;
+      padding: 9px 12px;
+      font-size: 0.78rem;
+      border-radius: 10px;
     }
+  }
+
+  .btn-ver-comanda-por-cobrar {
+    min-height: 42px;
+    font-size: 0.8rem;
+    border-radius: 10px;
   }
 
   .libre-body-box {
@@ -1942,9 +1975,11 @@
 
     .btn-take-order-prompt {
       width: 100%;
+      min-height: 40px;
       justify-content: center;
-      padding: 6px 8px;
-      font-size: 0.72rem;
+      padding: 9px 12px;
+      font-size: 0.78rem;
+      border-radius: 10px;
       margin-top: 2px;
     }
   }

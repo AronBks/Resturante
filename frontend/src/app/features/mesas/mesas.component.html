@@ -271,6 +271,11 @@
                         <span class="dish-subtotal">Bs. {{ item.subtotal | number:'1.0-0' }}</span>
                       </div>
                     }
+                    @if (getComandaExtraCount(mesa) > 0) {
+                      <div class="comanda-extra-more">
+                        <span>+{{ getComandaExtraCount(mesa) }} producto{{ getComandaExtraCount(mesa) > 1 ? 's' : '' }} más (toca para ver)</span>
+                      </div>
+                    }
                     @if (getComandaItems(mesa).length === 0) {
                       <div class="comanda-item-row empty-row">
                         <span class="dish-name-empty">En toma de pedido...</span>
@@ -300,7 +305,9 @@
                       title="Confirmar retiro de barra y entrega a la mesa"
                     >
                       <lucide-icon name="check-circle-2" [size]="12"></lucide-icon>
-                      <span>Recoger y Servir</span>
+                      <span>
+                        {{ tienePlatosEnCocina(mesa) ? ('Recoger ' + conteoPlatosListos(mesa) + (conteoPlatosListos(mesa) === 1 ? ' listo' : ' listos')) : 'Recoger y Servir' }}
+                      </span>
                     </button>
                   } @else if (todosPlatosEntregados(mesa)) {
                     <span class="badge-delivered-ok">
@@ -308,15 +315,10 @@
                       <span>Servido</span>
                     </span>
                   } @else {
-                    <button 
-                      type="button"
-                      class="btn-deliver-order" 
-                      (click)="servirTodosLosPlatos(mesa, $event)"
-                      title="Confirmar entrega presencial en mesa"
-                    >
-                      <lucide-icon name="check" [size]="11"></lucide-icon>
-                      <span>Entregar</span>
-                    </button>
+                    <span class="badge-waiting-kitchen">
+                      <lucide-icon name="clock" [size]="11"></lucide-icon>
+                      <span>En preparación</span>
+                    </span>
                   }
                 </div>
 
